@@ -39,13 +39,10 @@ function 字を集める(節点: Node, 結果: 字単位[]): void {
 }
 
 function 範囲を指定(範囲: Range, 字: 字単位, 先頭: boolean): void {
-    if (字.節点 instanceof Text) {
-        if (先頭) 範囲.setStart(字.節点, 字.開始);
-        if (!先頭) 範囲.setEnd(字.節点, 字.終了);
-        return;
-    }
-    if (先頭) 範囲.setStartBefore(字.節点);
-    if (!先頭) 範囲.setEndAfter(字.節点);
+    if (字.節点 instanceof Text && 先頭) 範囲.setStart(字.節点, 字.開始);
+    if (字.節点 instanceof Text && !先頭) 範囲.setEnd(字.節点, 字.終了);
+    if (字.節点 instanceof Element && 先頭) 範囲.setStartBefore(字.節点);
+    if (字.節点 instanceof Element && !先頭) 範囲.setEndAfter(字.節点);
 }
 
 /** 以前の保護を外してから新しい末尾を保護する。 */
