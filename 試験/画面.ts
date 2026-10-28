@@ -485,6 +485,13 @@ try {
     if (元の例 !== "したり") throw new Error("元の孤立字が残っています: " + 元の例);
 
 
+    // 朗読の非固定パネルは本文の上へ重なる。別機能の操作前に収納する。
+    await 頁.mouse.move(5, 5);
+    await 頁.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await 頁.waitForFunction(() => {
+        const 内容 = document.querySelector(".朗読内容");
+        return Boolean(内容 && getComputedStyle(内容).visibility === "hidden");
+    });
     const 車輪対象 = 頁.locator("#物語本文");
     await 車輪対象.scrollIntoViewIfNeeded();
     await 車輪対象.evaluate((要素) => { 要素.scrollTo({ left: 0, behavior: "instant" }); });
@@ -1123,11 +1130,13 @@ try {
             目次文字色: 目次色.color,
             背景: 朗読色.backgroundColor,
             目次背景: 目次色.backgroundColor,
+            看板の影: getComputedStyle(document.querySelector(".朗読看板")!).boxShadow,
         };
     });
     if (!収納見た目?.固定は内容内 || !収納見た目.固定は非表示
         || 収納見た目.文字色 !== 収納見た目.目次文字色
-        || 収納見た目.背景 !== 収納見た目.目次背景) {
+        || 収納見た目.背景 !== 収納見た目.目次背景
+        || 収納見た目.看板の影 === "none") {
         throw new Error("収納時の固定ボタンか朱色の引手が目次に一致しません: " + JSON.stringify(収納見た目));
     }
     const 収納の接合を調べる = async (): Promise<Readonly<{

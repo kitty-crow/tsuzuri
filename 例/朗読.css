@@ -171,6 +171,7 @@
     min-height: 40px;
     border: 1px solid var(--線);
     background: var(--面);
+    box-shadow: 0 7px 25px color-mix(in srgb, var(--墨) 8%, transparent);
 }
 .朗読引手 {
     display: flex;
