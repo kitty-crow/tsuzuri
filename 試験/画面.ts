@@ -18,20 +18,20 @@ try {
     頁.on("pageerror", (例外内容) => 例外.push(例外内容.message));
     await 頁.goto("http://127.0.0.1:" + String(配信.port));
     await 頁.waitForSelector(".綴り-文字");
-    // 朗読の格納位置は巻物の下。収納時は常に引手の高さだけを占める。
+    // 朗読の格納位置は巻物の上。収納時は常に引手の高さだけを占める。
     const 朗読領域 = await 頁.locator(".物語節 > .容器").evaluate((箱) => {
         const 巻 = 箱.querySelector(".物語読書面")?.getBoundingClientRect();
         const 収納 = 箱.querySelector(".朗読収納")?.getBoundingClientRect();
         const 引手 = 箱.querySelector(".朗読看板")?.getBoundingClientRect();
         const 操作 = 箱.querySelector(".朗読内容")?.getBoundingClientRect();
         return {
-            巻下: 巻?.bottom ?? 0, 収納上: 収納?.top ?? 0,
+            巻上: 巻?.top ?? 0, 収納下: 収納?.bottom ?? 0,
             収納高: 収納?.height ?? 0, 引手高: 引手?.height ?? 0,
             操作高: 操作?.height ?? -1,
             収納右: 収納?.right ?? 0, 巻右: 巻?.right ?? 0,
         };
     });
-    if (朗読領域.収納上 < 朗読領域.巻下 - 1
+    if (Math.abs(朗読領域.巻上 - 朗読領域.収納下) > 1.5
         || 朗読領域.収納高 < 36 || 朗読領域.収納高 > 46
         || 朗読領域.操作高 > 1 || Math.abs(朗読領域.収納右 - 朗読領域.巻右) > 3) {
         throw new Error("朗読の収納場所か予約領域が不正です: " + JSON.stringify(朗読領域));
