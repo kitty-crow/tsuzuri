@@ -1024,6 +1024,30 @@ try {
     const 収納試験 = await ブラウザー.newPage({ viewport: { width: 1280, height: 800 } });
     await 収納試験.goto("http://127.0.0.1:" + String(配信.port));
     await 収納試験.waitForSelector("#朗読固定");
+    const 収納の接合を調べる = async (): Promise<Readonly<{
+        間隔: number; 左ずれ: number; 右ずれ: number;
+        上枠: number; 見出し間隔: number;
+    }>> => 収納試験.locator(".物語節 > .容器").evaluate((箱) => {
+        const 巻 = 箱.querySelector(".物語読書面")?.getBoundingClientRect();
+        const 朗読 = 箱.querySelector(".朗読収納")?.getBoundingClientRect();
+        const 見出し = 箱.querySelector(".物語冒頭")?.getBoundingClientRect();
+        const 枠 = 箱.querySelector(".朗読看板");
+        return {
+            間隔: (朗読?.top ?? 0) - (巻?.bottom ?? 0),
+            左ずれ: Math.abs((朗読?.left ?? 0) - (巻?.left ?? 0)),
+            右ずれ: Math.abs((朗読?.right ?? 0) - (巻?.right ?? 0)),
+            上枠: 枠 ? Number.parseFloat(getComputedStyle(枠).borderTopWidth) : -1,
+            見出し間隔: (巻?.top ?? 0) - (見出し?.bottom ?? 0),
+        };
+    });
+    const 接合を確認する = (位置: string, 寸法: Awaited<ReturnType<typeof 収納の接合を調べる>>): void => {
+        if (Math.abs(寸法.間隔) > 1.5 || 寸法.左ずれ > 1.5
+            || 寸法.右ずれ > 1.5 || 寸法.上枠 !== 0) {
+            throw new Error("朗読の引手が巻物の下辺に接続していません: "
+                + JSON.stringify({ 位置, ...寸法 }));
+        }
+    };
+    接合を確認する("大画面・収納", await 収納の接合を調べる());
     await 収納試験.locator("#朗読引手").hover();
     await 収納試験.waitForFunction(() => document.querySelector(".朗読収納")
         ?.getBoundingClientRect().height! > 95);
@@ -1047,6 +1071,7 @@ try {
         || 保存確認.押下 !== "true" || 保存確認.高さ < 95) {
         throw new Error("朗読の固定が保持されません: " + JSON.stringify(保存確認));
     }
+    接合を確認する("大画面・固定", await 収納の接合を調べる());
     await 収納試験.reload();
     await 収納試験.waitForSelector(".朗読収納[data-readaloud-pinned='true']");
     const 復元 = await 収納試験.locator(".朗読収納").evaluate((要素) =>
@@ -1068,6 +1093,7 @@ try {
                 高さ: 収納?.height ?? 0,
             };
         });
+        接合を確認する("携帯・固定・" + String(幅), await 収納の接合を調べる());
         if (携帯寸法.収納上 < 携帯寸法.巻下 - 1
             || 携帯寸法.収納左 < 携帯寸法.左端 - 2
             || 携帯寸法.収納右 > 携帯寸法.右端 + 2
@@ -1088,6 +1114,7 @@ try {
     if (収納後.高さ < 36 || 収納後.高さ > 46 || 収納後.固定 !== "false") {
         throw new Error("固定解除時に朗読が引手へ戻りません: " + JSON.stringify(収納後));
     }
+    接合を確認する("大画面・解除", await 収納の接合を調べる());
     await 収納試験.close();
 
     console.log("実ブラウザーでの表示検査に合格しました。");
