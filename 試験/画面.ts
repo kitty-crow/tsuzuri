@@ -125,7 +125,15 @@ try {
     const 新しい配色 = await 頁.locator("html").getAttribute("data-theme");
     const 新しい背景 = await 頁.locator("body").evaluate((要素) => getComputedStyle(要素).backgroundColor);
     if (新しい配色 === 初期の配色 || 新しい背景 === 初期の背景) {
-        throw new Error("配色の切替が行われませんでした");
+        throw new Error("配色の切替が行われませんでした: " + JSON.stringify({
+            初期の配色, 新しい配色, 初期の背景, 新しい背景,
+            初期表示: await ボタン.textContent(),
+            配色処理: await 頁.evaluate(() => ({
+                定義: document.querySelector("script[src$='配色.js']")?.getAttribute("src"),
+                保存: localStorage.getItem("綴り-配色"),
+                様式: getComputedStyle(document.documentElement).getPropertyValue("--紙"),
+            })),
+        }));
     }
     await 頁.reload();
     const 保存済み = await 頁.locator("html").getAttribute("data-theme");
