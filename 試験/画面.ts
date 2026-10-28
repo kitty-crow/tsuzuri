@@ -136,6 +136,7 @@ try {
         要素.textContent = "自動";
         document.body.append(要素);
     });
+    console.log("画面検査の待機: 1");
     await 頁.waitForFunction(() => Array.from(document.querySelectorAll("ruby.綴り-振仮名"))
         .some((要素) => 要素.textContent?.includes("じどう")));
 
@@ -231,6 +232,7 @@ try {
         箱.append(注記の書面);
         document.body.append(箱);
     });
+    console.log("画面検査の待機: 2");
     await 頁.waitForFunction(() =>
         document.querySelectorAll("#組版の孤立防止検査 .綴り-孤立防止").length === 4
     );
@@ -285,6 +287,7 @@ try {
         throw new Error("目次が初期状態で収納されていません: " + JSON.stringify(初期収納));
     }
     await 引手.hover();
+    console.log("画面検査の待機: 3");
     await 頁.waitForFunction(() =>
         document.querySelector(".目次側")?.getBoundingClientRect().width !== undefined
         && Math.abs((document.querySelector(".目次側")?.getBoundingClientRect().right ?? 0)
@@ -324,6 +327,8 @@ try {
     if (Math.abs(固定後.親右 - 固定後.右) > 5) {
         throw new Error("固定された目次が閉じています: " + JSON.stringify(固定後));
     }
+
+    console.log("画面検査の待機: 4");
 
     await 頁.waitForFunction(() => {
         const 読書面 = document.querySelector(".物語読書面");
@@ -413,6 +418,7 @@ try {
     if (!目標識別) throw new Error("目次に使う識別子がありません");
     const 跳躍先 = 頁.locator('#物語目次 a[data-target="' + 目標識別 + '"]');
     await 跳躍先.click();
+    console.log("画面検査の待機: 5");
     await 頁.waitForFunction((識別) => {
         const 見出し = document.getElementById(識別);
         const 巻物 = document.querySelector("#物語本文");
@@ -420,6 +426,7 @@ try {
         const ずれ = 見出し.getBoundingClientRect().right - 巻物.getBoundingClientRect().right;
         return Math.abs(ずれ + 28) < 52 && Math.abs(巻物.scrollLeft) > 100;
     }, 目標識別);
+    console.log("画面検査の待機: 6");
     await 頁.waitForFunction((識別) =>
         document.querySelector('#物語目次 a[data-target="' + 識別 + '"]')
             ?.getAttribute("aria-current") === "location", 目標識別);
@@ -459,6 +466,7 @@ try {
     if (await 頁.evaluate(() => localStorage.getItem("綴り-物語目次固定")) !== "false") {
         throw new Error("目次の固定解除が保存されませんでした");
     }
+    console.log("画面検査の待機: 7");
     await 頁.waitForFunction(() => {
         const 面 = document.querySelector(".物語読書面");
         const 本文 = document.querySelector(".物語巻");
@@ -518,6 +526,7 @@ try {
         });
     });
     await 頁.setViewportSize({ width: 390, height: 840 });
+    console.log("画面検査の待機: 8");
     await 頁.waitForFunction(() => document.documentElement.dataset.kofiReady === "true");
     const 携帯の軌道 = await 頁.evaluate(() => {
         const 頭 = document.querySelector(".上部")?.getBoundingClientRect();
@@ -554,6 +563,7 @@ try {
             + JSON.stringify({ 円形, 携帯の縦帯, 円形の控え, 名義 }));
     }
     await 頁.setViewportSize({ width: 1280, height: 800 });
+    console.log("画面検査の待機: 9");
     await 頁.waitForFunction(() =>
         document.documentElement.dataset.kofiReady === "false"
         && !document.querySelector(".floatingchat-container-wrap-mobi"));
