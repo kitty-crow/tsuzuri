@@ -1,0 +1,140 @@
+/* 共有の Ko-fi 浮動案内とフッターを、書物の色合いに合わせる。 */
+.下部版 {
+    display: inline-flex;
+    align-items: baseline;
+    gap: .6em;
+    font-family: "Yu Mincho", serif;
+    font-weight: 700;
+    color: var(--墨);
+}
+.下部版 > span { font-size: .8em; font-weight: 400; color: var(--薄); }
+.下部版 > small { font-family: ui-monospace, monospace; font-weight: 400; font-size: .72em; color: var(--薄); }
+.下部リンク { display: flex; align-items: center; gap: .55rem; flex-wrap: wrap; }
+.下部リンク > span { color: var(--朱); font-size: .75rem; }
+.下部リンク > a { color: var(--薄); text-decoration: none; font-size: .81rem; }
+.下部リンク > a:hover, .下部リンク > a:focus-visible { color: var(--朱); }
+.pages-kofi-link { display: inline-flex; align-items: center; gap: .4rem; }
+.pages-kofi-link > img {
+    display: block; width: 1.05rem; height: 1.05rem; flex: 0 0 1.05rem;
+    object-fit: contain;
+}
+/* 広い画面では横向きの外部埋込みに頼らず、綴りで縦書きにする。 */
+.支援側帯 {
+    position: fixed;
+    z-index: 9;
+    top: clamp(122px, 28vh, 265px);
+    right: max(0px, env(safe-area-inset-right));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .7em;
+    min-width: 45px;
+    padding: 17px 10px 19px;
+    border: 1px solid var(--線);
+    border-right: 0;
+    border-radius: 8px 0 0 8px;
+    background: color-mix(in srgb, var(--面) 96%, var(--朱));
+    box-shadow: -4px 7px 24px color-mix(in srgb, var(--墨) 10%, transparent);
+    color: var(--墨);
+    font-family: "Yu Mincho", serif;
+    font-size: .94rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .3s cubic-bezier(.22,1,.36,1), background-color .3s, box-shadow .3s;
+}
+.支援側帯 > .綴り-縦書 { display: inline-block; writing-mode: vertical-rl; text-orientation: upright; line-height: 1.2; }
+.支援側帯:hover, .支援側帯:focus-visible {
+    transform: translateX(-5px);
+    background: color-mix(in srgb, var(--面) 85%, var(--朱));
+    box-shadow: -6px 9px 25px color-mix(in srgb, var(--墨) 16%, transparent);
+}
+.支援側帯:focus-visible, .支援浮輪:focus-visible { outline: 2px solid var(--朱); outline-offset: 3px; }
+.支援杯 { width: 25px; height: 25px; object-fit: contain; }
+.支援浮輪 { display: none; }
+/* 外部ウィジェットの小さな円だけを表示し、ポップアップはそのまま動かす。 */
+@media (max-width: 720px) {
+    .支援側帯 { display: none; }
+    .支援浮輪 {
+        position: fixed;
+        bottom: max(16px, env(safe-area-inset-bottom));
+        left: max(16px, env(safe-area-inset-left));
+        z-index: 30;
+        display: grid;
+        place-items: center;
+        width: 56px;
+        height: 56px;
+        padding: 0;
+        border-radius: 50%;
+        background: #5bc0de;
+        box-shadow: 0 8px 20px rgb(31 49 56 / 22%);
+        cursor: pointer;
+        transition: transform .2s ease, box-shadow .2s;
+    }
+    .支援浮輪 > img { width: 38px; height: 38px; object-fit: contain; }
+    .支援浮輪:hover { transform: translateY(-3px); box-shadow: 0 11px 24px rgb(31 49 56 / 25%); }
+    :root[data-kofi-ready="true"] .支援浮輪 { visibility: hidden; pointer-events: none; }
+    .floatingchat-container-wrap, .floatingchat-container-wrap-mobi {
+        position: fixed !important;
+        top: auto !important;
+        right: auto !important;
+        bottom: max(16px, env(safe-area-inset-bottom)) !important;
+        left: max(16px, env(safe-area-inset-left)) !important;
+        width: 56px !important;
+        min-width: 56px !important;
+        max-width: 56px !important;
+        height: 56px !important;
+        min-height: 56px !important;
+        max-height: 56px !important;
+        aspect-ratio: 1 / 1 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        border: 0 !important;
+        border-radius: 50% !important;
+        background: #5bc0de !important;
+        box-shadow: 0 8px 20px rgb(31 49 56 / 22%) !important;
+        clip-path: circle(50% at 50% 50%) !important;
+        isolation: isolate;
+        z-index: 32 !important;
+    }
+    .floatingchat-container-wrap::after, .floatingchat-container-wrap-mobi::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        border-radius: 50%;
+        background: #5bc0de url("https://storage.ko-fi.com/cdn/cup-border.png") center / 38px auto no-repeat;
+        pointer-events: none;
+    }
+    .floatingchat-container-wrap > iframe, .floatingchat-container-wrap-mobi > iframe {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        z-index: 1 !important;
+        width: 230px !important;
+        height: 56px !important;
+        max-width: none !important;
+        max-height: 56px !important;
+        margin: 0 !important;
+        pointer-events: auto !important;
+    }
+    .floating-chat-kofi-popup-iframe, .floating-chat-kofi-popup-iframe-mobi,
+    .floating-chat-kofi-popup-iframe-closer, .floating-chat-kofi-popup-iframe-closer-mobi {
+        right: auto !important;
+        left: max(16px, env(safe-area-inset-left)) !important;
+        max-width: calc(100vw - 32px) !important;
+        z-index: 33 !important;
+    }
+}
+@media (min-width: 721px) {
+    .floatingchat-container-wrap, .floatingchat-container-wrap-mobi { display: none !important; }
+}
+@media (max-width: 520px) {
+    .下部中 { align-items: flex-start; }
+    .下部版 { flex-wrap: wrap; }
+    .下部リンク { justify-content: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .支援側帯, .支援浮輪 { transition: none; }
+}

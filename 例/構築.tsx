@@ -30,6 +30,7 @@ function 例示(名称: string, 内容: string, 読み: string, 説明: string):
 }
 
 const 物語 = await 物語の見本();
+const 版 = (await Bun.file("package.json").json() as { readonly version: string }).version;
 
 const 画面 = (
     <html lang="ja">
@@ -41,9 +42,11 @@ const 画面 = (
             <title>綴り | 日本語組版の小さな道具箱</title>
             <link rel="stylesheet" href="./様式.css" />
             <link rel="stylesheet" href="./物語.css" />
+            <link rel="stylesheet" href="./支援.css" />
             <script src="./dist/tsuzuri.js" defer={true}></script>
             <script src="./配色.js" defer={true}></script>
             <script src="./目次.js" defer={true}></script>
+            <script src="./支援.js" defer={true}></script>
         </head>
         <body>
             <header className="上部">
@@ -128,7 +131,30 @@ const 画面 = (
                 </section>
                 {物語}
             </main>
-            <footer className="下部"><div className="容器 下部中"><span>綴り · 日本語のための文字表現</span><a href="https://github.com/kitty-crow/tsuzuri">ソースコードを見る</a></div></footer>
+            <footer className="下部" aria-label="サイトの案内">
+                <div className="容器 下部中">
+                    <span className="下部版">綴り <span>日本語の文字を美しく</span> <small>v{版}</small></span>
+                    <nav className="下部リンク" aria-label="関連するリンク">
+                        <a href="https://kittycrow.dev/">公式サイト</a>
+                        <span aria-hidden="true">・</span>
+                        <a href="https://github.com/kitty-crow/tsuzuri">ソースコード</a>
+                        <span aria-hidden="true">・</span>
+                        <a className="pages-kofi-link" href="https://ko-fi.com/kittycrow" target="_blank" rel="noopener noreferrer">
+                            <img src="https://storage.ko-fi.com/cdn/cup-border.png" alt="" loading="lazy" />
+                            珈琲で応援
+                        </a>
+                    </nav>
+                </div>
+            </footer>
+            <a className="支援側帯" href="https://ko-fi.com/kittycrow"
+                target="_blank" rel="noopener noreferrer" aria-label="珈琲で応援する">
+                <img className="支援杯" src="https://storage.ko-fi.com/cdn/cup-border.png" alt="" />
+                {createElement("jp-tategaki", null, "珈琲で応援")}
+            </a>
+            <a className="支援浮輪" href="https://ko-fi.com/kittycrow"
+                target="_blank" rel="noopener noreferrer" aria-label="珈琲で応援する">
+                <img src="https://storage.ko-fi.com/cdn/cup-border.png" alt="" />
+            </a>
         </body>
     </html>
 );
@@ -137,6 +163,7 @@ await mkdir("site", { recursive: true });
 await writeFile("site/index.html", "<!doctype html>\n" + render2Mkup(画面) + "\n", "utf8");
 await copyFile("例/様式.css", "site/様式.css");
 await copyFile("例/物語.css", "site/物語.css");
+await copyFile("例/支援.css", "site/支援.css");
 await writeFile("site/.nojekyll", "", "utf8");
 const 配色の構築 = await Bun.build({
     entrypoints: ["例/配色.ts"],
@@ -156,5 +183,14 @@ const 目次の構築 = await Bun.build({
     minify: true,
 });
 if (!目次の構築.success) throw new Error("目次の構築に失敗しました");
+const 支援の構築 = await Bun.build({
+    entrypoints: ["例/支援.ts"],
+    outdir: "site",
+    naming: { entry: "支援.js" },
+    target: "browser",
+    format: "iife",
+    minify: true,
+});
+if (!支援の構築.success) throw new Error("支援の構築に失敗しました");
 console.log("紹介ページを構築しました。");
 

@@ -5,7 +5,7 @@ const 配信 = Bun.serve({
     fetch(要求) {
         const 道 = decodeURIComponent(new URL(要求.url).pathname);
         const 対象 = 道 === "/" ? "index.html" : 道.replace(/^\//, "");
-        if (!["index.html", "様式.css", "物語.css", "配色.js", "目次.js", "dist/tsuzuri.js", "dist/tsuzuri.css", "dist/tsuzuri.js.map"].includes(対象)) {
+        if (!["index.html", "様式.css", "物語.css", "支援.css", "配色.js", "目次.js", "支援.js", "dist/tsuzuri.js", "dist/tsuzuri.css", "dist/tsuzuri.js.map"].includes(対象)) {
             return new Response("未登録", { status: 404 });
         }
         return new Response(Bun.file("site/" + 対象));
@@ -268,6 +268,51 @@ try {
         throw new Error("斜体が読者に見える形で装飾されていません");
     }
     await ボタン.click();
+
+    const 縦の支援 = 頁.locator(".支援側帯 .綴り-縦書");
+    const 縦方向 = await 縦の支援.evaluate((要素) => getComputedStyle(要素).writingMode);
+    const デスクトップ案内 = await 頁.locator(".支援側帯").evaluate((要素) => {
+        const 装飾 = getComputedStyle(要素);
+        return { 表示: 装飾.display, 固定: 装飾.position, 右: 装飾.right };
+    });
+    const 支援先 = await 頁.locator(".支援側帯").getAttribute("href");
+    const 下部リンク = 頁.locator(".下部 .pages-kofi-link");
+    const 下部版 = await 頁.locator(".下部版").textContent();
+    if (縦方向 !== "vertical-rl" || デスクトップ案内.固定 !== "fixed"
+        || デスクトップ案内.表示 === "none" || 支援先 !== "https://ko-fi.com/kittycrow"
+        || await 下部リンク.getAttribute("href") !== 支援先 || !下部版?.includes("v0.1.0")) {
+        throw new Error("日本語の縦書き支援案内とフッターが不正です: "
+            + JSON.stringify({ 縦方向, デスクトップ案内, 支援先, 下部版 }));
+    }
+
+    // 外部の Ko-fi スクリプトを模擬し、携帯画面でも円形の表示を検査する。
+    await 頁.route("https://storage.ko-fi.com/cdn/scripts/overlay-widget.js", async (通信) => {
+        await 通信.fulfill({
+            status: 200,
+            contentType: "application/javascript",
+            body: "window.kofiWidgetOverlay={draw:function(名前,設定){document.documentElement.dataset.kofiAccount=名前;const 外枠=document.createElement('div');外枠.className='floatingchat-container-wrap-mobi';const 内枠=document.createElement('iframe');内枠.title='珈琲で応援';外枠.append(内枠);document.body.append(外枠);}};",
+        });
+    });
+    await 頁.setViewportSize({ width: 390, height: 840 });
+    await 頁.waitForFunction(() => document.documentElement.dataset.kofiReady === "true");
+    const 円形 = await 頁.locator(".floatingchat-container-wrap-mobi").evaluate((要素) => {
+        const 装飾 = getComputedStyle(要素);
+        return { 幅: 要素.getBoundingClientRect().width, 高さ: 要素.getBoundingClientRect().height,
+            角丸: 装飾.borderRadius, 固定: 装飾.position, 左: 装飾.left, 下: 装飾.bottom };
+    });
+    const 名義 = await 頁.locator("html").getAttribute("data-kofi-account");
+    const 円形の控え = await 頁.locator(".支援浮輪").evaluate((要素) => getComputedStyle(要素).visibility);
+    const 携帯の縦帯 = await 頁.locator(".支援側帯").evaluate((要素) => getComputedStyle(要素).display);
+    if (円形.幅 !== 56 || 円形.高さ !== 56 || 円形.角丸 !== "50%"
+        || 円形.固定 !== "fixed" || 携帯の縦帯 !== "none"
+        || 円形の控え !== "hidden" || 名義 !== "kittycrow") {
+        throw new Error("携帯表示の円形ウィジェットが不正です: "
+            + JSON.stringify({ 円形, 携帯の縦帯, 円形の控え, 名義 }));
+    }
+    await 頁.setViewportSize({ width: 1280, height: 800 });
+    await 頁.waitForFunction(() =>
+        document.documentElement.dataset.kofiReady === "false"
+        && !document.querySelector(".floatingchat-container-wrap-mobi"));
     console.log("実ブラウザーでの表示検査に合格しました。");
 } finally {
     await ブラウザー.close();
