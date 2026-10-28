@@ -110,21 +110,27 @@ try {
         const 箱 = 字?.getBoundingClientRect();
         const 枠 = 要素.getBoundingClientRect();
         const ルビ枠 = 読み?.getBoundingClientRect();
+        const 縦書要素 = 要素.querySelector(".綴り-縦書");
+        const 左端 = Math.min(箱?.left ?? 0, ルビ枠?.left ?? 0);
+        const 右端 = Math.max(箱?.right ?? 0, ルビ枠?.right ?? 0);
         return {
             元: 要素.querySelector(".綴り-原字")?.textContent ?? "",
             読み: 読み?.textContent ?? "",
             部品: Array.from(視字?.querySelectorAll(".綴り-単字") ?? [], (部) => 部.textContent),
             ルビ位置: ルビ ? getComputedStyle(ルビ).rubyPosition : "",
+            縦組: 縦書要素 ? getComputedStyle(縦書要素).writingMode : "",
+            ルビ縦組: ルビ ? getComputedStyle(ルビ).writingMode : "",
+            ルビ方向: ルビ ? getComputedStyle(ルビ).flexDirection : "",
             枠: getComputedStyle(要素).borderTopStyle,
             枠幅: getComputedStyle(要素).borderTopWidth,
             表示: 字形?.display ?? "",
             大きさ: 箱?.width ?? 0,
             枠高さ: 枠.height,
             枠横幅: 枠.width,
-            文字の中心差: 箱 ? ((箱.left + 箱.right) - (枠.left + 枠.right)) / 2 : -100,
-            読みの中心差: ルビ枠 ? ((ルビ枠.left + ルビ枠.right) - (枠.left + 枠.right)) / 2 : -100,
+            全体の中心差: 箱 && ルビ枠
+                ? (左端 + 右端 - 枠.left - 枠.right) / 2 : -100,
+            読みは右側: Boolean(ルビ枠 && 箱 && ルビ枠.left >= 箱.right - 1),
             読みは枠内: Boolean(ルビ枠 && 箱
-                && ルビ枠.top > 箱.bottom
                 && ルビ枠.left >= 枠.left && ルビ枠.right <= 枠.right
                 && ルビ枠.bottom <= 枠.bottom && ルビ枠.top >= 枠.top),
             原文: 要素.querySelector("jp-kanji")?.textContent ?? "",
@@ -136,17 +142,20 @@ try {
         return 応答.ok ? await 応答.text() : "";
     });
     if (標章.元 !== "⿰綴り" || 標章.読み !== "つづり"
-        || 標章.部品.join("") !== "綴り" || 標章.ルビ位置 !== "under"
+        || 標章.部品.join("") !== "綴り" || 標章.ルビ位置 !== "over"
+        || 標章.縦組 !== "vertical-rl" || 標章.ルビ縦組 !== "vertical-rl"
+        || 標章.ルビ方向 !== "column-reverse"
         || 標章.枠 !== "solid" || 標章.枠幅 !== "1px"
         || 標章.表示 === "none" || 標章.大きさ < 30 || 標章.原文 !== ""
         || 標章.枠横幅 < 54 || Math.abs(標章.枠横幅 - 標章.枠高さ) > 1
-        || Math.abs(標章.文字の中心差) > 1.5
-        || Math.abs(標章.読みの中心差) > 1.5 || !標章.読みは枠内
+        || Math.abs(標章.全体の中心差) > 2.5
+        || !標章.読みは右側 || !標章.読みは枠内
         || await 頁.locator(".上部 .印 img").count() !== 0
         || アイコン先 !== "./綴.svg"
         || (標章の原文.match(/<path /g) ?? []).length !== 5
         || !標章の原文.includes('x="8" y="8" width="112" height="112"')
-        || !標章の原文.includes("translate(43.5 112)")
+        || !["translate(95 48)", "translate(95 67)", "translate(95 86)"]
+            .every((座標) => 標章の原文.includes(座標))
         || 標章の原文.includes("<text ") || 標章の原文.includes("<image ")) {
         throw new Error("標章の生きた合成文字・振仮名とベクターのファビコンが不正です: "
             + JSON.stringify({ 標章, アイコン先 }));
@@ -216,10 +225,18 @@ try {
             囲い幅: 欄.closest(".一覧")?.getBoundingClientRect().width ?? 0,
             収まる: Boolean(欄.closest(".一覧") && 欄.getBoundingClientRect().right
                 <= 欄.closest(".一覧")!.getBoundingClientRect().right),
+            最初の名: 欄.querySelector("code")?.textContent ?? "",
+            中央差: (() => {
+                const 外 = 欄.closest(".一覧")?.getBoundingClientRect();
+                const 内 = 欄.closest(".縦案内節")?.getBoundingClientRect();
+                return 外 && 内 ? (外.left + 外.right) / 2 - (内.left + 内.right) / 2 : -1000;
+            })(),
         };
     });
     if (単独版の縦並び.方向 !== "column" || 単独版の縦並び.折返し !== "nowrap"
-        || 単独版の縦並び.数 !== 6 || !単独版の縦並び.同じ左端
+        || 単独版の縦並び.数 !== 7 || 単独版の縦並び.最初の名 !== "tsuzuri.js"
+        || Math.abs(単独版の縦並び.中央差) > 160
+        || !単独版の縦並び.同じ左端
         || !単独版の縦並び.同じ幅
         || !単独版の縦並び.上から順 || 単独版の縦並び.囲い幅 > 360
         || !単独版の縦並び.収まる) {
@@ -906,16 +923,20 @@ try {
         const 字 = 枠.querySelector(".綴り-文字")?.getBoundingClientRect();
         const 読み = 枠.querySelector("rt")?.getBoundingClientRect();
         const 外 = 枠.getBoundingClientRect();
+        const 最左端 = Math.min(字?.left ?? 0, 読み?.left ?? 0);
+        const 最右端 = Math.max(字?.right ?? 0, 読み?.right ?? 0);
         return {
             枠幅: 外.width,
-            中心差: 字 ? ((字.left + 字.right) - (外.left + 外.right)) / 2 : 999,
-            読みは内側: Boolean(読み && 字 && 読み.top > 字.bottom
+            中心差: 字 && 読み
+                ? (最左端 + 最右端 - 外.left - 外.right) / 2 : 999,
+            読みは右側: Boolean(読み && 字 && 読み.left >= 字.right - 1),
+            読みは内側: Boolean(読み && 字
                 && 読み.left >= 外.left && 読み.right <= 外.right
-                && 読み.bottom <= 外.bottom),
+                && 読み.top >= 外.top && 読み.bottom <= 外.bottom),
         };
     });
-    if (携帯標章.枠幅 < 40 || Math.abs(携帯標章.中心差) > 1.5
-        || !携帯標章.読みは内側) {
+    if (携帯標章.枠幅 < 40 || Math.abs(携帯標章.中心差) > 2.5
+        || !携帯標章.読みは右側 || !携帯標章.読みは内側) {
         throw new Error("携帯で標章の振仮名が金枠の外へはみ出しています: "
             + JSON.stringify(携帯標章));
     }

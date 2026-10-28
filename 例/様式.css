@@ -154,13 +154,25 @@ body {
     color: var(--墨);
     writing-mode: horizontal-tb;
 }
+.印 .印章 > .綴り-縦書 {
+    display: inline-flex;
+    width: max-content;
+    height: max-content;
+    max-height: none;
+    max-width: none;
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    line-height: 1;
+}
 .印 .印章 ruby {
-    display: flex;
-    flex-direction: column;
+    display: inline-flex;
+    flex-direction: column-reverse;
     align-items: center;
     justify-content: center;
     gap: 2px;
-    ruby-position: under;
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    ruby-position: over;
     ruby-align: center;
     white-space: nowrap;
 }
@@ -175,7 +187,6 @@ body {
 .印 .印章 rt {
     display: block;
     flex: 0 0 auto;
-    order: 2;
     margin: 0;
     padding: 0;
     color: var(--薄);
@@ -183,6 +194,8 @@ body {
     font-weight: 400;
     line-height: 1.15;
     letter-spacing: .02em;
+    writing-mode: vertical-rl;
+    text-orientation: upright;
 }
 .上部 nav {
     display: flex;
@@ -332,7 +345,7 @@ body {
     .縦案内節 > .一覧 {
         width: max-content;
         max-width: 100%;
-        justify-self: end;
+        justify-self: center;
         grid-template-columns: max-content 140px;
     }
     .縦案内節 .一覧格子 {
