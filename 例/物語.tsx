@@ -2,8 +2,8 @@ import { readFile } from "node:fs/promises";
 import { createElement, Fragment, type ReactNode } from "react";
 import { marked, type Token, type Tokens } from "marked";
 
-type 章 = Readonly<{ 日付: string; 段落: readonly string[]; 字句: readonly Token[] }>;
 type 合成語 = Readonly<{ 構文: string; 読み: string }>;
+type 日付設定 = Readonly<{ 干支?: boolean; 同年?: boolean; 廿?: boolean; 吉日?: boolean }>;
 
 const 人名: Readonly<Record<string, string>> = {
     "清七": "せいしち",
@@ -18,9 +18,23 @@ const 合成候補: Readonly<Record<string, 合成語>> = {
     "初音": { 構文: "⿰初音", 読み: "はつね" },
 };
 
-const 特徴的な語 = /(清七|初音|久兵衛|白萩|燈心|行燈)/g;
+const 日付の装ひ: Readonly<Record<string, 日付設定>> = {
+    "1809-12-22": { 干支: true },
+    "1811-05-24": { 干支: true },
+    "1813-10-06": { 干支: true },
+    "1814-05-09": { 干支: true },
+    "1814-10-10": { 同年: true, 廿: true },
+    "1814-10-21": { 同年: true },
+    "1814-11-26": { 同年: true },
+    "1814-11-27": { 干支: true },
+    "1814-12-09": { 同年: true, 廿: true },
+    "1815-04-15": { 干支: true, 吉日: true },
+};
 
-/** 与えられた本文の順序と語句は変えず、表示要素だけを付す。 */
+const 特徴的な語 = /(清七|初音|久兵衛|白萩|燈心|行燈)/g;
+const 西暦 = /^\d{4}-\d{2}-\d{2}$/;
+
+/** 人名の読みをすべて示し、合成文字はそれぞれ初出に限る。 */
 export function 文章を装ふ(文章: string, 使用済み: Set<string>): ReactNode[] {
     return 文章.split(特徴的な語).map((語, 番号) => {
         const 合成 = 合成候補[語];
@@ -34,19 +48,32 @@ export function 文章を装ふ(文章: string, 使用済み: Set<string>): Reac
     });
 }
 
-export function 原稿を章に分ける(原稿: string): readonly 章[] {
-    const 部分 = 原稿.trim().split(/\n\n(?=### \d{4}-\d{2}-\d{2})/);
-    if (部分.length !== 8) throw new Error("物語の章数が一致しません");
-    return 部分.slice(1).map((本文) => {
-        const [見出し, ...段落] = 本文.trim().split(/\n\n/);
-        const 日付 = /^### (\d{4}-\d{2}-\d{2})$/.exec(見出し ?? "")?.[1];
-        if (!日付 || 段落.length === 0) throw new Error("章の日付と本文が必要です");
-        return { 日付, 段落, 字句: marked.lexer(段落.join("\n\n")) };
-    });
+/** 一つの Markdown 原稿をそのまま字句へ変換する。章ごとには分割しない。 */
+export function 原稿を読む(原稿: string): readonly Token[] {
+    const 字句 = marked.lexer(原稿);
+    const 見出し = 字句.filter((項目): 項目 is Tokens.Heading => 項目.type === "heading");
+    const 日付 = 見出し.filter((項目) => 項目.depth === 3 && 西暦.test(項目.text.trim()));
+    if (見出し.filter((項目) => 項目.depth === 1).length !== 1) throw new Error("題名は一つ必要です");
+    if (日付.length !== 10) throw new Error("物語と後日譚の日付は十箇所必要です");
+    return 字句;
 }
 
+function 日付を描く(日付: string): ReactNode {
+    const 設定 = 日付の装ひ[日付];
+    return createElement("jp-koyomi", {
+        date: 日付,
+        calendar: "kyureki",
+        eto: 設定?.干支 ? true : undefined,
+        year: 設定?.同年 ? "same" : undefined,
+        "day-style": 設定?.吉日 ? "auspicious" : 設定?.廿 ? "abbreviated" : undefined,
+    }, 日付);
+}
 
-/** Markdown を型付きの字句から安全な要素へ変換する。 */
+function リンクを描く(行先: string, 内容: ReactNode, 番号: number): ReactNode {
+    const 安全 = /^(https?:\/\/|#)/i.test(行先);
+    return 安全 ? <a key={番号} href={行先}>{内容}</a> : <Fragment key={番号}>{内容}</Fragment>;
+}
+
 function 文中を描く(字句: readonly Token[], 使用済み: Set<string>): ReactNode[] {
     return 字句.map((項目, 番号) => {
         if (項目.type === "text" || 項目.type === "escape") {
@@ -65,20 +92,26 @@ function 文中を描く(字句: readonly Token[], 使用済み: Set<string>): R
     });
 }
 
-function リンクを描く(行先: string, 内容: ReactNode, 番号: number): ReactNode {
-    const 安全 = /^(https?:\/\/|#)/i.test(行先);
-    return 安全 ? <a key={番号} href={行先}>{内容}</a> : <Fragment key={番号}>{内容}</Fragment>;
+function 見出しを描く(項目: Tokens.Heading, 使用済み: Set<string>, 番号: number): ReactNode {
+    if (項目.depth === 1) {
+        return <h2 key={番号} className="物語大題">{文中を描く(項目.tokens ?? [], 使用済み)}</h2>;
+    }
+    if (項目.depth === 2) {
+        return <h3 key={番号} id="後日譚" className="物語後日題">{文中を描く(項目.tokens ?? [], 使用済み)}</h3>;
+    }
+    if (項目.depth === 3 && 西暦.test(項目.text.trim())) {
+        return <h4 key={番号} className="物語年月">{日付を描く(項目.text.trim())}</h4>;
+    }
+    return <h4 key={番号} className="物語小見出し">{文中を描く(項目.tokens ?? [], 使用済み)}</h4>;
 }
 
 function 段落を描く(項目: Token, 使用済み: Set<string>, 番号: number): ReactNode {
+    if (項目.type === "heading") return 見出しを描く(項目, 使用済み, 番号);
     if (項目.type === "paragraph" || 項目.type === "text") {
         return <p key={番号} className="物語段落">{文中を描く(項目.tokens ?? [], 使用済み)}</p>;
     }
     if (項目.type === "blockquote") {
         return <blockquote key={番号} className="物語書状">{区画を描く(項目.tokens ?? [], 使用済み)}</blockquote>;
-    }
-    if (項目.type === "heading") {
-        return <h4 key={番号} className="物語小見出し">{文中を描く(項目.tokens ?? [], 使用済み)}</h4>;
     }
     if (項目.type === "hr") return <hr key={番号} className="物語区切り" />;
     if (項目.type === "code") return <pre key={番号} className="物語原文"><code>{項目.text}</code></pre>;
@@ -93,47 +126,30 @@ function 区画を描く(字句: readonly Token[], 使用済み: Set<string>): R
     return 字句.map((項目, 番号) => 段落を描く(項目, 使用済み, 番号));
 }
 
-/** React は静的な紹介ページの組み立て専用。配布物には含めない。 */
+/** 一つの巻物として組む。書式は Markdown、和暦は綴りに委ねる。 */
 export async function 物語の見本(): Promise<ReactNode> {
     const 原稿 = await readFile("例/白萩の露.md", "utf8");
-    const 章 = 原稿を章に分ける(原稿);
+    const 字句 = 原稿を読む(原稿);
     const 使用済み = new Set<string>();
 
     return (
         <section id="物語" className="節 物語節">
             <div className="容器">
                 <div className="節題">
-                    <p className="眉">綴りによる縦書きの実例</p>
-                    <h2>白萩の露</h2>
-                    <p>しらはぎのつゆ</p>
-                    <p>文化年間の江戸を舞台とした物語。人名の振仮名、合成漢字、古式の暦を織り込みました。</p>
+                    <p className="眉">日本語の縦書きの実例</p>
+                    <h2>物語を、ひと巻に綴る。</h2>
+                    <p>一つの原稿に題名・章・後日譚を収めました。すべての見出しと文章は Markdown から組み上げます。</p>
                 </div>
-                <div className="物語説明" aria-label="表記の説明">
-                    <span>人名の読みに振仮名</span>
-                    <span>合成漢字は四種類</span>
-                    <span>西暦の日付を旧暦へ換算</span>
-                    <span>右から左へ読み進めます</span>
+                <div className="物語説明">
+                    <span>人名の振仮名</span>
+                    <span>合成漢字</span>
+                    <span>旧暦の章題</span>
+                    <span>右から左へ読む一巻の物語</span>
                 </div>
-                {章.map((一章, 番号) => (
-                    <article className="物語章" key={一章.日付}>
-                        <header className="物語章頭">
-                            <span className="章番号">巻 {String(番号 + 1).padStart(2, "0")}</span>
-                            {createElement("jp-koyomi", {
-                                date: 一章.日付,
-                                calendar: "kyureki",
-                                eto: 番号 < 4 ? true : undefined,
-                                year: 番号 >= 4 ? "same" : undefined,
-                                "day-style": 番号 === 4 ? "abbreviated" : undefined,
-                            }, 一章.日付)}
-                        </header>
-                        <div className="物語巻">
-                            {createElement("tsuzuri", null,
-                                区画を描く(一章.字句, 使用済み)
-                            )}
-                        </div>
-                    </article>
-                ))}
-                <p className="物語結語">露と消えにし人の名を　花のみぞ知る</p>
+                <article className="物語巻" aria-label="白萩の露と後日譚">
+                    {createElement("tsuzuri", null, 区画を描く(字句, 使用済み))}
+                </article>
+                <p className="物語注記">※ 祝言の吉日は日付が特定されていないため、文化十二年弥生の一日を資料内の代表日として用ゐてをります。</p>
             </div>
         </section>
     );

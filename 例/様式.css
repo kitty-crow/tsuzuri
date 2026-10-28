@@ -1,10 +1,11 @@
-:root { color-scheme: light; --紙:#f6f4ed; --面:#fffefa; --墨:#242921; --薄:#697066; --線:#dedfd5; --緑:#365747; --朱:#b36a4c; }
+:root { color-scheme: light; --紙:#f6f4ed; --面:#fffefa; --墨:#242921; --薄:#697066; --線:#dedfd5; --緑:#365747; --朱:#b36a4c; --主要文字:#fffefa; --見出し淡:#586258; --淡印:#bec7ba; --強調:#61442f; --書状背景:#f7f3e8; --書状文字:#444c40; }
+:root[data-theme="dark"] { color-scheme: dark; --紙:#131915; --面:#1e2822; --墨:#f2efe4; --薄:#b4c7b9; --線:#425248; --緑:#b2d9c1; --朱:#edb590; --主要文字:#142219; --見出し淡:#b7c8b7; --淡印:#819589; --強調:#f1be9e; --書状背景:#2b332c; --書状文字:#f2ebdf; }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; background: var(--紙); color: var(--墨); font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif; line-height: 1.7; }
 a { color: inherit; }
 .容器 { width: min(1160px, calc(100% - 44px)); margin-inline: auto; }
-.上部 { position: sticky; top: 0; background: rgba(246,244,237,.95); backdrop-filter: blur(16px); z-index: 10; border-bottom: 1px solid var(--線); }
+.上部 { position: sticky; top: 0; background: color-mix(in srgb, var(--紙) 95%, transparent); backdrop-filter: blur(16px); z-index: 10; border-bottom: 1px solid var(--線); }
 .上部中 { min-height: 74px; display: flex; gap: 28px; align-items: center; justify-content: space-between; }
 .印 { font-family: serif; font-size: 1.65rem; font-weight: bold; text-decoration: none; letter-spacing: .12em; }
 .印 span { font-size: .7rem; font-weight: normal; color: var(--薄); letter-spacing: .1em; margin-left: 12px; }
@@ -15,10 +16,10 @@ nav a:hover, .下部 a:hover { color: var(--朱); }
 .眉 { letter-spacing: .19em; font-size: .75rem; font-weight: 750; color: var(--朱); }
 h1 { font-family: "Yu Mincho", serif; font-size: clamp(2.6rem, 5.3vw, 5.6rem); line-height: 1.32; letter-spacing: .02em; font-weight: 500; margin: 15px 0 30px; }
 h1 span { color: var(--緑); }
-.導入 { font-size: clamp(.94rem,1.4vw,1.03rem); color: #586258; line-height: 2.15; }
+.導入 { font-size: clamp(.94rem,1.4vw,1.03rem); color: var(--見出し淡); line-height: 2.15; }
 .導入行 { display: flex; gap: 15px; margin-top: 34px; }
 .導入行 a { padding: 12px 24px; text-decoration: none; border-radius: 4px; font-size: .85rem; }
-.主要 { background: var(--緑); color: white; } .副 { border: 1px solid var(--線); }
+.主要 { background: var(--緑); color: var(--主要文字); } .副 { border: 1px solid var(--線); }
 .手引 { display: flex; gap: 19px; color: var(--薄); font-size: .75rem; margin-top: 36px; flex-wrap: wrap; }
 .手引 span::before { content: "◦"; margin-right: 7px; color: var(--朱); }
 .主題見本 { min-height: 420px; display: flex; justify-content: center; align-items: center; border-left: 1px solid var(--線); position: relative; padding: 25px; }
@@ -44,7 +45,7 @@ h1 span { color: var(--緑); }
 .作品頭 { display: flex; justify-content: space-between; align-items: start; border-bottom: 1px solid var(--線); padding-bottom: 15px; }
 .作品頭 h3 { font-family: serif; font-size: 1.3rem; margin: 4px 0; font-weight: normal; }
 .小見出し { font-size: .68rem; letter-spacing: .15em; color: var(--朱); font-weight: bold; }
-.識別 { color: #bec7ba; }
+.識別 { color: var(--淡印); }
 .作品見本 { height: 180px; display: flex; align-items: center; justify-content: center; font-family: "Yu Mincho",serif; font-size: clamp(5rem,10vw,8rem); overflow: visible; }
 .作品見本 .綴り-振仮名 { font-size: 1em; }
 .作品説明, .補足 { color: var(--薄); font-size: .83rem; }
@@ -82,3 +83,9 @@ pre { background: #252c26; color: #e9efe8; padding: 23px; font-size: .8rem; over
   .下部中 { flex-direction: column; align-items:flex-start; justify-content:center; }
 }
 
+
+.配色切替 { border: 1px solid var(--線); border-radius: 50%; background: var(--面); color: var(--墨); font-size: 1.25rem; width: 38px; height: 38px; display: inline-grid; place-items: center; cursor: pointer; line-height: 1; padding: 0; }
+.配色切替:hover { border-color: var(--朱); color: var(--朱); }
+.配色切替:focus-visible { outline: 2px solid var(--朱); outline-offset: 3px; }
+:root[data-theme="dark"] pre { background: #0e1511; color: #f4eadc; }
+:root[data-theme="dark"] .副 { background: var(--面); }

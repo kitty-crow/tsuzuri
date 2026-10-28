@@ -21,5 +21,5 @@
     "jsx": "react-jsx",
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "道具/**/*.ts", "試験/**/*.ts", "例/**/*.tsx"]
+  "include": ["src/**/*.ts", "道具/**/*.ts", "試験/**/*.ts", "例/**/*.tsx", "例/**/*.ts"]
 }

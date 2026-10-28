@@ -42,6 +42,7 @@ const 画面 = (
             <link rel="stylesheet" href="./様式.css" />
             <link rel="stylesheet" href="./物語.css" />
             <script src="./dist/tsuzuri.js" defer={true}></script>
+            <script src="./配色.js" defer={true}></script>
         </head>
         <body>
             <header className="上部">
@@ -50,6 +51,7 @@ const 画面 = (
                     <nav aria-label="ページ内の案内">
                         <a href="#組版">組版</a><a href="#合成">合成漢字</a><a href="#書式">使い方</a><a href="#物語">物語</a>
                         <a href="https://github.com/kitty-crow/tsuzuri">原稿</a>
+                        <button type="button" id="配色切替" className="配色切替" aria-label="配色を切り替える" aria-pressed="false" title="配色を切り替える">☾</button>
                     </nav>
                 </div>
             </header>
@@ -135,5 +137,14 @@ await writeFile("site/index.html", "<!doctype html>\n" + render2Mkup(画面) + "
 await copyFile("例/様式.css", "site/様式.css");
 await copyFile("例/物語.css", "site/物語.css");
 await writeFile("site/.nojekyll", "", "utf8");
+const 配色の構築 = await Bun.build({
+    entrypoints: ["例/配色.ts"],
+    outdir: "site",
+    naming: { entry: "配色.js" },
+    target: "browser",
+    format: "iife",
+    minify: true,
+});
+if (!配色の構築.success) throw new Error("配色の構築に失敗しました");
 console.log("紹介ページを構築しました。");
 

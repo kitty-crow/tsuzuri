@@ -65,7 +65,7 @@ try {
     const 伸縮 = await 頁.locator("#追加字の検査 .綴り-伸縮字 .綴り-単字").count();
     if (伸縮 !== 3) throw new Error("未知の合成文字の伸縮描画に失敗しました");
 
-    const 見出し = await 頁.locator(".物語章頭 .綴り-暦").allTextContents();
+    const 見出し = await 頁.locator(".物語年月 .綴り-暦").allTextContents();
     const 期待 = [
         "文化六年己巳　霜月十六日",
         "文化八年辛未　卯月三日",
@@ -74,20 +74,29 @@ try {
         "同年　葉月廿七日",
         "同年　長月九日",
         "同年　神無月十五日",
+        "文化十一年甲戌　神無月十六日",
+        "同年　神無月廿八日",
+        "文化十二年乙亥　弥生吉日",
     ];
-    const 日付属性 = await 頁.locator(".物語章頭 time").evaluateAll((要素) =>
+    const 日付属性 = await 頁.locator(".物語年月 time").evaluateAll((要素) =>
         要素.map((項目) => 項目.getAttribute("datetime"))
     );
     const 元の日付 = [
         "1809-12-22", "1811-05-24", "1813-10-06", "1814-05-09",
         "1814-10-10", "1814-10-21", "1814-11-26",
+        "1814-11-27", "1814-12-09", "1815-04-15",
     ];
     const 人物の読み = await 頁.locator(".物語巻 ruby rt").allTextContents();
     const 表意文字 = await 頁.locator(".物語巻 .綴り-原字").allTextContents();
-    const 章数 = await 頁.locator(".物語章").count();
+    const 巻数 = await 頁.locator(".物語巻").count();
+    const 縦書本文数 = await 頁.locator(".物語巻 > .綴り-縦書").count();
+    const 大題数 = await 頁.locator(".物語巻 h2.物語大題").count();
+    const 後日題数 = await 頁.locator(".物語巻 h3.物語後日題").count();
     if (JSON.stringify(見出し) !== JSON.stringify(期待)) throw new Error("歴史的な章の日付が一致しません: " + JSON.stringify({ 見出し, 期待 }));
     if (JSON.stringify(日付属性) !== JSON.stringify(元の日付)) throw new Error("原稿の日付が西暦で保存されていません");
-    if (章数 !== 7) throw new Error("物語の章数が一致しません");
+    if (巻数 !== 1 || 縦書本文数 !== 1 || 大題数 !== 1 || 後日題数 !== 1) {
+        throw new Error("一つの巻物に全篇が収まっていません");
+    }
     for (const 読み of ["せいしち", "はつね", "きゅうべえ"]) {
         if (!人物の読み.includes(読み)) throw new Error("人名の振仮名が欠けています: " + 読み);
     }
@@ -97,16 +106,38 @@ try {
 
     const 書状数 = await 頁.locator(".物語巻 blockquote.物語書状").count();
     const 強調数 = await 頁.locator(".物語巻 strong").count();
+    const 斜体数 = await 頁.locator(".物語巻 em").count();
     const 流れ = await 頁.locator(".物語巻 .物語段落").first().evaluate((要素) => ({
         方向: getComputedStyle(要素).direction,
         揃え: getComputedStyle(要素).textAlign,
     }));
-    if (書状数 < 7 || 強調数 < 3) {
-        throw new Error("Markdown の書状と強調が描画されていません: " + JSON.stringify({ 書状数, 強調数 }));
+    if (書状数 < 7 || 強調数 < 8 || 斜体数 < 8) {
+        throw new Error("Markdown の書状と強調が描画されていません: " + JSON.stringify({ 書状数, 強調数, 斜体数 }));
     }
     if (流れ.方向 !== "ltr" || 流れ.揃え !== "start") {
         throw new Error("縦書きの行が上から始まりません: " + JSON.stringify(流れ));
     }
+
+    const ボタン = 頁.locator("#配色切替");
+    const 初期の配色 = await 頁.locator("html").getAttribute("data-theme");
+    const 初期の背景 = await 頁.locator("body").evaluate((要素) => getComputedStyle(要素).backgroundColor);
+    await ボタン.click();
+    const 新しい配色 = await 頁.locator("html").getAttribute("data-theme");
+    const 新しい背景 = await 頁.locator("body").evaluate((要素) => getComputedStyle(要素).backgroundColor);
+    if (新しい配色 === 初期の配色 || 新しい背景 === 初期の背景) {
+        throw new Error("配色の切替が行われませんでした");
+    }
+    await 頁.reload();
+    const 保存済み = await 頁.locator("html").getAttribute("data-theme");
+    if (保存済み !== 新しい配色) throw new Error("配色が保存されていません");
+    const 斜体の形式 = await 頁.locator(".物語巻 em").first().evaluate((要素) => ({
+        傾斜: getComputedStyle(要素).fontStyle,
+        装飾: getComputedStyle(要素).textDecorationLine,
+    }));
+    if (!斜体の形式.傾斜.includes("italic") || !斜体の形式.装飾.includes("underline")) {
+        throw new Error("斜体が読者に見える形で装飾されていません");
+    }
+    await ボタン.click();
     console.log("実ブラウザーでの表示検査に合格しました。");
 } finally {
     await ブラウザー.close();
