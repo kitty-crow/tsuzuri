@@ -890,7 +890,7 @@ try {
     }));
     if (!要求した声.言語.includes('xml:lang="ja-JP"')
         || !要求した声.言語.includes('voice name="ja-JP-NanamiNeural"')
-        || !要求した声.言語.includes("白萩")
+        || !要求した声.言語.includes("しらはぎのつゆ")
         || 要求した声.地域 !== "japaneast" || 要求した声.鍵 !== "true"
         || 要求した声.保存 !== "綴り朗読検査用") {
         throw new Error("Azure の日本語女性音声への要求が不正です: "
