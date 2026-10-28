@@ -1,112 +1,151 @@
 # 綴り
 
-**綴り**は、日本語の書字表現を扱う、フレームワーク非依存の描画ライブラリーです。縦書き、振仮名、合成漢字、組版、漢数字、暦の機能を、意味の分かる要素だけで使えます。
+**綴り（つづり）**は、縦書き・横書き、振仮名、合成漢字、日本語組版、漢数字、和暦に対応した、フレームワーク非依存のブラウザー向け日本語組版ライブラリーです。HTML の専用要素で利用でき、JavaScript の初期化コードは不要です。
 
-**安定版: v1.0.0**（2026年10月28日）。対応済みの要素と属性について、公開 API を安定版として扱います。今後は互換性を壊す変更をメジャー版、機能追加をマイナー版、不具合修正をパッチ版として管理します。旧暦の対応期間など、現時点の制限は以下の記述と [変更履歴](CHANGELOG.md) に明示しています。
+**安定版：v1.0.0** ・ **ライセンス：MIT** ・ [要素と属性](文書/書式.md) ・ [設計](文書/設計.md) ・ [変更履歴](CHANGELOG.md)
 
-## 最小構成
+## 1. インストール・導入方法
 
-```html
-<script src="dist/tsuzuri.js"></script>
-<tsuzuri>
-  <jp-furigana reading="つづり">綴り</jp-furigana>
-  <jp-kanji reading="にほん">⿱日本</jp-kanji>
-</tsuzuri>
-```
+配布物はブラウザーで直接動作する JavaScript（IIFE）と CSS の組です。**npm パッケージとしては公開していません。** 次のいずれかの方法で導入してください。
 
-追加の初期化処理や設定は不要です。配布物は構築時に依存物をまとめた独立したファイルです。各配布ファイルは同じ場所にある対応する様式ファイルを自動読込します。
+### CDN 形式：HTML から直接読み込む
 
-## 原稿と配布物
+ファイルのダウンロードやビルドは不要です。全機能を利用する場合：
 
-| 原稿 | 配布ファイル | 役割 |
-|---|---|---|
-| `src/振仮名.ts` | `furigana.js` | 振仮名の略記 |
-| `src/縦書.ts` | `tategaki.js` | 縦書きと横書き |
-| `src/書道.ts` | `shoudou.js` | 合成文字と読み |
-| `src/組版.ts` | `kumihan.js` | 日本語組版 |
-| `src/漢数字.ts` | `kansuji.js` | 漢数字 |
-| `src/暦.ts` | `koyomi.js` | 和暦と限定的な旧暦 |
-| `src/綴り.ts` | `tsuzuri.js` | 全機能の統合 |
+~~~html
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <script src="https://kitty-crow.github.io/tsuzuri/dist/tsuzuri.js" defer></script>
+</head>
+<body>
+  <tsuzuri>
+    <jp-furigana reading="つづり">綴り</jp-furigana>で日本語を組む。
+  </tsuzuri>
+</body>
+</html>
+~~~
 
-`styles/` に機能別の原稿を置きます。構築時に配布用の対応した様式ファイルも生成します。
+必要な機能だけを読み込む場合は、たとえば振仮名専用の `furigana.js` に変更します。
 
-## 要素の使い方
+~~~html
+<script src="https://kitty-crow.github.io/tsuzuri/dist/furigana.js" defer></script>
+~~~
 
-```html
-<tsuzuri>春はあけぼの。</tsuzuri>
-<tsuzuri direction="horizontal">横書きです。</tsuzuri>
-<jp-tategaki>縦書きです。</jp-tategaki>
-<jp-yokogaki>横書きです。</jp-yokogaki>
-<jp-furigana reading="ことば">言葉</jp-furigana>
-<jp-kanji reading="にほんご">⿱⿰日本語</jp-kanji>
-<jp-kansuji value="2026" style="digits"></jp-kansuji>
-<jp-kansuji value="18" style="daiji"></jp-kansuji>
-<jp-koyomi date="2026-10-28" calendar="kyureki"></jp-koyomi>
-```
+これは GitHub Pages で公開しているビルド済み配布物の直接 URL です。各 JavaScript は**同じディレクトリーにある同名の CSS を自動的に読み込む**ため、通常は別途 `<link>` を追加する必要はありません。
 
-合成漢字は `⿰`（左右）と `⿱`（上下）に対応し、入れ子にできます。構文や異体字そのものを複写できることを重視しています。
+**注意：** 上記 URL は公開中の最新版を指し、特定の版に固定されません。バージョンを固定したい本番サイトでは、次の方法で JS と CSS を手元に保存し、自分のサーバーから配信してください。`dist/` は Git にコミットしていないため、`cdn.jsdelivr.net/gh/.../dist/` のパスでは配布できません。
 
-### 暦について
+### ビルド済みファイルを curl でダウンロードする
 
-`calendar="kyureki"` は**照合済みの暦月**だけを扱います。文化年間の一部の寛政暦と、2026年秋の一部を収録しています。未対応の日付を推測して表示することはありません。通常の和暦表記は `calendar` を省略します。旧暦の正確な一般変換は今後の課題です。
+全機能を使う `tsuzuri.js` と `tsuzuri.css` をダウンロードします。
 
-## 構築・検査
+~~~sh
+mkdir -p public/vendor/tsuzuri
+curl -fL --retry 3 \
+  -o public/vendor/tsuzuri/tsuzuri.js \
+  https://kitty-crow.github.io/tsuzuri/dist/tsuzuri.js
+curl -fL --retry 3 \
+  -o public/vendor/tsuzuri/tsuzuri.css \
+  https://kitty-crow.github.io/tsuzuri/dist/tsuzuri.css
+~~~
 
-```sh
+全機能版と各単独版を一括取得したい場合：
+
+~~~sh
+mkdir -p public/vendor/tsuzuri
+for name in tsuzuri furigana tategaki shoudou kumihan kansuji koyomi; do
+  for ext in js css; do
+    curl -fL --retry 3 \
+      -o "public/vendor/tsuzuri/$name.$ext" \
+      "https://kitty-crow.github.io/tsuzuri/dist/$name.$ext" || exit 1
+  done
+done
+~~~
+
+ダウンロードした JS と CSS を同じ場所に置き、サイトの HTML から読み込みます。
+
+~~~html
+<script src="/vendor/tsuzuri/tsuzuri.js" defer></script>
+~~~
+
+`public/` は静的サイトの配置例です。使用するウェブサーバーに合わせて変更してください。
+
+## 2. ライブラリーのソースコードだけをダウンロードする
+
+Git の sparse checkout を使えば、ライブラリー本体・CSS の原稿・ビルド道具だけを取得できます。
+
+~~~sh
+git clone --depth 1 --filter=blob:none --sparse \
+  https://github.com/kitty-crow/tsuzuri.git tsuzuri-src
+cd tsuzuri-src
+git sparse-checkout set src styles 道具
+~~~
+
+取得するディレクトリーは `src/`（TypeScript の実装）、`styles/`（CSS の原稿）、`道具/`（ビルドスクリプト）です。ルートの `package.json`、`tsconfig.json` などの必要なファイルも取得されます。リポジトリーの他のディレクトリーはチェックアウトされません。
+
+## 3. ソースからビルドする
+
+[Bun](https://bun.sh/) をインストールした状態で、上記のソース取得ディレクトリー内から実行します。
+
+~~~sh
 bun install
-bun run check
-bun run build
-bun 試験/画面.ts
-```
+bun run build:lib
+~~~
 
-厳密な型検査、曖昧な型の禁止、条件分岐の入れ子禁止、型検査無効化の禁止を継続的に確認します。紹介ページの構築には `vendor/website` に固定したウェブサイト用補助コードを使用しますが、配布ライブラリーには含めません。紹介ページ以外でこの補助コードを読み込むことはありません。
+結果は `dist/` に生成されます。**ライブラリーだけを構築するコマンド**であり、ウェブサイトの生成は行いません。出力された `.js` と `.css` を同じディレクトリーに配置して使用してください。
 
-## 掲載例
+## 4. 配布ファイルと機能
 
-紹介ページは `例/構築.tsx` から生成します。末尾には `例/白萩の露.md` の本篇と後日譚を一つの縦書きの巻物として掲載します。`#`、`##`、`###` の見出しも含め、一つの Markdown 原稿全体を `marked` で解釈し、振仮名・合成漢字・旧暦の表示は綴りに委ねます。`marked` は配布ライブラリーへ含めません。短い行も必ず上から組み始めます。紹介ページの明暗はボタンで切り替えられ、選択した配色をブラウザーに保存します。`dist/` と `site/` は構築時の生成物です。公開用の構築処理が `site/` を配信します。
+全機能の統合版 `tsuzuri.js`、または必要な機能だけを含む単独版を選べます。
 
+| JavaScript | 自動読込 CSS | 対応する機能 |
+|---|---|---|
+| `tsuzuri.js` | `tsuzuri.css` | 全機能 |
+| `furigana.js` | `furigana.css` | 振仮名 |
+| `tategaki.js` | `tategaki.css` | 縦書き・横書き、組版 |
+| `shoudou.js` | `shoudou.css` | 合成漢字 |
+| `kumihan.js` | `kumihan.css` | 日本語組版 |
+| `kansuji.js` | `kansuji.css` | 漢数字 |
+| `koyomi.js` | `koyomi.css` | 和暦と対応済みの旧暦 |
 
-巻物の右側には縦書きの目次を備えています。目次の題名・副題・日付は `marked` が解析した見出しから自動生成され、通常の見出しと同じ箇所を参照します。標準の `details` により各章の一覧を折り畳め、クリック時には本文の横スクロールが滑らかに移動します。目次は通常、巻物の右端に収納されており、端にマウスを近付けると CSS で現れます。固定釦で開いたままにでき、状態は `localStorage` に記録します。本文の上で車輪を下へ回すと左、上へ回すと右へ進み、巻物の端ではページの通常の縦スクロールに戻ります。現在地の表示と移動処理は紹介ページ専用の `例/目次.ts` に実装し、主な動きと装飾は `例/物語.css` で行います。配布ライブラリーには含めません。
+統合版と単独版を重複して読み込む必要はありません。全ての配布版はブラウザー向けで、外部の JavaScript フレームワークを必要としません。
 
+## 5. HTML ページで使う
 
-## 紹介ページの支援案内
+`<head>` に配布済みのスクリプトを置き、`<body>` に専用の HTML 要素を記述します。次はローカルにダウンロードした統合版を使う例です。
 
-紹介ページには、[app.kittycrow.dev](https://app.kittycrow.dev/) と同じ Ko-fi アカウント `kittycrow` への支援案内と、サイト・原稿・支援先をまとめたフッターがあります。広い画面では右端に綴りの縦書きで「珈琲で応援」を表示し、携帯画面でも右下の専用区画に同じ縦書きの支援案内を表示します。通信が使えない場合も、直接支援先を開ける円形リンクを残します。
+~~~html
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <script src="./vendor/tsuzuri/tsuzuri.js" defer></script>
+</head>
+<body>
+  <tsuzuri>春はあけぼの。</tsuzuri>
+  <tsuzuri direction="horizontal">横書きに切り替えます。</tsuzuri>
 
-案内の実装は `例/支援.ts` と `例/支援.css` に限り、外部の浮動ウィジェットは読み込まず、縦書きのリンクだけを表示します。綴りの配布ライブラリーには一切含めません。
+  <jp-tategaki>縦書きです。</jp-tategaki>
+  <jp-yokogaki>横書きです。</jp-yokogaki>
+  <jp-furigana reading="ことば">言葉</jp-furigana>
+  <jp-kanji reading="にほん">⿱日本</jp-kanji>
+  <jp-kansuji value="2026"></jp-kansuji>
+  <jp-kansuji value="18" style="daiji"></jp-kansuji>
+  <jp-koyomi date="2026-10-28"></jp-koyomi>
+</body>
+</html>
+~~~
 
-縦書きの合成漢字は振仮名の表示幅を分けて確保し、画数と読みに重なりが生じないよう調整しています。これは紹介ページだけでなく、配布ライブラリーの様式にも適用されます。
+初期化処理は不要です。ページの読み込み後に追加した専用要素も自動処理します。全要素、属性、複合漢字の記述、組版、日付の書式については [要素と属性の仕様](文書/書式.md) を参照してください。
+
+## 6. 対応範囲と制限
+
+- 合成漢字は `⿰`（左右）と `⿱`（上下）およびその入れ子に対応します。元の表意文字記述は選択・複写可能です。文字の見た目はブラウザーや書体によって多少異なる場合があります。
+- `calendar="kyureki"` は照合済みの期間のみ対応します。未確認の日付について推測した旧暦を表示することはありません。通常の和暦表記は `calendar` を省略します。
+- 全面的な天文暦変換、特殊な表意文字記述演算子、独自の完全な禁則処理は今後の拡張領域です。
 
 ## ライセンス
 
-MIT
-
-
-紹介ページの配色切替コードは `例/配色.ts` から生成されます。配布ライブラリーの一部ではありません。祝言の「弥生吉日」については日付が特定されていないため、文化十二年弥生六日に相当する `1815-04-15` を代表日として記述しています。
-
-## 標章と目次の固定
-
-紹介ページの標章とファビコンは、同じ輪郭線 SVG `例/綴.svg` を使用します。標章は既存の見出しに添えるだけで、ページの構成を変えません。目次は非固定時には本文に重なる引き出しですが、固定した場合に限り、本文の表示幅を目次の幅だけ縮めて文字が隠れないようにします。固定の保存先は従来の `localStorage` キーを維持します。
-
-
-## 紹介ページの縦組
-
-紹介ページの本文書体は、物語と同じ明朝体を基本とします。ページの頭部は右端、フッターは左端の縦書き軌道として固定します。右下に Ko-fi の専用空間を確保しているため、見出しや案内を覆いません。携帯画面でも右下に縦書きの支援案内を配置します。
-
-冒頭の説明・リンク・特徴、各節の見出しと説明、コード例の手順名、個別配布の案内、物語の導入はすべて縦書きです。コードの内容は読みやすい横書きのままです。変更は `例/` のみで、綴りの配布物には含みません。
-
-## 物語の音声朗読
-
-「白萩の露」は日本語女性音声 **Azure Speech の七海（`ja-JP-NanamiNeural`）** で読み上げられます。原稿内の見出しと段落を一つずつ読み、再生、一時停止、停止、前後の移動に対応します。振仮名を付けた人名や合成文字は、表記ではなく振仮名を音声に渡します。朗読中の段落には淡い背景を付けます。
-
-Azure Speech の契約キーと発行地域は閲覧者が「音声の設定」から入力します。キーを公開ファイルに埋め込まず、入力した値はブラウザーの `localStorage` にのみ保存します。キー欄には表示・非表示を切り替える SVG の目のボタンがあります。Azure の API 利用には閲覧者の契約が必要です。
-
-音声キュー・テキスト加工・再生時間計測・型定義は、既存の `kittyCrypto-gg/website/src/readAloud/` を `vendor/readAloud/` に移植したものです。ウェブサイト専用の UI、モーダル、React 依存を持ち込まず、紹介ページ専用の `例/朗読.ts` と `例/朗読.css` で操作します。綴りの配布ライブラリーは Azure と音声 SDK に依存しません。
-
-### 自動地域検出と音声 SDK
-
-紹介ページの音声合成は、構築時に npm 配布の `microsoft-cognitiveservices-speech-sdk` から `site/音声SDK.js` にコピーします。閲覧者のブラウザーから外部 CDN へのアクセスは不要です。この SDK は表示例だけに必要で、綴りの配布物は依存しません。
-
-Azure Speech の地域は既定で自動検出します。英国南部（`uksouth`）から確認し、該当する地域を探します。通信が遮断された場合は地域を手動で選択できます。合成に失敗した場合は SDK から返った原因を表示し、入力した鍵と一致する文字は伏せます。振仮名があれば漢字の表記を除いて読みだけを Azure に渡します。
-
-朗読操作は巻物の上側に目次と同じ朱色の引手を持つ収納欄を配置し、同じ縦方向の容器内で間隔なく接続します。固定ボタンは展開した操作面の内側に置き、収納中は表示しません。閉じた場合も四十画素程度の高さを本文の外に確保し、カーソル・キーボード操作で自動的に展開します。固定ボタンで常時展開ができ、状態は `localStorage` の `綴り-物語朗読固定` に保存されます。設定を含めて通常の文書内で高さが増減するため、巻物や左右の案内に重なりません。
+[MIT](LICENSE)
