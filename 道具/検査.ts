@@ -25,7 +25,7 @@ function 点検(名前: string, 内容: string): void {
         ts.forEachChild(節, (子) => 見る(子, 深さ + Number(条件)));
     };
     見る(文書, 0);
-    if (/[@]ts-(?:ignore|nocheck)|eslint-disable/.test(内容)) 違反.push(名前 + " 型検査の無効化");
+    if (new RegExp("@" + "ts-" + "(?:ignore|nocheck)|" + "eslint-" + "disable").test(内容)) 違反.push(名前 + " 型検査の無効化");
     if (/\bas\s+unknown\s+as\b/.test(内容)) 違反.push(名前 + " 二重の型変換");
 }
 

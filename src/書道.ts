@@ -22,15 +22,17 @@ function 子要素(元: Element): readonly Element[] {
     return Array.from(元.children).filter((子) => 子.matches("jp-kanji"));
 }
 
+function 二要素から解析(元: Element, 子: readonly Element[]): 文字 | null {
+    const 左 = 要素から解析(子[0]!);
+    const 右 = 要素から解析(子[1]!);
+    if (!左 || !右) return null;
+    const 配置: 配置 = 属性(元, "alignment") === "horizontal" ? "左右" : "上下";
+    return { 配置, 部品: [左, 右] };
+}
+
 function 要素から解析(元: Element): 文字 | null {
     const 子 = 子要素(元);
-    if (子.length === 2) {
-        const 左 = 要素から解析(子[0]!);
-        const 右 = 要素から解析(子[1]!);
-        if (!左 || !右) return null;
-        const 配置: 配置 = 属性(元, "alignment") === "horizontal" ? "左右" : "上下";
-        return { 配置, 部品: [左, 右] };
-    }
+    if (子.length === 2) return 二要素から解析(元, 子);
     const 記号 = Array.from(元.textContent?.trim() ?? "");
     const 指示 = 構文解析(記号, 0);
     if (指示 && 指示[1] === 記号.length) return 指示[0];
