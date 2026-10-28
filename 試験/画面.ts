@@ -54,12 +54,15 @@ try {
         .some((要素) => 要素.textContent?.includes("じどう")));
 
     await 頁.evaluate(() => {
+        const 親 = document.createElement("div");
+        親.id = "追加字の検査";
         const 見本 = document.createElement("jp-kanji");
         見本.textContent = "⿱⿰天地人";
-        document.body.append(見本);
+        親.append(見本);
+        document.body.append(親);
     });
-    await 頁.waitForSelector(".綴り-伸縮字 .綴り-単字");
-    const 伸縮 = await 頁.locator(".綴り-伸縮字 .綴り-単字").count();
+    await 頁.waitForSelector("#追加字の検査 .綴り-伸縮字 .綴り-単字");
+    const 伸縮 = await 頁.locator("#追加字の検査 .綴り-伸縮字 .綴り-単字").count();
     if (伸縮 !== 3) throw new Error("未知の合成文字の伸縮描画に失敗しました");
 
     const 見出し = await 頁.locator(".物語章頭 .綴り-暦").allTextContents();
