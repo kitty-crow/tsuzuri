@@ -213,19 +213,7 @@ export async function 物語の見本(): Promise<ReactNode> {
         <section id="物語" className="節 物語節">
             <div className="容器">
                 <div className="物語冒頭">
-                    {createElement("tsuzuri", null, <>
-                        <div className="節題">
-                            <p className="眉">日本語の縦書きの実例</p>
-                            <h2>物語を、ひと巻に綴る。</h2>
-                            <p>一つの原稿に題名・章・後日譚を収めました。すべての見出しと文章は Markdown から組み上げます。</p>
-                        </div>
-                        <div className="物語説明">
-                            <span>人名の振仮名</span>
-                            <span>合成漢字</span>
-                            <span>旧暦の章題</span>
-                            <span>右から左へ読む一巻の物語</span>
-                        </div>
-                    </>)}
+                    {createElement("tsuzuri", null, <h2>日本語の物語と縦書きの実例</h2>)}
                 </div>
                 <div className="物語読書面" data-index-pinned="false">
                     <article id="物語本文" className="物語巻" aria-label="白萩の露と後日譚" tabIndex={0}>

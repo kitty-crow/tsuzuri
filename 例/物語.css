@@ -409,7 +409,7 @@
 /* 物語の説明は巻物の右隣に、同じ縦組で配置する。 */
 .物語節 > .容器 {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) clamp(190px, 22vw, 260px);
+    grid-template-columns: minmax(0, 1fr) clamp(86px, 11vw, 128px);
     align-items: start;
     column-gap: clamp(36px, 4.1vw, 64px);
     row-gap: 20px;
@@ -430,35 +430,25 @@
     font-size: .95rem;
     line-height: 1.9;
 }
-.物語冒頭 .節題 { margin: 0 0 0 1em; max-width: none; }
-.物語冒頭 .節題 > .眉 { margin: 0 0 0 1.15em; }
-.物語冒頭 .節題 > h2 {
-    font-size: clamp(1.55rem, 2.35vw, 2.35rem);
-    font-weight: 500;
-    margin: 0 0 0 .65em;
+.物語冒頭 h2 {
+    font-size: clamp(1.4rem, 2.2vw, 2.2rem);
+    font-weight: 700;
+    margin: 0;
     line-height: 1.45;
-}
-.物語冒頭 .節題 > p:last-child { margin: 0; color: var(--薄); }
-.物語冒頭 .物語説明 { display: block; margin: 0; font-size: .85em; }
-.物語冒頭 .物語説明 span {
-    display: block;
-    margin: 0 0 0 .75em;
     white-space: nowrap;
 }
-.物語冒頭 .物語説明 span::before { content: "・"; color: var(--朱); }
 .物語節 .物語読書面 {
     grid-column: 1;
     grid-row: 1;
     min-width: 0;
 }
 @media (max-width: 900px) {
-    .物語節 > .容器 { grid-template-columns: minmax(0,1fr) minmax(130px,25%); column-gap: 24px; row-gap: 12px; }
+    .物語節 > .容器 { grid-template-columns: minmax(0,1fr) 96px; column-gap: 24px; row-gap: 12px; }
     .物語冒頭 > .綴り-縦書 { height: 570px; font-size: .83rem; }
 }
 @media (max-width: 520px) {
-    .物語節 > .容器 { grid-template-columns: minmax(0,1fr) minmax(82px,29%); column-gap: 14px; row-gap: 7px; }
+    .物語節 > .容器 { grid-template-columns: minmax(0,1fr) 67px; column-gap: 14px; row-gap: 7px; }
     .物語冒頭 { padding-left: 8px; }
     .物語冒頭 > .綴り-縦書 { height: 450px; font-size: .74rem; }
-    .物語冒頭 .節題 > h2 { font-size: 1.32rem; }
-    .物語冒頭 .物語説明 { font-size: .73em; }
+    .物語冒頭 h2 { font-size: 1.27rem; }
 }

@@ -141,6 +141,13 @@ try {
             throw new Error("右側の縦書き見出しが本文に重なっています: " + JSON.stringify({ 名称, 配置 }));
         }
     }
+    const 章の見出し = 頁.locator(".物語冒頭 h2");
+    if (await 章の見出し.count() !== 1
+        || await 章の見出し.textContent() !== "日本語の物語と縦書きの実例"
+        || await 頁.locator(".物語冒頭 p, .物語冒頭 .物語説明").count() !== 0) {
+        throw new Error("物語の導入には一つの縦書き見出しだけを表示します");
+    }
+
     const 物語配置 = await 頁.locator(".物語節 .容器").evaluate((箱) => {
         const 題 = 箱.querySelector(".物語冒頭")?.getBoundingClientRect();
         const 本文 = 箱.querySelector(".物語読書面")?.getBoundingClientRect();
