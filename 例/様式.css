@@ -134,15 +134,20 @@ body {
     line-height: 1.2;
     white-space: nowrap;
 }
-/* The logo is a live Tsuzuri composite, with its own ruby reading. */
+/* 生きた合成漢字と振仮名を、同じ一つの金色の枠に納める。 */
 .印 .印章 {
-    display: block;
-    width: auto;
-    height: auto;
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
     flex: 0 0 auto;
     margin: 0;
+    padding: 3px;
+    border: 1px solid var(--朱);
+    border-radius: 4px;
+    background: var(--面);
     font-family: "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif CJK JP", serif;
-    font-size: 1.8rem;
+    font-size: 2.1rem;
     font-weight: 700;
     line-height: 1;
     letter-spacing: 0;
@@ -150,27 +155,33 @@ body {
     writing-mode: horizontal-tb;
 }
 .印 .印章 ruby {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
     ruby-position: under;
     ruby-align: center;
     white-space: nowrap;
 }
 .印 .印章 .綴り-文字 {
-    box-sizing: content-box;
-    padding: 3px;
-    border: 1px solid var(--朱);
-    border-radius: 4px;
-    background: var(--面);
-}
-.印 .印章 .綴り-原字,
-.印 .印章 .綴り-視字 {
-    top: 3px;
-    left: 3px;
+    display: inline-flex;
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
 }
 .印 .印章 rt {
+    display: block;
+    flex: 0 0 auto;
+    order: 2;
+    margin: 0;
+    padding: 0;
     color: var(--薄);
-    font-size: .35em;
+    font-size: .24em;
     font-weight: 400;
-    line-height: 1.1;
+    line-height: 1.15;
     letter-spacing: .02em;
 }
 .上部 nav {
@@ -318,6 +329,12 @@ body {
 .一覧 .一覧格子 { grid-column: 1; grid-row: 1; }
 /* デスクトップでは配布ライブラリー名を一列に並べる。携帯の折返しは維持する。 */
 @media (min-width: 721px) {
+    .縦案内節 > .一覧 {
+        width: max-content;
+        max-width: 100%;
+        justify-self: end;
+        grid-template-columns: max-content 140px;
+    }
     .縦案内節 .一覧格子 {
         flex-direction: column;
         flex-wrap: nowrap;
@@ -341,7 +358,8 @@ body {
     .容器 { width: calc(100% - 20px); }
     .上部中 { padding: 10px 3px; gap: 12px; }
     .印 { font-size: 1rem; }
-    .印 .印章 { font-size: 1.35rem; }
+    .印 .印章 { width: 42px; height: 42px; padding: 2px; font-size: 1.5rem; }
+    .印 .印章 ruby { gap: 1px; }
     .上部 nav { gap: 11px; }
     .上部 nav a { font-size: .7rem; }
     .上部 .配色切替 { width: 29px; height: 29px; flex-basis: 29px; }
