@@ -157,6 +157,44 @@ try {
         throw new Error("物語の縦書き案内が巻物に重なっています: " + JSON.stringify(物語配置));
     }
 
+    // 広い画面は右から主題・言の葉・案内の順。左右に罫線を引く。
+    for (const 横幅 of [1280, 1024]) {
+        await 頁.setViewportSize({ width: 横幅, height: 800 });
+        const 主題配置 = await 頁.locator(".主題").evaluate((主題) => {
+            const 案内 = 主題.querySelector(".主題縦案内");
+            const 見本 = 主題.querySelector(".主題見本");
+            const 見出し = 主題.querySelector(".主題見出し");
+            if (!案内 || !見本 || !見出し) throw new Error("主題の三領域がありません");
+            const 左 = 案内.getBoundingClientRect();
+            const 中 = 見本.getBoundingClientRect();
+            const 右 = 見出し.getBoundingClientRect();
+            const 線 = getComputedStyle(見本);
+            return {
+                左右: 左.right, 中左: 中.left, 中右: 中.right, 右左: 右.left,
+                左幅: 左.width, 中幅: 中.width, 右幅: 右.width,
+                左線: Number.parseFloat(線.borderLeftWidth),
+                右線: Number.parseFloat(線.borderRightWidth),
+                書体: getComputedStyle(見出し.querySelector(".綴り-縦書")!).writingMode,
+                表題: 見出し.textContent,
+                見本: 見本.textContent,
+                操作数: 案内.querySelectorAll(".導入行 a").length,
+                主題幅: 主題.getBoundingClientRect().width,
+            };
+        });
+        if (主題配置.左幅 < 120 || 主題配置.中幅 < 120 || 主題配置.右幅 < 160
+            || 主題配置.左右 > 主題配置.中左 - 8
+            || 主題配置.中右 > 主題配置.右左 - 8
+            || 主題配置.左線 < 1 || 主題配置.右線 < 1
+            || 主題配置.書体 !== "vertical-rl"
+            || !主題配置.表題?.includes("文字を")
+            || !主題配置.見本?.includes("言の葉を")
+            || 主題配置.操作数 !== 2) {
+            throw new Error("三領域の主題が正しい順に並んでいません: "
+                + JSON.stringify({ 横幅, ...主題配置 }));
+        }
+    }
+    await 頁.setViewportSize({ width: 1280, height: 800 });
+
     const 合成数 = await 頁.locator(".綴り-文字").count();
     const 縦書数 = await 頁.locator(".綴り-縦書").count();
     const 読み数 = await 頁.locator(".綴り-振仮名").count();
