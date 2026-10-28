@@ -215,40 +215,6 @@ export async function 物語の見本(): Promise<ReactNode> {
                 <div className="物語冒頭">
                     {createElement("tsuzuri", null, <h2>日本語の物語と縦書きの実例</h2>)}
                 </div>
-                <div className="朗読操作" aria-label="白萩の露の音声朗読">
-                    <div className="朗読主操作">
-                        <span className="朗読題">声に出して読む</span>
-                        <span className="朗読声">Azure · 七海（女性・日本語）</span>
-                        <button id="朗読前" type="button" aria-label="前の段落">前へ</button>
-                        <button id="朗読再生" type="button" aria-pressed="false">再生</button>
-                        <button id="朗読次" type="button" aria-label="次の段落">次へ</button>
-                        <button id="朗読停止" type="button">停止</button>
-                    </div>
-                    <details id="朗読設定" className="朗読設定">
-                        <summary>音声の設定</summary>
-                        <div className="朗読設定中">
-                            <label htmlFor="朗読鍵">Azure Speech のキー</label>
-                            <input id="朗読鍵" type="password" autoComplete="off"
-                                placeholder="ご自身の Azure Speech キー" spellCheck={false} />
-                            <label htmlFor="朗読地域">Azure の地域</label>
-                            <select id="朗読地域" defaultValue="">
-                                <option value="">自動検出（英国南部を優先）</option>
-                                <option value="uksouth">英国南部</option>
-                                <option value="japaneast">日本東部</option>
-                                <option value="japanwest">日本西部</option>
-                                <option value="westeurope">欧州西部</option>
-                                <option value="northeurope">欧州北部</option>
-                                <option value="eastus">米国東部</option>
-                                <option value="eastus2">米国東部２</option>
-                                <option value="westus2">米国西部２</option>
-                                <option value="southeastasia">東南アジア</option>
-                                <option value="australiaeast">豪州東部</option>
-                            </select>
-                            <p>キーはこのタブの中にだけ保存され、公開ページには含まれません。音声合成は Azure Speech に接続します。</p>
-                        </div>
-                    </details>
-                    <output id="朗読状態" role="status" aria-live="polite">朗読を準備しています。</output>
-                </div>
                 <div className="物語読書面" data-index-pinned="false">
                     <article id="物語本文" className="物語巻" aria-label="白萩の露と後日譚" tabIndex={0}>
                         {createElement("tsuzuri", null, 区画を描く(字句, 使用済み, 目次.識別表))}
@@ -286,6 +252,65 @@ export async function 物語の見本(): Promise<ReactNode> {
                         <span className="目次案内">項目を選ぶと巻物が移動します</span>
                     </aside>
                 </div>
+                <section className="朗読収納" data-readaloud-pinned="false"
+                    data-readaloud-open="false" aria-label="物語の音声朗読">
+                    <div className="朗読看板">
+                        <button id="朗読引手" className="朗読引手" type="button"
+                            aria-controls="朗読内容" aria-expanded="false" aria-label="朗読の操作を開く">
+                            <span>朗読</span>
+                            <svg viewBox="0 0 24 24" width="17" height="17" fill="none"
+                                stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"
+                                strokeLinejoin="round" aria-hidden="true">
+                                <path d="m6 9 6 6 6-6" />
+                            </svg>
+                        </button>
+                        <button id="朗読固定" className="朗読固定" type="button"
+                            aria-label="朗読の操作を固定する" aria-pressed="false" title="朗読の操作を固定する">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                                stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
+                                strokeLinejoin="round" aria-hidden="true">
+                                <path d="M9 3h6l-1 5 3 3v2H7v-2l3-3-1-5Z" />
+                                <path d="M12 13v8" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="朗読内容" className="朗読内容">
+                <div className="朗読操作" aria-label="白萩の露の音声朗読">
+                    <div className="朗読主操作">
+                        <span className="朗読題">声に出して読む</span>
+                        <span className="朗読声">Azure · 七海（女性・日本語）</span>
+                        <button id="朗読前" type="button" aria-label="前の段落">前へ</button>
+                        <button id="朗読再生" type="button" aria-pressed="false">再生</button>
+                        <button id="朗読次" type="button" aria-label="次の段落">次へ</button>
+                        <button id="朗読停止" type="button">停止</button>
+                    </div>
+                    <details id="朗読設定" className="朗読設定">
+                        <summary>音声の設定</summary>
+                        <div className="朗読設定中">
+                            <label htmlFor="朗読鍵">Azure Speech のキー</label>
+                            <input id="朗読鍵" type="password" autoComplete="off"
+                                placeholder="ご自身の Azure Speech キー" spellCheck={false} />
+                            <label htmlFor="朗読地域">Azure の地域</label>
+                            <select id="朗読地域" defaultValue="">
+                                <option value="">自動検出（英国南部を優先）</option>
+                                <option value="uksouth">英国南部</option>
+                                <option value="japaneast">日本東部</option>
+                                <option value="japanwest">日本西部</option>
+                                <option value="westeurope">欧州西部</option>
+                                <option value="northeurope">欧州北部</option>
+                                <option value="eastus">米国東部</option>
+                                <option value="eastus2">米国東部２</option>
+                                <option value="westus2">米国西部２</option>
+                                <option value="southeastasia">東南アジア</option>
+                                <option value="australiaeast">豪州東部</option>
+                            </select>
+                            <p>キーはこのタブの中にだけ保存され、公開ページには含まれません。音声合成は Azure Speech に接続します。</p>
+                        </div>
+                    </details>
+                    <output id="朗読状態" role="status" aria-live="polite">朗読を準備しています。</output>
+                </div>
+                    </div>
+                </section>
 
             </div>
         </section>

@@ -256,6 +256,66 @@ class 物語朗読 {
     }
 }
 
+/** 目次と同じ開閉規則で、朗読の操作を巻物の下に収納する。 */
+function 朗読の収納を起動(): void {
+    const 収納 = document.querySelector<HTMLElement>(".朗読収納");
+    const 引手 = document.querySelector<HTMLButtonElement>("#朗読引手");
+    const 固定 = document.querySelector<HTMLButtonElement>("#朗読固定");
+    if (!収納 || !引手 || !固定) return;
+
+    const 保存先 = "綴り-物語朗読固定";
+    let 初期固定 = false;
+    try {
+        初期固定 = window.localStorage.getItem(保存先) === "true";
+    } catch {
+        // ローカルの保存が禁止されていても操作は可能。
+    }
+
+    const 開きを更新 = (): void => {
+        const 開く = 収納.dataset.readaloudPinned === "true"
+            || 収納.dataset.readaloudOpen === "true"
+            || 収納.matches(":hover, :focus-within");
+        引手.setAttribute("aria-expanded", String(開く));
+        引手.setAttribute("aria-label", 開く ? "朗読の操作を閉じる" : "朗読の操作を開く");
+    };
+    const 固定を適用 = (固定する: boolean): void => {
+        収納.dataset.readaloudPinned = String(固定する);
+        固定.setAttribute("aria-pressed", String(固定する));
+        固定.setAttribute("aria-label", 固定する ? "朗読の固定を解除する" : "朗読の操作を固定する");
+        固定.title = 固定.getAttribute("aria-label") ?? "";
+        開きを更新();
+    };
+
+    固定を適用(初期固定);
+    固定.addEventListener("click", () => {
+        const 次 = 収納.dataset.readaloudPinned !== "true";
+        固定を適用(次);
+        try {
+            window.localStorage.setItem(保存先, String(次));
+        } catch {
+            // 保存できなくても現在の表示は維持する。
+        }
+    });
+    引手.addEventListener("click", () => {
+        収納.dataset.readaloudOpen = String(収納.dataset.readaloudOpen !== "true");
+        開きを更新();
+    });
+    収納.addEventListener("pointerenter", 開きを更新);
+    収納.addEventListener("pointerleave", 開きを更新);
+    収納.addEventListener("focusin", 開きを更新);
+    収納.addEventListener("focusout", () => requestAnimationFrame(開きを更新));
+    収納.addEventListener("keydown", (出来事: KeyboardEvent) => {
+        if (出来事.key !== "Escape") return;
+        収納.dataset.readaloudOpen = "false";
+        if (収納.contains(document.activeElement) && document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+        開きを更新();
+    });
+}
+
+朗読の収納を起動();
+
 if (本文 && 再生 && 停止 && 前へ && 次へ && 設定 && 鍵 && 地域 && 状態) {
     new 物語朗読({ 本文, 再生, 停止, 前へ, 次へ, 設定, 鍵, 地域, 状態 });
 }
