@@ -99,28 +99,43 @@ try {
         throw new Error("Azure 音声 SDK がサイトから配信されていません: " + JSON.stringify(SDK配信));
     }
 
-    const 標章 = 頁.locator(".上部 .印 img.印章");
-    const 標章の読込 = await 標章.evaluate((要素) => {
-        const 画像 = 要素 as HTMLImageElement;
-        return { 読込: 画像.complete, 幅: 画像.naturalWidth, 高さ: 画像.naturalHeight,
-            代替: 画像.alt, 元: 画像.getAttribute("src") };
+    // ヘッダーは SVG の画像ではなく、綴りのライブ合成漢字と本物の振仮名を描く。
+    await 頁.waitForSelector(".上部 .印 .印章 ruby.綴り-合成ルビ .綴り-単字");
+    const 標章 = await 頁.locator(".上部 .印 .印章").evaluate((要素) => {
+        const 字 = 要素.querySelector(".綴り-文字");
+        const ルビ = 要素.querySelector("ruby");
+        const 読み = 要素.querySelector("rt");
+        const 視字 = 要素.querySelector(".綴り-視字");
+        const 字形 = 字 ? getComputedStyle(字) : null;
+        const 箱 = 字?.getBoundingClientRect();
+        return {
+            元: 要素.querySelector(".綴り-原字")?.textContent ?? "",
+            読み: 読み?.textContent ?? "",
+            部品: Array.from(視字?.querySelectorAll(".綴り-単字") ?? [], (部) => 部.textContent),
+            ルビ位置: ルビ ? getComputedStyle(ルビ).rubyPosition : "",
+            枠: 字形?.borderTopStyle ?? "",
+            枠幅: 字形?.borderTopWidth ?? "",
+            表示: 字形?.display ?? "",
+            大きさ: 箱?.width ?? 0,
+            原文: 要素.querySelector("jp-kanji")?.textContent ?? "",
+        };
     });
     const アイコン先 = await 頁.locator('head link[rel="icon"][type="image/svg+xml"]').getAttribute("href");
-    const 印の文字 = await 頁.locator(".上部 .印").textContent();
     const 標章の原文 = await 頁.evaluate(async () => {
         const 応答 = await fetch("./綴.svg");
         return 応答.ok ? await 応答.text() : "";
     });
-    if (!標章の読込.読込 || 標章の読込.幅 !== 128 || 標章の読込.高さ !== 128
-        || 標章の読込.代替 !== "" || アイコン先 !== "./綴.svg"
-        || 標章の読込.元 !== アイコン先 || !印の文字?.includes("り") || 印の文字.includes("綴")
-        || !標章の原文.includes("<path ") || 標章の原文.includes("<text ")) {
-        throw new Error("文字を輪郭化した標章とファビコンが不正です: "
-            + JSON.stringify({ 標章の読込, アイコン先, 印の文字 }));
+    if (標章.元 !== "⿰綴り" || 標章.読み !== "つづり"
+        || 標章.部品.join("") !== "綴り" || 標章.ルビ位置 !== "under"
+        || 標章.枠 !== "solid" || 標章.枠幅 !== "1px"
+        || 標章.表示 === "none" || 標章.大きさ < 25 || 標章.原文 !== ""
+        || await 頁.locator(".上部 .印 img").count() !== 0
+        || アイコン先 !== "./綴.svg"
+        || (標章の原文.match(/<path /g) ?? []).length !== 5
+        || 標章の原文.includes("<text ") || 標章の原文.includes("<image ")) {
+        throw new Error("標章の生きた合成文字・振仮名とベクターのファビコンが不正です: "
+            + JSON.stringify({ 標章, アイコン先 }));
     }
-
-    const 印字 = await 頁.locator(".上部 .印 .印字").textContent();
-    if (印字 !== "り") throw new Error("標章と綴りの文字が重複しています: " + 印字);
 
     const 組版方向 = await 頁.evaluate(() => {
         const 対象 = (選択: string): Element => {
@@ -845,6 +860,10 @@ try {
     }
 
     await 目次の縁を検査();
+    if (!(await 頁.locator(".上部 .印 .綴り-文字").isVisible())
+        || !(await 頁.locator(".上部 .印 rt").isVisible())) {
+        throw new Error("携帯画面で標章の合成漢字か振仮名が隠れています");
+    }
     const 携帯収納 = await 頁.locator(".物語読書面").evaluate((面) => {
         const 本文 = 面.querySelector(".物語巻")?.getBoundingClientRect();
         const 引手 = 面.querySelector(".目次引手")?.getBoundingClientRect();

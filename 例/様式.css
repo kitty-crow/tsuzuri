@@ -10,7 +10,6 @@ a { color: inherit; }
 .印 { font-family: serif; font-size: 1.65rem; font-weight: bold; text-decoration: none; letter-spacing: .12em; }
 .印 { display: inline-flex; align-items: center; gap: .38em; }
 .印章 { display: block; width: 1.12em; height: 1.12em; flex: 0 0 auto; }
-.印 span { font-size: .7rem; font-weight: normal; color: var(--薄); letter-spacing: .1em; margin-left: 12px; }
 nav { display: flex; align-items: center; gap: clamp(12px, 2vw, 28px); flex-wrap: wrap; }
 nav a { text-decoration: none; font-size: .88rem; }
 nav a:hover, .下部 a:hover { color: var(--朱); }
@@ -76,7 +75,6 @@ pre { background: #252c26; color: #e9efe8; padding: 23px; font-size: .8rem; over
   .容器 { width: min(100% - 24px, 1160px); }
   .上部中 { min-height: 60px; }
   .印 { font-size: 1.25rem; }
-  .印 span { display:none; }
   nav { gap: 12px; }
   nav a { font-size: .68rem; }
   .節 { padding-block: 42px; }
@@ -136,9 +134,45 @@ body {
     line-height: 1.2;
     white-space: nowrap;
 }
-.印章 { width: 34px; height: 34px; }
-.印 .印字 { display: block; writing-mode: vertical-rl; margin: 0; font-size: 1em; font-weight: 700; color: var(--墨); }
-.印 .印読 { display: block; writing-mode: vertical-rl; margin: 0; font-size: .67rem; color: var(--薄); }
+/* The logo is a live Tsuzuri composite, with its own ruby reading. */
+.印 .印章 {
+    display: block;
+    width: auto;
+    height: auto;
+    flex: 0 0 auto;
+    margin: 0;
+    font-family: "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif CJK JP", serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0;
+    color: var(--墨);
+    writing-mode: horizontal-tb;
+}
+.印 .印章 ruby {
+    ruby-position: under;
+    ruby-align: center;
+    white-space: nowrap;
+}
+.印 .印章 .綴り-文字 {
+    box-sizing: content-box;
+    padding: 3px;
+    border: 1px solid var(--朱);
+    border-radius: 4px;
+    background: var(--面);
+}
+.印 .印章 .綴り-原字,
+.印 .印章 .綴り-視字 {
+    top: 3px;
+    left: 3px;
+}
+.印 .印章 rt {
+    color: var(--薄);
+    font-size: .35em;
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: .02em;
+}
 .上部 nav {
     display: flex;
     writing-mode: horizontal-tb;
@@ -299,7 +333,7 @@ body {
     .容器 { width: calc(100% - 20px); }
     .上部中 { padding: 10px 3px; gap: 12px; }
     .印 { font-size: 1rem; }
-    .印章 { width: 25px; height: 25px; }
+    .印 .印章 { font-size: 1.35rem; }
     .上部 nav { gap: 11px; }
     .上部 nav a { font-size: .7rem; }
     .上部 .配色切替 { width: 29px; height: 29px; flex-basis: 29px; }
