@@ -269,3 +269,67 @@
     .支援浮輪 > img { width: 34px; height: 34px; }
     /* Ko-fi 自身の円は元の 56px のまま。 */
 }
+
+/* 左側フッターも一列とし、全リンクを上下方向だけに並べる。 */
+.下部 {
+    box-sizing: border-box;
+    overflow: clip;
+}
+.下部 > .下部中 {
+    display: flex;
+    flex-flow: column nowrap;
+    writing-mode: horizontal-tb;
+    align-items: center;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    min-inline-size: 0;
+    block-size: 100%;
+    min-block-size: 0;
+    padding-inline: 6px;
+    overflow-x: clip;
+    overflow-y: hidden;
+}
+.下部 > .下部中 > .下部版 {
+    flex: 0 0 auto;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    max-inline-size: 100%;
+    margin: 0;
+}
+.下部 > .下部中 > .下部リンク {
+    display: flex;
+    flex: 1 1 auto;
+    flex-flow: column nowrap;
+    writing-mode: horizontal-tb;
+    align-items: center;
+    justify-content: flex-start;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    min-inline-size: 0;
+    min-block-size: 0;
+    margin: 0;
+    padding: 0;
+    gap: clamp(6px, 1.1vh, 10px);
+    overflow-x: clip;
+    overflow-y: auto;
+}
+.下部 > .下部中 > .下部リンク > :is(a, span) {
+    flex: 0 0 auto;
+    display: block;
+    max-inline-size: 100%;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    white-space: nowrap;
+    line-height: 1.15;
+}
+.下部 > .下部中 > .下部リンク > .pages-kofi-link {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+@media (max-width: 520px) {
+    .下部 > .下部中 { padding-inline: 3px; gap: 7px; }
+    .下部 > .下部中 > .下部リンク { gap: 6px; }
+}

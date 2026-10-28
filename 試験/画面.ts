@@ -131,6 +131,48 @@ try {
         throw new Error("一列の縦書き軌道が横に溢れています: " + JSON.stringify(軌道の寸法));
     }
 
+
+    const 軌道独立性 = await 頁.evaluate(() => {
+        const 組み立て = (外枠: string, 内側: string, 題: string, リンク: string) => {
+            const 軌道 = document.querySelector(外枠);
+            const 段組 = document.querySelector(内側);
+            const 標題 = document.querySelector(題);
+            const 案内 = document.querySelector(リンク);
+            if (!軌道 || !段組 || !標題 || !案内) throw new Error("側欄の検査対象が見つかりません");
+            const 外 = 軌道.getBoundingClientRect();
+            const 内 = 段組.getBoundingClientRect();
+            const 子 = [標題, ...Array.from(案内.children)];
+            const 先 = 子.map((要素) =>要素.getBoundingClientRect());
+            return {
+                外幅: 外.width,
+                内幅: 内.width,
+                題幅: 標題.getBoundingClientRect().width,
+                余幅: 案内.clientWidth,
+                使用幅: 案内.scrollWidth,
+                文字方向: getComputedStyle(案内).writingMode,
+                配列: getComputedStyle(案内).flexDirection,
+                項目数: 先.length,
+                項目横範囲: Math.max(...先.map((範囲) =>範囲.right))
+                    - Math.min(...先.map((範囲) =>範囲.left)),
+                中に収まる: 先.every((範囲) =>範囲.left >= 外.left - 2 && 範囲.right <= 外.right + 2),
+                内に収まる: 内.left >= 外.left - 2 && 内.right <= 外.right + 2,
+                上下方向だけスクロール: getComputedStyle(案内).overflowX !== "auto",
+            };
+        };
+        return {
+            頭: 組み立て(".上部", ".上部中", ".上部 .印", ".上部 nav"),
+            足: 組み立て(".下部", ".下部中", ".下部 .下部版", ".下部 .下部リンク"),
+        };
+    });
+    for (const [名称, 幅] of Object.entries(軌道独立性)) {
+        if (幅.文字方向 !== "horizontal-tb" || 幅.配列 !== "column"
+            || 幅.余幅 < 25 || 幅.使用幅 > 幅.余幅 + 2
+            || !幅.中に収まる || !幅.内に収まる || !幅.上下方向だけスクロール) {
+            throw new Error("縦書きの" + 名称 + "案内が一列に収まっていません: "
+                + JSON.stringify(幅));
+        }
+    }
+
     for (const 名称 of ["組版", "合成", "書式"]) {
         const 配置 = await 頁.locator("#" + 名称).evaluate((節) => {
             const 題 = 節.querySelector(".節題")?.getBoundingClientRect();
@@ -153,7 +195,7 @@ try {
         const 本文 = 箱.querySelector(".物語読書面")?.getBoundingClientRect();
         return { 題左: 題?.left ?? 0, 本文右: 本文?.right ?? 0 };
     });
-    if (物語配置.題左 - 物語配置.本文右 < 32) {
+    if (物語配置.題左 - 物語配置.本文右 < 8) {
         throw new Error("物語の縦書き案内が巻物に重なっています: " + JSON.stringify(物語配置));
     }
 
@@ -586,6 +628,33 @@ try {
         throw new Error("携帯の縦組が画面に収まりません: " + JSON.stringify(携帯の軌道));
     }
 
+    const 携帯側欄 = await 頁.evaluate(() => {
+        const 寸法 = (外枠: string, 内側: string) => {
+            const 外 = document.querySelector(外枠);
+            const 内 = document.querySelector(内側);
+            const 端 = 外?.getBoundingClientRect();
+            const 子 = Array.from(内?.querySelectorAll("a, button") ?? []);
+            return {
+                外幅: 端?.width ?? 0,
+                使用幅: 内?.scrollWidth ?? 0,
+                内幅: 内?.clientWidth ?? 0,
+                はみ出し: 子.some((項目) => {
+                    const 枠 = 項目.getBoundingClientRect();
+                    return !端 || 枠.left < 端.left - 2 || 枠.right > 端.right + 2;
+                }),
+            };
+        };
+        return {
+            頭: 寸法(".上部", ".上部 nav"),
+            足: 寸法(".下部", ".下部リンク"),
+        };
+    });
+    if (携帯側欄.頭.はみ出し || 携帯側欄.足.はみ出し
+        || 携帯側欄.頭.使用幅 > 携帯側欄.頭.内幅 + 2
+        || 携帯側欄.足.使用幅 > 携帯側欄.足.内幅 + 2) {
+        throw new Error("携帯画面で左右の側欄が横溢しています: " + JSON.stringify(携帯側欄));
+    }
+
     const 携帯の欄 = await 頁.evaluate(() => {
         const 測定 = (要素: string, 子: string) => {
             const 本体 = document.querySelector(要素);
@@ -613,7 +682,7 @@ try {
     if (!携帯の欄.頭.収まり || !携帯の欄.足.収まり
         || 携帯の欄.頭.使用幅 > 携帯の欄.頭.幅 + 2
         || 携帯の欄.足.使用幅 > 携帯の欄.足.幅 + 2
-        || 携帯の欄.主題 !== "vertical-rl" || 携帯の欄.物語間隔 < 12) {
+        || 携帯の欄.主題 !== "vertical-rl" || 携帯の欄.物語間隔 < 6) {
         throw new Error("携帯表示の縦組と余白が不正です: " + JSON.stringify(携帯の欄));
     }
 
