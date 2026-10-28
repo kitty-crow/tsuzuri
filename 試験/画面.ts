@@ -33,6 +33,14 @@ try {
         || 向き !== "vertical-rl" || 表記 !== "⿱日本" || 選択 !== "⿱日本" || 例外.length > 0) {
         throw new Error(JSON.stringify({ 合成数, 縦書数, 読み数, 旧暦, 向き, 表記, 選択, 例外 }));
     }
+    await 頁.evaluate(() => {
+        const 要素 = document.createElement("jp-furigana");
+        要素.setAttribute("reading", "じどう");
+        要素.textContent = "自動";
+        document.body.append(要素);
+    });
+    await 頁.waitForFunction(() => Array.from(document.querySelectorAll("ruby.綴り-振仮名"))
+        .some((要素) => 要素.textContent?.includes("じどう")));
     console.log("実ブラウザーでの表示検査に合格しました。");
 } finally {
     await ブラウザー.close();

@@ -27,6 +27,12 @@ jobs:
         run: bunx playwright install --with-deps chromium
       - name: 描画の動作確認
         run: bun run test:browser
+      - name: 紹介ページを保存
+        uses: actions/upload-artifact@v4
+        with:
+          name: 綴り紹介ページ
+          path: site
+          retention-days: 14
       - name: 配布物の確認
         run: |
           test -f dist/tsuzuri.js
