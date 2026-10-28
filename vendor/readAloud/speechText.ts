@@ -151,11 +151,10 @@ function hydrateTooltipMeta(root: HTMLElement): void {
 }
 
 function applyMeta(root: HTMLElement): Map<string, ReadAloudSsmlToken> {
-    const nodes = Array.from(
-        root.querySelectorAll<HTMLElement>(
-            `[${READ_ALOUD_META_ATTR}]`
-        )
-    ).reverse();
+    const nodes = [
+        ...Array.from(root.querySelectorAll<HTMLElement>(`[${READ_ALOUD_META_ATTR}]`)),
+        ...(root.hasAttribute(READ_ALOUD_META_ATTR) ? [root] : []),
+    ].reverse();
 
     const tokens = new Map<string, ReadAloudSsmlToken>();
     let tokenIndex = 0;
