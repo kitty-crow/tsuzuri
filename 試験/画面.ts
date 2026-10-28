@@ -922,19 +922,17 @@ try {
 
     // 自動地域検出、漢字より振仮名を優先する読み、秘密鍵を隠した失敗表示。
     const 自動試験 = await ブラウザー.newPage();
-    await 自動試験.route("**/cognitiveservices/voices/list", async (経路) => {
-        const URLの地域 = new URL(経路.request().url()).hostname.split(".")[0];
-        await 経路.fulfill({ status: 経路.request().method() === "OPTIONS" ? 204
-                : URLの地域 === "uksouth" ? 200 : 401,
-            contentType: "application/json", body: "[]",
-            headers: {
-                "access-control-allow-origin": "*",
-                "access-control-allow-methods": "GET, OPTIONS",
-                "access-control-allow-headers": "Ocp-Apim-Subscription-Key",
-            },
-        });
-    });
     await 自動試験.addInitScript(() => {
+        const 元の取得 = window.fetch.bind(window);
+        window.fetch = (入力: RequestInfo | URL, 初期?: RequestInit): Promise<Response> => {
+            const 先 = typeof 入力 === "string" ? 入力
+                : 入力 instanceof URL ? 入力.href : 入力.url;
+            if (先.includes(".tts.speech.microsoft.com/cognitiveservices/voices/list")) {
+                document.documentElement.dataset.地域照合 = 先;
+                return Promise.resolve(new Response("[]", { status: 200 }));
+            }
+            return 元の取得(入力, 初期);
+        };
         const 偽音声 = {
             SpeechConfig: {
                 fromSubscription: (_鍵: string, 地域: string) => {
@@ -977,24 +975,18 @@ try {
         throw new Error("地域の既定値が自動検出になっていません");
     }
     await 自動試験.locator("#朗読再生").click();
-    await 自動試験.waitForTimeout(1000);
-    const 自動の進捗 = await 自動試験.evaluate(() => ({
-        地域: document.documentElement.dataset.自動地域,
-        朗読: document.documentElement.dataset.振仮名の検査,
-        表示: document.querySelector("#朗読状態")?.textContent ?? "",
-    }));
-    if (!自動の進捗.朗読) {
-        throw new Error("地域の自動検出から音声要求へ進みませんでした: "
-            + JSON.stringify({ 自動の進捗, 例外: 自動例外 }));
-    }
+    await 自動試験.waitForFunction(() =>
+        Boolean(document.documentElement.dataset.振仮名の検査), null, { timeout: 5000 });
     await 自動試験.waitForFunction(() =>
         document.querySelector("#朗読状態")?.textContent?.includes("接続拒否") ?? false);
     const 自動結果 = await 自動試験.evaluate(() => ({
         地域: document.documentElement.dataset.自動地域,
+        確認先: document.documentElement.dataset.地域照合 ?? "",
         発声: document.documentElement.dataset.振仮名の検査 ?? "",
         エラー: document.querySelector("#朗読状態")?.textContent ?? "",
     }));
-    if (自動結果.地域 !== "uksouth" || !自動結果.発声.includes("はつね")
+    if (自動結果.地域 !== "uksouth" || !自動結果.確認先.includes("uksouth.tts.speech.microsoft.com")
+        || !自動結果.発声.includes("はつね")
         || !自動結果.発声.includes("とうしん")
         || !自動結果.発声.includes("江戸")
         || 自動結果.発声.includes("初音") || 自動結果.発声.includes("⿰燈心")
