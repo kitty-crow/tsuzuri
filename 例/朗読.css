@@ -141,7 +141,10 @@
 }
 
 /* 朗読引手は巻物の真上に密着する。上側の角だけを丸める。 */
-.物語節 .朗読看板 { border-bottom: 1px solid var(--線); border-radius: 5px 5px 0 0; }
+.物語節 .朗読看板 {
+    border: 1px solid var(--線);
+    border-radius: 5px 5px 0 0;
+}
 @media (max-width: 720px) {
     .物語節 .物語冒頭 { margin-bottom: 0; }
 }
