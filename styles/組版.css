@@ -1,3 +1,19 @@
-.綴り-本文, .綴り-組版 { line-break: strict; word-break: normal; font-kerning: normal; font-feature-settings: "palt" 1; text-spacing-trim: trim-start; }
+.綴り-本文, .綴り-組版 {
+    line-break: strict;
+    word-break: normal;
+    font-kerning: normal;
+    font-feature-settings: "palt" 1;
+    text-spacing-trim: trim-start;
+    text-wrap: pretty;
+    orphans: 2;
+    widows: 2;
+}
 .綴り-組版 { display: inline; }
 
+/* 末尾を一組として折り返すため、縦書きでも文字の分断を許さない。 */
+.綴り-孤立防止 {
+    display: inline;
+    white-space: nowrap;
+    word-break: keep-all;
+    break-inside: avoid;
+}

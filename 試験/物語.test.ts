@@ -21,6 +21,9 @@ describe("白萩の露と後日譚", () => {
         expect(原稿).toContain("白萩の露　終");
         expect(原稿).toContain("松葉屋の主たる海藤を訪ねたり");
         expect(原稿).toContain("松葉屋の海藤を枕元に呼びて");
+        expect(原稿).toContain("「海藤さま　あと七両　必ず調へて参ります」");
+        expect(原稿).toContain("「海藤さま　約束の金　残らず持参つかまつりました」");
+        expect(原稿).toContain("「旦那さま　どうぞわちきを死んだものにしておくんなんし」");
         expect(原稿).toContain("> 清七さま");
         expect(原稿).toContain("「清七さん　もう燈心を撚ることはおやめなんし」");
         expect(原稿).toContain("**「主様　来年も白萩を見せておくんなんし」**");

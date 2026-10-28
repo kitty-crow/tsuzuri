@@ -118,6 +118,73 @@ try {
         throw new Error("縦書きの行が上から始まりません: " + JSON.stringify(流れ));
     }
 
+
+    await 頁.evaluate(() => {
+        const 箱 = document.createElement("div");
+        箱.id = "組版の孤立防止検査";
+        const 条件: readonly (readonly [number, number])[] = [[90, 16], [115, 20], [140, 24]];
+        for (const [高さ, 大きさ] of 条件) {
+            const 書面 = document.createElement("tsuzuri");
+            const 段落 = document.createElement("p");
+            段落.style.height = String(高さ) + "px";
+            段落.style.fontSize = String(大きさ) + "px";
+            段落.style.lineHeight = "1.3";
+            段落.style.margin = "0";
+            段落.textContent = "初音は枕元の木箱を開き簪や指輪長年に貯へし僅かばかりの銭を差し出したり";
+            書面.append(段落);
+            箱.append(書面);
+        }
+        const 注記の書面 = document.createElement("tsuzuri");
+        const 注記の段落 = document.createElement("p");
+        注記の段落.textContent = "清七は静かに";
+        const 読み = document.createElement("jp-furigana");
+        読み.setAttribute("reading", "しらはぎ");
+        読み.textContent = "白萩";
+        注記の段落.append(読み);
+        注記の書面.append(注記の段落);
+        箱.append(注記の書面);
+        document.body.append(箱);
+    });
+    await 頁.waitForFunction(() =>
+        document.querySelectorAll("#組版の孤立防止検査 .綴り-孤立防止").length === 4
+    );
+    const 孤立結果 = await 頁.locator("#組版の孤立防止検査 p").evaluateAll((段落一覧) =>
+        段落一覧.map((段落) => {
+            const 保護 = 段落.querySelector(".綴り-孤立防止");
+            const 本文 = 保護?.textContent ?? "";
+            const 改行不可 = 保護 ? getComputedStyle(保護).whiteSpace === "nowrap" : false;
+            const 文字 = 保護?.firstChild;
+            const 横位置: number[] = [];
+            if (文字 instanceof Text) {
+                for (let 位置 = 0; 位置 < 文字.length; 位置 += 1) {
+                    const 範囲 = document.createRange();
+                    範囲.setStart(文字, 位置);
+                    範囲.setEnd(文字, 位置 + 1);
+                    横位置.push(範囲.getBoundingClientRect().left);
+                }
+            }
+            return {
+                本文, 改行不可, 横位置,
+                読み: 保護?.querySelector("ruby rt")?.textContent ?? "",
+                保護数: 段落.querySelectorAll(".綴り-孤立防止").length,
+            };
+        })
+    );
+    for (const 結果 of 孤立結果.slice(0, 3)) {
+        if (結果.本文 !== "したり" || !結果.改行不可 || 結果.保護数 !== 1) {
+            throw new Error("末尾三字を保護できません: " + JSON.stringify(結果));
+        }
+        if (結果.横位置.length !== 3 || Math.max(...結果.横位置) - Math.min(...結果.横位置) > 2) {
+            throw new Error("末尾が別の列に分断されています: " + JSON.stringify(結果));
+        }
+    }
+    if (孤立結果[3]?.読み !== "しらはぎ" || !孤立結果[3]?.改行不可) {
+        throw new Error("振仮名の保護に失敗しました: " + JSON.stringify(孤立結果[3]));
+    }
+    const 元の例 = await 頁.locator(".物語巻 .物語段落").filter({ hasText: "簪や指輪" }).first()
+        .locator(".綴り-孤立防止").textContent();
+    if (元の例 !== "したり") throw new Error("元の孤立字が残っています: " + 元の例);
+
     const ボタン = 頁.locator("#配色切替");
     const 初期の配色 = await 頁.locator("html").getAttribute("data-theme");
     const 初期の背景 = await 頁.locator("body").evaluate((要素) => getComputedStyle(要素).backgroundColor);
