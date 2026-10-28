@@ -39,16 +39,18 @@
 
 ### ビルド済みファイルを curl でダウンロードする
 
+ダウンロードにはリバースプロキシを使わず、GitHub Pages の配布元から直接取得します。
+
 全機能を使う `tsuzuri.js` と `tsuzuri.css` をダウンロードします。
 
 ~~~sh
 mkdir -p public/vendor/tsuzuri
 curl -fL --retry 3 \
   -o public/vendor/tsuzuri/tsuzuri.js \
-  https://app.kittycrow.dev/tsuzuri/dist/tsuzuri.js
+  https://kitty-crow.github.io/tsuzuri/dist/tsuzuri.js
 curl -fL --retry 3 \
   -o public/vendor/tsuzuri/tsuzuri.css \
-  https://app.kittycrow.dev/tsuzuri/dist/tsuzuri.css
+  https://kitty-crow.github.io/tsuzuri/dist/tsuzuri.css
 ~~~
 
 全機能版と各単独版を一括取得したい場合：
@@ -59,7 +61,7 @@ for name in tsuzuri furigana tategaki shoudou kumihan kansuji koyomi; do
   for ext in js css; do
     curl -fL --retry 3 \
       -o "public/vendor/tsuzuri/$name.$ext" \
-      "https://app.kittycrow.dev/tsuzuri/dist/$name.$ext" || exit 1
+      "https://kitty-crow.github.io/tsuzuri/dist/$name.$ext" || exit 1
   done
 done
 ~~~
