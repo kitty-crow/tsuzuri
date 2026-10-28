@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { createElement, Fragment, type ReactNode } from "react";
-import { marked, type Token } from "marked";
+import { marked, type Token, type Tokens } from "marked";
 
 type 章 = Readonly<{ 日付: string; 段落: readonly string[]; 字句: readonly Token[] }>;
 type 合成語 = Readonly<{ 構文: string; 読み: string }>;
@@ -52,12 +52,12 @@ function 文中を描く(字句: readonly Token[], 使用済み: Set<string>): R
         if (項目.type === "text" || 項目.type === "escape") {
             return <Fragment key={番号}>{文章を装ふ(項目.text, 使用済み)}</Fragment>;
         }
-        if (項目.type === "strong") return <strong key={番号}>{文中を描く(項目.tokens, 使用済み)}</strong>;
-        if (項目.type === "em") return <em key={番号}>{文中を描く(項目.tokens, 使用済み)}</em>;
-        if (項目.type === "del") return <del key={番号}>{文中を描く(項目.tokens, 使用済み)}</del>;
+        if (項目.type === "strong") return <strong key={番号}>{文中を描く(項目.tokens ?? [], 使用済み)}</strong>;
+        if (項目.type === "em") return <em key={番号}>{文中を描く(項目.tokens ?? [], 使用済み)}</em>;
+        if (項目.type === "del") return <del key={番号}>{文中を描く(項目.tokens ?? [], 使用済み)}</del>;
         if (項目.type === "codespan") return <code key={番号}>{項目.text}</code>;
         if (項目.type === "br") return <br key={番号} />;
-        if (項目.type === "link") return リンクを描く(項目.href, 文中を描く(項目.tokens, 使用済み), 番号);
+        if (項目.type === "link") return リンクを描く(項目.href, 文中を描く(項目.tokens ?? [], 使用済み), 番号);
         if ("text" in 項目 && typeof 項目.text === "string") {
             return <Fragment key={番号}>{文章を装ふ(項目.text, 使用済み)}</Fragment>;
         }
@@ -75,15 +75,15 @@ function 段落を描く(項目: Token, 使用済み: Set<string>, 番号: numbe
         return <p key={番号} className="物語段落">{文中を描く(項目.tokens ?? [], 使用済み)}</p>;
     }
     if (項目.type === "blockquote") {
-        return <blockquote key={番号} className="物語書状">{区画を描く(項目.tokens, 使用済み)}</blockquote>;
+        return <blockquote key={番号} className="物語書状">{区画を描く(項目.tokens ?? [], 使用済み)}</blockquote>;
     }
     if (項目.type === "heading") {
-        return <h4 key={番号} className="物語小見出し">{文中を描く(項目.tokens, 使用済み)}</h4>;
+        return <h4 key={番号} className="物語小見出し">{文中を描く(項目.tokens ?? [], 使用済み)}</h4>;
     }
     if (項目.type === "hr") return <hr key={番号} className="物語区切り" />;
     if (項目.type === "code") return <pre key={番号} className="物語原文"><code>{項目.text}</code></pre>;
     if (項目.type === "list") {
-        const 内容 = 項目.items.map((要素, 順) => <li key={順}>{区画を描く(要素.tokens, 使用済み)}</li>);
+        const 内容 = 項目.items.map((要素: Tokens.ListItem, 順: number) => <li key={順}>{区画を描く(要素.tokens ?? [], 使用済み)}</li>);
         return 項目.ordered ? <ol key={番号} className="物語列挙">{内容}</ol> : <ul key={番号} className="物語列挙">{内容}</ul>;
     }
     return null;
