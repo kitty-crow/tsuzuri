@@ -1,7 +1,21 @@
 /* 書物を声に出す操作。紹介ページにだけ存在し、配布ライブラリーには含めない。 */
-.物語節 > .容器 { grid-template-rows: minmax(0, 1fr) auto; }
-.物語節 .物語冒頭 { grid-column: 2; grid-row: 1 / span 2; }
-.物語節 .物語読書面 { grid-column: 1; grid-row: 1; }
+.物語節 > .容器 { grid-template-rows: auto; }
+.物語節 .物語冒頭 { grid-column: 2; grid-row: 1; }
+.物語節 .物語読書枠 {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    align-self: start;
+    min-width: 0;
+    width: 100%;
+}
+.物語節 .物語読書枠 > .物語読書面 {
+    flex: 0 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 5px 5px 0 0;
+}
 .朗読操作 {
     grid-column: 1;
     grid-row: 1;
@@ -61,6 +75,28 @@
     padding: 11px 3px;
 }
 .朗読設定中 label { color: var(--薄); font-size: .8rem; }
+.朗読鍵欄 { position: relative; min-width: 0; grid-column: 2; }
+.朗読鍵欄 #朗読鍵 { padding-right: 44px; }
+.朗読操作 .朗読鍵表示 {
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    min-width: 34px;
+    height: 32px;
+    padding: 5px;
+    border: 0;
+    background: transparent;
+    color: var(--薄);
+}
+.朗読操作 .朗読鍵表示:hover { color: var(--墨); }
+.朗読鍵表示 .朗読鍵閉眼 { display: none; }
+.朗読鍵表示[aria-pressed="true"] .朗読鍵開眼 { display: none; }
+.朗読鍵表示[aria-pressed="true"] .朗読鍵閉眼 { display: initial; }
 .朗読設定中 input,
 .朗読設定中 select {
     display: block;
@@ -89,37 +125,32 @@
 @media (max-width: 720px) {
     .物語節 > .容器 { grid-template-rows: auto minmax(0, 1fr) auto; }
     .物語節 .物語冒頭 { grid-column: 1; grid-row: 1; }
-    .物語節 .朗読収納 { grid-column: 1; grid-row: 3; }
-    .物語節 .物語読書面 { grid-column: 1; grid-row: 2; }
+    .物語節 .物語読書枠 { grid-column: 1; grid-row: 2; }
     .朗読操作 { padding: 9px; font-size: .74rem; }
     .朗読主操作 { gap: 6px; }
     .朗読題 { width: 100%; }
     .朗読声 { width: 100%; margin: 0; }
     .朗読操作 button { padding: 6px 7px; min-width: 36px; }
     .朗読設定中 { grid-template-columns: minmax(0, 1fr); }
+    .朗読鍵欄 { grid-column: 1; }
     .朗読設定中 p { grid-column: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
     .朗読操作 button, .物語巻 .朗読中 { transition: none; }
 }
 
-/* 本文と朗読の引手は一続きの枠とする。グリッドの段間を空けない。
-   狭い画面では表題と巻物の間隔だけを別途残す。 */
-.物語節 > .容器 { row-gap: 0; }
-.物語節 .朗読看板 { border-top: 0; }
+/* 朗読引手は巻物と同じ箱にあり、二つの境界に隙間はない。 */
+.物語節 .朗読看板 { border-top: 0; border-radius: 0 0 5px 5px; }
 @media (max-width: 720px) {
-    .物語節 > .容器 { row-gap: 0; }
-    .物語節 .物語冒頭 { margin-bottom: 18px; }
+    .物語節 .物語冒頭 { margin-bottom: 0; }
 }
 
 /* 巻物の下に常設の引手を置く。閉じたときも高さを確保するので巻物を覆わない。 */
 .物語節 .朗読収納 {
-    grid-column: 1;
-    grid-row: 2;
+    flex: 0 0 auto;
     width: 100%;
     min-width: 0;
     max-width: 100%;
-    align-self: start;
     background: var(--面);
     font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
     box-sizing: border-box;
@@ -198,7 +229,6 @@
     margin: 0;
 }
 @media (max-width: 720px) {
-    .物語節 .朗読収納 { grid-column: 1; grid-row: 3; }
     .朗読引手, .朗読固定 { padding: 7px 10px; }
     .朗読内容 { transition-duration: .22s; }
 }

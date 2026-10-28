@@ -215,6 +215,7 @@ export async function 物語の見本(): Promise<ReactNode> {
                 <div className="物語冒頭">
                     {createElement("tsuzuri", null, <h2>日本語の物語と縦書きの実例</h2>)}
                 </div>
+                <div className="物語読書枠">
                 <div className="物語読書面" data-index-pinned="false">
                     <article id="物語本文" className="物語巻" aria-label="白萩の露と後日譚" tabIndex={0}>
                         {createElement("tsuzuri", null, 区画を描く(字句, 使用済み, 目次.識別表))}
@@ -288,8 +289,20 @@ export async function 物語の見本(): Promise<ReactNode> {
                         <summary>音声の設定</summary>
                         <div className="朗読設定中">
                             <label htmlFor="朗読鍵">Azure Speech のキー</label>
-                            <input id="朗読鍵" type="password" autoComplete="off"
-                                placeholder="ご自身の Azure Speech キー" spellCheck={false} />
+                            <div className="朗読鍵欄">
+                                <input id="朗読鍵" type="password" autoComplete="off"
+                                    placeholder="ご自身の Azure Speech キー" spellCheck={false} />
+                                <button id="朗読鍵表示" className="朗読鍵表示" type="button"
+                                    aria-label="キーを表示" title="キーを表示" aria-pressed="false" aria-controls="朗読鍵">
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                                        stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+                                        strokeLinejoin="round" aria-hidden="true">
+                                        <path d="M2 12c2.7-4.6 7-7 10-7s7.3 2.4 10 7c-2.7 4.6-7 7-10 7s-7.3-2.4-10-7Z" />
+                                        <circle className="朗読鍵開眼" cx="12" cy="12" r="2.5" />
+                                        <path className="朗読鍵閉眼" d="M8 13.5c1.2 1 2.6 1.5 4 1.5s2.8-.5 4-1.5" />
+                                    </svg>
+                                </button>
+                            </div>
                             <label htmlFor="朗読地域">Azure の地域</label>
                             <select id="朗読地域" defaultValue="">
                                 <option value="">自動検出（英国南部を優先）</option>
@@ -304,14 +317,14 @@ export async function 物語の見本(): Promise<ReactNode> {
                                 <option value="southeastasia">東南アジア</option>
                                 <option value="australiaeast">豪州東部</option>
                             </select>
-                            <p>キーはこのタブの中にだけ保存され、公開ページには含まれません。音声合成は Azure Speech に接続します。</p>
+                            <p>キーはこのブラウザーの localStorage にのみ保存され、公開ページには含まれません。音声合成は Azure Speech に接続します。</p>
                         </div>
                     </details>
                     <output id="朗読状態" role="status" aria-live="polite">朗読を準備しています。</output>
                 </div>
                     </div>
                 </section>
-
+                </div>
             </div>
         </section>
     );

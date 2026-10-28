@@ -12,6 +12,7 @@ const 前へ = document.querySelector<HTMLButtonElement>("#朗読前");
 const 次へ = document.querySelector<HTMLButtonElement>("#朗読次");
 const 設定 = document.querySelector<HTMLDetailsElement>("#朗読設定");
 const 鍵 = document.querySelector<HTMLInputElement>("#朗読鍵");
+const 鍵表示 = document.querySelector<HTMLButtonElement>("#朗読鍵表示");
 const 地域 = document.querySelector<HTMLSelectElement>("#朗読地域");
 const 状態 = document.querySelector<HTMLOutputElement>("#朗読状態");
 
@@ -23,13 +24,23 @@ type 朗読環境 = Readonly<{
     次へ: HTMLButtonElement;
     設定: HTMLDetailsElement;
     鍵: HTMLInputElement;
+    鍵表示: HTMLButtonElement;
     地域: HTMLSelectElement;
     状態: HTMLOutputElement;
 }>;
 
+const 鍵の保存先 = "綴り-朗読鍵";
+
 function 文字を取る(): string {
     try {
-        return sessionStorage.getItem("綴り-朗読鍵") ?? "";
+        const 保存済み = localStorage.getItem(鍵の保存先);
+        if (保存済み !== null) return 保存済み;
+        const 旧 = sessionStorage.getItem(鍵の保存先);
+        if (旧 !== null) {
+            localStorage.setItem(鍵の保存先, 旧);
+            sessionStorage.removeItem(鍵の保存先);
+        }
+        return 旧 ?? "";
     } catch {
         return "";
     }
@@ -37,11 +48,8 @@ function 文字を取る(): string {
 
 function 保存(文字: string): void {
     try {
-        if (!文字) {
-            sessionStorage.removeItem("綴り-朗読鍵");
-            return;
-        }
-        sessionStorage.setItem("綴り-朗読鍵", 文字);
+        if (文字) localStorage.setItem(鍵の保存先, 文字);
+        else localStorage.removeItem(鍵の保存先);
     } catch {
         // ブラウザーの保存が禁止されても朗読は続けられる。
     }
@@ -73,7 +81,14 @@ class 物語朗読 {
         画面.停止.addEventListener("click", () => { void this.#止める(); });
         画面.前へ.addEventListener("click", () => { void this.#移る(-1); });
         画面.次へ.addEventListener("click", () => { void this.#移る(1); });
-        画面.鍵.addEventListener("change", () => 保存(画面.鍵.value.trim()));
+        画面.鍵.addEventListener("input", () => 保存(画面.鍵.value.trim()));
+        画面.鍵表示.addEventListener("click", () => {
+            const 見える = 画面.鍵.type === "password";
+            画面.鍵.type = 見える ? "text" : "password";
+            画面.鍵表示.setAttribute("aria-pressed", String(見える));
+            画面.鍵表示.setAttribute("aria-label", 見える ? "キーを隠す" : "キーを表示");
+            画面.鍵表示.title = 見える ? "キーを隠す" : "キーを表示";
+        });
         画面.地域.addEventListener("change", () => { void this.#止める(); });
         window.addEventListener("pagehide", () => { this.#音を捨てる(); });
         this.#表示する("朗読の準備ができました。");
@@ -316,6 +331,6 @@ function 朗読の収納を起動(): void {
 
 朗読の収納を起動();
 
-if (本文 && 再生 && 停止 && 前へ && 次へ && 設定 && 鍵 && 地域 && 状態) {
-    new 物語朗読({ 本文, 再生, 停止, 前へ, 次へ, 設定, 鍵, 地域, 状態 });
+if (本文 && 再生 && 停止 && 前へ && 次へ && 設定 && 鍵 && 鍵表示 && 地域 && 状態) {
+    new 物語朗読({ 本文, 再生, 停止, 前へ, 次へ, 設定, 鍵, 鍵表示, 地域, 状態 });
 }
