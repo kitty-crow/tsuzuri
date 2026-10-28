@@ -845,6 +845,57 @@ try {
         }
     }
     await 頁.setViewportSize({ width: 1280, height: 800 });
+    // Azure の実契約を使わず、SDK と同じ口で日本語女性音声の合成要求を検証する。
+    await 頁.evaluate(() => {
+        const 偽の音声 = {
+            SpeechConfig: {
+                fromSubscription: (鍵: string, 地域: string) => {
+                    document.documentElement.dataset.azureRegion = 地域;
+                    document.documentElement.dataset.azureKeyAccepted = String(鍵 === "綴り朗読検査用");
+                    return {
+                        speechSynthesisVoiceName: "",
+                        setProperty: (_番号: number, _値: number): void => {},
+                    };
+                },
+            },
+            SpeechSynthesizer: class {
+                speakSsmlAsync(
+                    本文: string,
+                    完了: (結果: { reason: number; audioData: ArrayBuffer }) => void,
+                    _失敗: (理由: unknown) => void,
+                ): void {
+                    document.documentElement.dataset.azureSsml = 本文;
+                    完了({ reason: 1, audioData: new ArrayBuffer(24) });
+                }
+                close(): void {}
+            },
+            PropertyId: { SpeechSynthesisOutputFormat: 1 },
+            SpeechSynthesisOutputFormat: { Audio16Khz32KBitRateMonoMp3: 1 },
+            ResultReason: { SynthesizingAudioCompleted: 1 },
+        };
+        Object.assign(window, { SpeechSDK: 偽の音声 });
+    });
+    await 頁.locator("#朗読鍵").fill("綴り朗読検査用");
+    await 頁.locator("#朗読地域").selectOption("japaneast");
+    await 頁.locator("#朗読再生").click();
+    await 頁.waitForFunction(() => Boolean(document.documentElement.dataset.azureSsml));
+    const 要求した声 = await 頁.evaluate(() => ({
+        言語: document.documentElement.dataset.azureSsml ?? "",
+        地域: document.documentElement.dataset.azureRegion,
+        鍵: document.documentElement.dataset.azureKeyAccepted,
+        保存: sessionStorage.getItem("綴り-朗読鍵"),
+    }));
+    if (!要求した声.言語.includes('xml:lang="ja-JP"')
+        || !要求した声.言語.includes('voice name="ja-JP-NanamiNeural"')
+        || !要求した声.言語.includes("白萩")
+        || 要求した声.地域 !== "japaneast" || 要求した声.鍵 !== "true"
+        || 要求した声.保存 !== "綴り朗読検査用") {
+        throw new Error("Azure の日本語女性音声への要求が不正です: "
+            + JSON.stringify({ ...要求した声, 保存: 要求した声.保存 === "綴り朗読検査用" }));
+    }
+    await 頁.locator("#朗読停止").click();
+    await 頁.evaluate(() => sessionStorage.removeItem("綴り-朗読鍵"));
+
     console.log("実ブラウザーでの表示検査に合格しました。");
 } finally {
     await ブラウザー.close();
