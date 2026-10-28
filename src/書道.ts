@@ -47,22 +47,45 @@ function 表意記号(構造: 文字): string {
     return 指示 + 表意記号(構造.部品[0]) + 表意記号(構造.部品[1]);
 }
 
+
+/** 原型を保持しながら、各部品を筆画の形ごと圧縮する。 */
+function 部品を描く(
+    構造: 文字, 左: number, 上: number, 幅: number, 高さ: number, 親: HTMLElement,
+): void {
+    if ("字" in 構造) {
+        const 字 = document.createElement("span");
+        字.className = "綴り-単字";
+        字.textContent = 構造.字;
+        字.style.left = String(左 * 100) + "%";
+        字.style.top = String(上 * 100) + "%";
+        字.style.transform = "scale(" + String(幅) + ", " + String(高さ) + ")";
+        親.append(字);
+        return;
+    }
+    const 左右 = 構造.配置 === "左右";
+    const 半幅 = 左右 ? 幅 / 2 : 幅;
+    const 半高 = 左右 ? 高さ : 高さ / 2;
+    部品を描く(構造.部品[0], 左, 上, 半幅, 半高, 親);
+    部品を描く(
+        構造.部品[1], 左 + (左右 ? 半幅 : 0),
+        上 + (左右 ? 0 : 半高), 半幅, 半高, 親,
+    );
+}
+
 function 描画(構造: 文字): HTMLElement {
-    const 葉 = "字" in 構造;
     const 箱 = document.createElement("span");
-    箱.className = 葉 ? "綴り-単字" : "綴り-合成 " + (構造.配置 === "左右" ? "綴り-左右" : "綴り-上下");
-    if (葉) {
-        箱.textContent = 構造.字;
-        return 箱;
-    }
-    for (const 部分 of 構造.部品) {
-        const 枠 = document.createElement("span");
-        枠.className = "綴り-部分";
-        枠.append(描画(部分));
-        箱.append(枠);
-    }
+    箱.className = "綴り-合成 綴り-伸縮字";
+    部品を描く(構造, 0, 0, 1, 1, 箱);
     return 箱;
 }
+
+/** 元の実演資料で描かれた字形。未知の組合せは伸縮描画に切り替える。 */
+const 既定字形: Readonly<Record<string, string>> = {
+    "⿱日本": "\uE100",
+    "⿰日本": "\uE101",
+    "⿱⿰日本語": "\uE102",
+    "⿱⿰日本⿰語学": "\uE103",
+};
 
 /** IDS と入れ子になった要素の双方に対応する。 */
 export function 書道を描く(根: ParentNode): void {
@@ -79,7 +102,10 @@ export function 書道を描く(根: ParentNode): void {
             const 視覚 = document.createElement("span");
             視覚.className = "綴り-視字";
             視覚.setAttribute("aria-hidden", "true");
-            視覚.append(描画(解析));
+            const 専用字 = 既定字形[原文.textContent ?? ""];
+            視覚.classList.add(専用字 ? "綴り-既定字" : "綴り-伸縮字");
+            if (専用字) 視覚.textContent = 専用字;
+            if (!専用字) 視覚.append(描画(解析));
             表示.append(原文, 視覚);
         }
         const 読み = 属性(元, "reading");
