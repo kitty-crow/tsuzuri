@@ -21,7 +21,73 @@ function 現在地を示す(リンク: readonly HTMLAnchorElement[], 見出し: 
     }
 }
 
+/** 開閉の見た目は CSS に任せ、固定状態だけを保存する。 */
+const 固定保存先 = "綴り-物語目次固定";
+
+function 固定を読む(): boolean {
+    try {
+        return window.localStorage.getItem(固定保存先) === "true";
+    } catch {
+        return false;
+    }
+}
+
+function 固定を保存(固定: boolean): void {
+    try {
+        window.localStorage.setItem(固定保存先, String(固定));
+    } catch {
+        /* 保存が使えなくても現在の操作は維持する。 */
+    }
+}
+
+function 目次収納を起動(本文: HTMLElement, 案内: HTMLElement): void {
+    const 読書面 = 本文.closest<HTMLElement>(".物語読書面");
+    const 側 = 案内.closest<HTMLElement>(".目次側");
+    const 固定ボタン = document.querySelector<HTMLButtonElement>("#目次固定");
+    const 引手 = document.querySelector<HTMLButtonElement>("#目次引手");
+    if (!読書面 || !側 || !固定ボタン || !引手) return;
+
+    const 開き状態を更新 = (): void => {
+        const 開いた = 読書面.dataset.indexPinned === "true"
+            || 読書面.dataset.indexOpen === "true"
+            || 側.matches(":hover, :focus-within");
+        引手.setAttribute("aria-expanded", String(開いた));
+        引手.setAttribute("aria-label", 開いた ? "目次を閉じる" : "目次を開く");
+    };
+    const 固定を適用 = (固定: boolean): void => {
+        読書面.dataset.indexPinned = String(固定);
+        固定ボタン.setAttribute("aria-pressed", String(固定));
+        固定ボタン.setAttribute("aria-label", 固定 ? "目次の固定を解除する" : "目次を固定する");
+        固定ボタン.title = 固定ボタン.getAttribute("aria-label") ?? "";
+        開き状態を更新();
+    };
+
+    固定を適用(固定を読む());
+    固定ボタン.addEventListener("click", () => {
+        const 固定 = 読書面.dataset.indexPinned !== "true";
+        固定を適用(固定);
+        固定を保存(固定);
+    });
+    引手.addEventListener("click", () => {
+        読書面.dataset.indexOpen = String(読書面.dataset.indexOpen !== "true");
+        開き状態を更新();
+    });
+    側.addEventListener("pointerenter", 開き状態を更新);
+    側.addEventListener("pointerleave", 開き状態を更新);
+    側.addEventListener("focusin", 開き状態を更新);
+    側.addEventListener("focusout", () => requestAnimationFrame(開き状態を更新));
+    document.addEventListener("keydown", (出来事: KeyboardEvent) => {
+        if (出来事.key !== "Escape") return;
+        読書面.dataset.indexOpen = "false";
+        if (側.contains(document.activeElement) && document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+        開き状態を更新();
+    });
+}
+
 function 目次を起動(本文: HTMLElement, 案内: HTMLElement): void {
+    目次収納を起動(本文, 案内);
     const リンク = Array.from(案内.querySelectorAll<HTMLAnchorElement>("a[data-target]"));
     const 見出し = リンク.flatMap((項目) => {
         const 識別 = 項目.dataset.target;

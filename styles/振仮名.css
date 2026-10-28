@@ -3,3 +3,41 @@
 .綴り-合成ルビ { display: inline-flex; flex-direction: column-reverse; align-items: center; justify-content: center; vertical-align: middle; white-space: nowrap; width: 1em; min-width: 1em; line-height: 1; }
 .綴り-合成ルビ > rt { display: block; width: max-content; margin: 0 0 .16em; font-size: .28em; text-align: center; white-space: nowrap; }
 
+
+
+/* 縦書きの合成漢字は「字」と「読み」を横に並べる。
+   一字幅に固定すると flex が双方を押し潰し、読みが筆画に重なる。 */
+.綴り-縦書 .綴り-合成ルビ {
+    display: inline-flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    justify-content: center;
+    gap: .2em;
+    width: max-content;
+    min-width: max-content;
+    height: 1em;
+    min-height: 1em;
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    vertical-align: middle;
+    line-height: 1;
+}
+.綴り-縦書 .綴り-合成ルビ > .綴り-文字 {
+    flex: 0 0 auto;
+    width: 1em;
+    height: 1em;
+}
+.綴り-縦書 .綴り-合成ルビ > rt {
+    display: block;
+    flex: 0 0 auto;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    white-space: nowrap;
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    font-size: .32em;
+    line-height: 1;
+    letter-spacing: 0;
+}

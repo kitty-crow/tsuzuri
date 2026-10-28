@@ -297,3 +297,97 @@
     .目次リンク, .目次開閉 summary, .目次開閉印, .目次開閉::details-content { transition: none; }
     .目次進度 span { animation: none; }
 }
+
+
+/* 目次の収納: 巻物全幅を保持し、右端の細い引手だけを残す。 */
+.物語読書面 {
+    position: relative;
+    display: block;
+}
+.物語読書面 .物語巻 { width: 100%; }
+.目次側 {
+    --目次引手幅: 34px;
+    position: absolute;
+    z-index: 5;
+    inset: 0 0 0 auto;
+    width: clamp(208px, 26vw, 296px);
+    padding-left: var(--目次引手幅);
+    border-left: 1px solid var(--線);
+    border-radius: 5px 0 0 5px;
+    box-shadow: -10px 0 30px color-mix(in srgb, var(--墨) 8%, transparent);
+    transform: translateX(calc(100% - var(--目次引手幅)));
+    transition: transform .48s cubic-bezier(.2,.85,.2,1),
+        box-shadow .48s ease;
+    will-change: transform;
+}
+.目次側:is(:hover, :focus-within),
+.物語読書面[data-index-pinned="true"] .目次側,
+.物語読書面[data-index-open="true"] .目次側 {
+    transform: translateX(0);
+    box-shadow: -14px 0 35px color-mix(in srgb, var(--墨) 16%, transparent);
+}
+.目次引手 {
+    position: absolute;
+    top: clamp(25px, 18%, 125px);
+    left: 0;
+    width: var(--目次引手幅);
+    height: 118px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 10px 3px;
+    border: 0;
+    border-radius: 4px 0 0 4px;
+    background: color-mix(in srgb, var(--面) 88%, var(--朱));
+    color: var(--朱);
+    font: 700 .86rem "Yu Mincho", serif;
+    letter-spacing: .16em;
+    cursor: pointer;
+    transition: background-color .3s, color .3s;
+}
+.目次引手 span { writing-mode: vertical-rl; text-orientation: upright; }
+.目次引手 svg { transform: rotate(180deg); transition: transform .4s ease; }
+.目次側:is(:hover, :focus-within) .目次引手 svg,
+.物語読書面[data-index-pinned="true"] .目次引手 svg,
+.物語読書面[data-index-open="true"] .目次引手 svg { transform: rotate(0); }
+.目次引手:hover { color: var(--墨); background: color-mix(in srgb, var(--面) 70%, var(--朱)); }
+.目次引手:focus-visible, .目次固定:focus-visible { outline: 2px solid var(--朱); outline-offset: -2px; }
+.目次看板 { gap: 8px; padding: 15px 10px; }
+.目次数 { margin-left: auto; }
+.目次固定 {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 5px;
+    background: transparent;
+    color: var(--薄);
+    border: 1px solid var(--線);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: color .22s, border-color .22s, background-color .22s, transform .25s;
+}
+.目次固定:hover { color: var(--朱); border-color: var(--朱); transform: translateY(-1px); }
+.目次固定[aria-pressed="true"] {
+    color: var(--主要文字);
+    background: var(--緑);
+    border-color: var(--緑);
+}
+.目次固定[aria-pressed="true"] svg { transform: rotate(-35deg); }
+.目次固定 svg { transition: transform .35s cubic-bezier(.22,1,.36,1); }
+.目次引手,
+.目次固定 { touch-action: manipulation; }
+@media (max-width: 760px) {
+    .物語読書面 { display: block; }
+    .目次側 { width: min(245px, calc(100% - 28px)); }
+    .目次引手 { height: 100px; font-size: .78rem; }
+    .目次看板 { padding: 10px 6px; }
+    .目次固定 { width: 29px; height: 29px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .目次側, .目次引手 svg, .目次引手,
+    .目次固定, .目次固定 svg { transition: none; }
+}

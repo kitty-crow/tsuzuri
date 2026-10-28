@@ -186,6 +186,62 @@ try {
     if (元の例 !== "したり") throw new Error("元の孤立字が残っています: " + 元の例);
 
 
+    const 読書面 = 頁.locator(".物語読書面");
+    const 目次側 = 頁.locator(".目次側");
+    const 引手 = 頁.locator("#目次引手");
+    const 固定 = 頁.locator("#目次固定");
+    const 初期収納 = await 目次側.evaluate((要素) => ({
+        左: 要素.getBoundingClientRect().left,
+        親右: 要素.parentElement?.getBoundingClientRect().right ?? 0,
+    }));
+    if (await 読書面.getAttribute("data-index-pinned") !== "false"
+        || Math.abs(初期収納.親右 - 初期収納.左 - 34) > 5) {
+        throw new Error("目次が初期状態で収納されていません: " + JSON.stringify(初期収納));
+    }
+    await 引手.hover();
+    await 頁.waitForFunction(() =>
+        document.querySelector(".目次側")?.getBoundingClientRect().width !== undefined
+        && Math.abs((document.querySelector(".目次側")?.getBoundingClientRect().right ?? 0)
+            - (document.querySelector(".物語読書面")?.getBoundingClientRect().right ?? 0)) < 5);
+    await 固定.click();
+    if (await 固定.getAttribute("aria-pressed") !== "true"
+        || await 頁.evaluate(() => localStorage.getItem("綴り-物語目次固定")) !== "true") {
+        throw new Error("目次の固定状態が保存されませんでした");
+    }
+    await 頁.mouse.move(5, 5);
+    const 固定後 = await 目次側.evaluate((要素) => ({
+        右: 要素.getBoundingClientRect().right,
+        親右: 要素.parentElement?.getBoundingClientRect().right ?? 0,
+    }));
+    if (Math.abs(固定後.親右 - 固定後.右) > 5) {
+        throw new Error("固定された目次が閉じています: " + JSON.stringify(固定後));
+    }
+
+    const ルビ位置 = await 頁.locator(".物語巻 .綴り-合成ルビ").evaluateAll((要素一覧) =>
+        要素一覧.map((ルビ) => {
+            const 字 = ルビ.querySelector(".綴り-文字");
+            const 読み = ルビ.querySelector("rt");
+            const 字枠 = 字?.getBoundingClientRect();
+            const 読み枠 = 読み?.getBoundingClientRect();
+            return {
+                名: 読み?.textContent ?? "",
+                字右: 字枠?.right ?? 0, 読み左: 読み枠?.left ?? 0,
+                字中央: 字枠 ? (字枠.top + 字枠.bottom) / 2 : 0,
+                読み中央: 読み枠 ? (読み枠.top + 読み枠.bottom) / 2 : 0,
+                向き: getComputedStyle(ルビ).writingMode,
+            };
+        })
+    );
+    if (ルビ位置.length < 4 || !ルビ位置.some((位置) => 位置.名 === "しらはぎ")) {
+        throw new Error("合成漢字の振仮名が確認できません: " + JSON.stringify(ルビ位置));
+    }
+    for (const 位置 of ルビ位置) {
+        if (位置.向き !== "vertical-rl" || 位置.読み左 - 位置.字右 < 1
+            || Math.abs(位置.読み中央 - 位置.字中央) > 18) {
+            throw new Error("合成漢字と振仮名が重なっています: " + JSON.stringify(位置));
+        }
+    }
+
     const 目次リンク = 頁.locator("#物語目次 a[data-target]");
     const 目次数 = await 目次リンク.count();
     const 目次の検証 = await 目次リンク.evaluateAll((一覧) =>
@@ -258,6 +314,22 @@ try {
         }));
     }
     await 頁.reload();
+    if (await 頁.locator("#目次固定").getAttribute("aria-pressed") !== "true"
+        || await 頁.locator(".物語読書面").getAttribute("data-index-pinned") !== "true") {
+        throw new Error("再読込後に目次の固定が復元されませんでした");
+    }
+    await 頁.locator("#目次固定").click();
+    if (await 頁.evaluate(() => localStorage.getItem("綴り-物語目次固定")) !== "false") {
+        throw new Error("目次の固定解除が保存されませんでした");
+    }
+    await 頁.locator("#物語本文").focus();
+    await 頁.mouse.move(5, 5);
+    await 頁.waitForFunction(() => {
+        const 側 = document.querySelector(".目次側")?.getBoundingClientRect();
+        const 親 = document.querySelector(".物語読書面")?.getBoundingClientRect();
+        return Boolean(側 && 親 && Math.abs(親.right - 側.left - 34) < 5);
+    });
+
     const 保存済み = await 頁.locator("html").getAttribute("data-theme");
     if (保存済み !== 新しい配色) throw new Error("配色が保存されていません");
     const 斜体の形式 = await 頁.locator(".物語巻 em").first().evaluate((要素) => ({
