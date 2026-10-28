@@ -170,7 +170,7 @@ function 文中を描く(字句: readonly Token[], 使用済み: Set<string>): R
 
 function 見出しを描く(項目: Tokens.Heading, 使用済み: Set<string>, 番号: number, 識別: string): ReactNode {
     if (項目.depth === 1) {
-        return <h2 key={番号} id={識別} className="物語大題">{文中を描く(項目.tokens ?? [], 使用済み)}</h2>;
+        return <h2 key={番号} id={識別} className="物語大題" data-readaloud="しらはぎのつゆ">{文中を描く(項目.tokens ?? [], 使用済み)}</h2>;
     }
     if (項目.depth === 2) {
         return <h3 key={番号} id={識別} className="物語後日題">{文中を描く(項目.tokens ?? [], 使用済み)}</h3>;
