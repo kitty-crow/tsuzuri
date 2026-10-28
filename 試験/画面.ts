@@ -923,14 +923,14 @@ try {
     // 自動地域検出、漢字より振仮名を優先する読み、秘密鍵を隠した失敗表示。
     const 自動試験 = await ブラウザー.newPage();
     await 自動試験.route("**/cognitiveservices/voices/list", async (経路) => {
-        const URLの地域 = new URL(経路.request().url).hostname.split(".")[0];
+        const URLの地域 = new URL(経路.request().url()).hostname.split(".")[0];
         await 経路.fulfill({ status: URLの地域 === "uksouth" ? 200 : 401,
             contentType: "application/json", body: "[]" });
     });
     await 自動試験.addInitScript(() => {
         const 偽音声 = {
             SpeechConfig: {
-                fromSubscription: (鍵: string, 地域: string) => {
+                fromSubscription: (_鍵: string, 地域: string) => {
                     document.documentElement.dataset.自動地域 = 地域;
                     return { speechSynthesisVoiceName: "",
                         setProperty: (_種類: number, _番号: number): void => {} };
