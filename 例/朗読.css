@@ -170,35 +170,59 @@
     border: 1px solid var(--線);
     background: var(--面);
 }
-.朗読引手, .朗読固定 {
+.朗読引手 {
     display: flex;
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    min-width: 0;
-    padding: 7px 12px;
+    min-width: 96px;
+    padding: 7px 13px;
     border: 0;
-    background: transparent;
-    color: var(--墨);
-    font: 700 .83rem "Yu Mincho", "Hiragino Mincho ProN", serif;
+    border-right: 1px solid var(--線);
+    border-radius: 4px 0 0 0;
+    background: color-mix(in srgb, var(--面) 88%, var(--朱));
+    color: var(--朱);
+    font: 700 .86rem "Yu Mincho", "Hiragino Mincho ProN", serif;
+    letter-spacing: .12em;
     cursor: pointer;
+    transition: background-color .3s, color .3s;
 }
-.朗読引手 { justify-content: flex-start; flex: 1 1 auto; text-align: left; }
 .朗読引手 svg { transition: transform .25s ease; }
-.朗読固定 {
-    border-left: 1px solid var(--線);
-    color: var(--薄);
-    width: 42px;
-}
-.朗読固定[aria-pressed="true"] { color: var(--朱); background: var(--紙); }
-.朗読引手:hover, .朗読固定:hover {
-    background: color-mix(in srgb, var(--面) 70%, var(--朱));
-}
+.朗読引手:hover { color: var(--墨); background: color-mix(in srgb, var(--面) 70%, var(--朱)); }
 .朗読引手:focus-visible, .朗読固定:focus-visible {
     outline: 2px solid var(--朱);
-    outline-offset: -3px;
+    outline-offset: -2px;
 }
+/* 固定操作は目次と同じく展開した操作面の中だけに置く。 */
+.朗読操作 .朗読固定 {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    padding: 5px;
+    background: transparent;
+    color: var(--薄);
+    border: 1px solid var(--線);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: color .22s, border-color .22s, background-color .22s, transform .25s;
+}
+.朗読操作 .朗読固定:hover {
+    color: var(--朱);
+    border-color: var(--朱);
+    transform: translateY(-1px);
+}
+.朗読操作 .朗読固定[aria-pressed="true"] {
+    color: var(--主要文字);
+    background: var(--緑);
+    border-color: var(--緑);
+}
+.朗読操作 .朗読固定 svg { transition: transform .35s cubic-bezier(.22,1,.36,1); }
+.朗読操作 .朗読固定[aria-pressed="true"] svg { transform: rotate(-35deg); }
+.朗読引手, .朗読固定 { touch-action: manipulation; }
 /* 収納中は内容の高さがゼロ。展開中も表示領域は文書内に収まる。 */
 .朗読内容 {
     max-height: 0;
@@ -233,9 +257,10 @@
     margin: 0;
 }
 @media (max-width: 720px) {
-    .朗読引手, .朗読固定 { padding: 7px 10px; }
+    .朗読引手 { min-width: 87px; padding: 7px 10px; font-size: .78rem; }
+    .朗読操作 .朗読固定 { width: 29px; min-width: 29px; height: 29px; padding: 4px; }
     .朗読内容 { transition-duration: .22s; }
 }
 @media (prefers-reduced-motion: reduce) {
-    .朗読内容, .朗読引手 svg { transition: none; }
+    .朗読内容, .朗読引手, .朗読引手 svg, .朗読固定, .朗読固定 svg { transition: none; }
 }

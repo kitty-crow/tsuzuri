@@ -1076,7 +1076,28 @@ try {
     // 別ページで固定・自動収納・保存復元・携帯の領域確保を確認する。
     const 収納試験 = await ブラウザー.newPage({ viewport: { width: 1280, height: 800 } });
     await 収納試験.goto("http://127.0.0.1:" + String(配信.port));
-    await 収納試験.waitForSelector("#朗読固定");
+    await 収納試験.waitForSelector("#朗読固定", { state: "attached" });
+    const 収納見た目 = await 収納試験.evaluate(() => {
+        const 引手 = document.querySelector("#朗読引手");
+        const 目次引手 = document.querySelector("#目次引手");
+        const 固定 = document.querySelector("#朗読固定");
+        if (!引手 || !目次引手 || !固定) return null;
+        const 朗読色 = getComputedStyle(引手);
+        const 目次色 = getComputedStyle(目次引手);
+        return {
+            固定は内容内: Boolean(document.querySelector("#朗読内容")?.contains(固定)),
+            固定は非表示: getComputedStyle(固定).visibility === "hidden",
+            文字色: 朗読色.color,
+            目次文字色: 目次色.color,
+            背景: 朗読色.backgroundColor,
+            目次背景: 目次色.backgroundColor,
+        };
+    });
+    if (!収納見た目?.固定は内容内 || !収納見た目.固定は非表示
+        || 収納見た目.文字色 !== 収納見た目.目次文字色
+        || 収納見た目.背景 !== 収納見た目.目次背景) {
+        throw new Error("収納時の固定ボタンか朱色の引手が目次に一致しません: " + JSON.stringify(収納見た目));
+    }
     const 収納の接合を調べる = async (): Promise<Readonly<{
         間隔: number; 左ずれ: number; 右ずれ: number;
         上枠: number; 巻物上枠: number; 見出し間隔: number; 同じ容器: boolean;
@@ -1119,6 +1140,9 @@ try {
     }));
     if (展開時.状態 !== "true" || 展開時.高さ < 95) {
         throw new Error("朗読がホバーで展開しません: " + JSON.stringify(展開時));
+    }
+    if (!(await 収納試験.locator("#朗読固定").isVisible())) {
+        throw new Error("展開時に内部の固定ボタンが表示されません");
     }
     await 収納試験.locator("#朗読固定").click();
     await 収納試験.mouse.move(10, 10);
@@ -1173,8 +1197,10 @@ try {
         高さ: 要素.getBoundingClientRect().height,
         固定: localStorage.getItem("綴り-物語朗読固定"),
     }));
-    if (収納後.高さ < 36 || 収納後.高さ > 46 || 収納後.固定 !== "false") {
-        throw new Error("固定解除時に朗読が引手へ戻りません: " + JSON.stringify(収納後));
+    if (収納後.高さ < 36 || 収納後.高さ > 46 || 収納後.固定 !== "false"
+        || await 収納試験.locator("#朗読固定").isVisible()) {
+        throw new Error("固定解除時に朗読の引手へ戻らないか、固定ボタンが見えています: "
+            + JSON.stringify(収納後));
     }
     接合を確認する("大画面・解除", await 収納の接合を調べる());
     await 収納試験.close();

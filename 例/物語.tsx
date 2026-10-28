@@ -228,15 +228,6 @@ export async function 物語の見本(): Promise<ReactNode> {
                                 <path d="m6 9 6 6 6-6" />
                             </svg>
                         </button>
-                        <button id="朗読固定" className="朗読固定" type="button"
-                            aria-label="朗読の操作を固定する" aria-pressed="false" title="朗読の操作を固定する">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
-                                stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
-                                strokeLinejoin="round" aria-hidden="true">
-                                <path d="M9 3h6l-1 5 3 3v2H7v-2l3-3-1-5Z" />
-                                <path d="M12 13v8" />
-                            </svg>
-                        </button>
                     </div>
                     <div id="朗読内容" className="朗読内容">
                 <div className="朗読操作" aria-label="白萩の露の音声朗読">
@@ -247,6 +238,15 @@ export async function 物語の見本(): Promise<ReactNode> {
                         <button id="朗読再生" type="button" aria-pressed="false">再生</button>
                         <button id="朗読次" type="button" aria-label="次の段落">次へ</button>
                         <button id="朗読停止" type="button">停止</button>
+                        <button id="朗読固定" className="朗読固定" type="button"
+                            aria-label="朗読の操作を固定する" aria-pressed="false" title="朗読の操作を固定する">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                                stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
+                                strokeLinejoin="round" aria-hidden="true">
+                                <path d="M9 3h6l-1 5 3 3v2H7v-2l3-3-1-5Z" />
+                                <path d="M12 13v8" />
+                            </svg>
+                        </button>
                     </div>
                     <details id="朗読設定" className="朗読設定">
                         <summary>音声の設定</summary>
