@@ -216,43 +216,6 @@ export async function 物語の見本(): Promise<ReactNode> {
                     {createElement("tsuzuri", null, <h2>日本語の物語と縦書きの実例</h2>)}
                 </div>
                 <div className="物語読書枠">
-                <div className="物語読書面" data-index-pinned="false">
-                    <article id="物語本文" className="物語巻" aria-label="白萩の露と後日譚" tabIndex={0}>
-                        {createElement("tsuzuri", null, 区画を描く(字句, 使用済み, 目次.識別表))}
-                    </article>
-                    <aside className="目次側" aria-label="物語の目次">
-                        <button id="目次引手" className="目次引手" type="button"
-                            aria-controls="物語目次" aria-expanded="false" aria-label="目次を開く">
-                            <span aria-hidden="true">目次</span>
-                            <svg viewBox="0 0 24 24" width="17" height="17" fill="none"
-                                stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"
-                                strokeLinejoin="round" aria-hidden="true">
-                                <path d="m9 18 6-6-6-6" />
-                            </svg>
-                        </button>
-                        <div className="目次看板">
-                            <span className="目次小印">目録</span>
-                            <span className="目次題字">目次</span>
-                            <span className="目次数">{String(目次.識別表.size).padStart(2, "0")} 節</span>
-                            <button id="目次固定" className="目次固定" type="button"
-                                aria-label="目次を固定する" aria-pressed="false" title="目次を固定する">
-                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
-                                    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
-                                    strokeLinejoin="round" aria-hidden="true">
-                                    <path d="M9 3h6l-1 5 3 3v2H7v-2l3-3-1-5Z" />
-                                    <path d="M12 13v8" />
-                                </svg>
-                            </button>
-                        </div>
-                        <nav id="物語目次" className="目次領域" aria-label="題名と日付の目次">
-                            {createElement("tsuzuri", null,
-                                <ul className="目次列">{目次.節.map((節, 番号) => 目次の節(節, 番号 === 0))}</ul>
-                            )}
-                        </nav>
-                        <div className="目次進度" aria-hidden="true"><span /></div>
-                        <span className="目次案内">項目を選ぶと巻物が移動します</span>
-                    </aside>
-                </div>
                 <section className="朗読収納" data-readaloud-pinned="false"
                     data-readaloud-open="false" aria-label="物語の音声朗読">
                     <div className="朗読看板">
@@ -324,6 +287,43 @@ export async function 物語の見本(): Promise<ReactNode> {
                 </div>
                     </div>
                 </section>
+                <div className="物語読書面" data-index-pinned="false">
+                    <article id="物語本文" className="物語巻" aria-label="白萩の露と後日譚" tabIndex={0}>
+                        {createElement("tsuzuri", null, 区画を描く(字句, 使用済み, 目次.識別表))}
+                    </article>
+                    <aside className="目次側" aria-label="物語の目次">
+                        <button id="目次引手" className="目次引手" type="button"
+                            aria-controls="物語目次" aria-expanded="false" aria-label="目次を開く">
+                            <span aria-hidden="true">目次</span>
+                            <svg viewBox="0 0 24 24" width="17" height="17" fill="none"
+                                stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"
+                                strokeLinejoin="round" aria-hidden="true">
+                                <path d="m9 18 6-6-6-6" />
+                            </svg>
+                        </button>
+                        <div className="目次看板">
+                            <span className="目次小印">目録</span>
+                            <span className="目次題字">目次</span>
+                            <span className="目次数">{String(目次.識別表.size).padStart(2, "0")} 節</span>
+                            <button id="目次固定" className="目次固定" type="button"
+                                aria-label="目次を固定する" aria-pressed="false" title="目次を固定する">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                                    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
+                                    strokeLinejoin="round" aria-hidden="true">
+                                    <path d="M9 3h6l-1 5 3 3v2H7v-2l3-3-1-5Z" />
+                                    <path d="M12 13v8" />
+                                </svg>
+                            </button>
+                        </div>
+                        <nav id="物語目次" className="目次領域" aria-label="題名と日付の目次">
+                            {createElement("tsuzuri", null,
+                                <ul className="目次列">{目次.節.map((節, 番号) => 目次の節(節, 番号 === 0))}</ul>
+                            )}
+                        </nav>
+                        <div className="目次進度" aria-hidden="true"><span /></div>
+                        <span className="目次案内">項目を選ぶと巻物が移動します</span>
+                    </aside>
+                </div>
                 </div>
             </div>
         </section>

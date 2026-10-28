@@ -14,7 +14,8 @@
     flex: 0 0 auto;
     width: 100%;
     box-sizing: border-box;
-    border-radius: 5px 5px 0 0;
+    border-top: 0;
+    border-radius: 0 0 5px 5px;
 }
 .朗読操作 {
     grid-column: 1;
@@ -139,13 +140,13 @@
     .朗読操作 button, .物語巻 .朗読中 { transition: none; }
 }
 
-/* 朗読引手は巻物と同じ箱にあり、二つの境界に隙間はない。 */
-.物語節 .朗読看板 { border-top: 0; border-radius: 0 0 5px 5px; }
+/* 朗読引手は巻物の真上に密着する。上側の角だけを丸める。 */
+.物語節 .朗読看板 { border-bottom: 1px solid var(--線); border-radius: 5px 5px 0 0; }
 @media (max-width: 720px) {
     .物語節 .物語冒頭 { margin-bottom: 0; }
 }
 
-/* 巻物の下に常設の引手を置く。閉じたときも高さを確保するので巻物を覆わない。 */
+/* 巻物の上に常設の引手を置く。閉じたときも高さを確保するので巻物を覆わない。 */
 .物語節 .朗読収納 {
     flex: 0 0 auto;
     width: 100%;
