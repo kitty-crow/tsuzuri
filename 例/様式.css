@@ -1,6 +1,6 @@
 :root { color-scheme: light; --紙:#f6f4ed; --面:#fffefa; --墨:#242921; --薄:#697066; --線:#dedfd5; --緑:#365747; --朱:#b36a4c; }
 * { box-sizing: border-box; }
-html { scroll-behaviour: smooth; }
+html { scroll-behavior: smooth; }
 body { margin: 0; background: var(--紙); color: var(--墨); font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif; line-height: 1.7; }
 a { color: inherit; }
 .容器 { width: min(1160px, calc(100% - 44px)); margin-inline: auto; }

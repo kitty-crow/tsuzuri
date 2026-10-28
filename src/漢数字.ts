@@ -13,7 +13,7 @@ function 四桁(数値: number, 正式: boolean): string {
     for (let 桁 = 3; 桁 >= 0; 桁 -= 1) {
         const 数 = Math.floor(数値 / 10 ** 桁) % 10;
         if (数 === 0) continue;
-        const 一を省く = 数 === 1 && 桁 > 0 && !正式;
+        const 一を省く = 数 === 1 && 桁 > 0;
         出力 += (一を省く ? "" : 語[数]!) + 単位[桁]!;
     }
     return 出力;

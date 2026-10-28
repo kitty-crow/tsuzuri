@@ -20,21 +20,27 @@ function 日本の日付(入力: string): Date | null {
     return 数("year") === 年 && 数("month") === 月 && 数("day") === 日 ? 日付 : null;
 }
 
-function 元号(入力: Date): string {
-    const 形式 = new Intl.DateTimeFormat("ja-JP-u-ca-japanese", {
-        era: "long", year: "numeric", timeZone: "Asia/Tokyo",
-    });
-    const 部分 = 形式.formatToParts(入力);
-    const 名 = 部分.find((項) => 項.type === "era")?.value ?? "";
-    const 年 = 部分.find((項) => 項.type === "year")?.value ?? "";
-    return 名 + (年 === "元" ? 年 : 漢数字へ(Number(年))) + "年";
+const 元号表 = [
+    { 始: "2019-05-01", 名: "令和", 年: 2019 },
+    { 始: "1989-01-08", 名: "平成", 年: 1989 },
+    { 始: "1926-12-25", 名: "昭和", 年: 1926 },
+    { 始: "1912-07-30", 名: "大正", 年: 1912 },
+    { 始: "1868-09-08", 名: "明治", 年: 1868 },
+] as const;
+
+function 元号(入力: string): string {
+    const 項目 = 元号表.find((候補) => 入力 >= 候補.始);
+    const 年 = Number(入力.slice(0, 4));
+    if (!項目) return "西暦" + 漢数字へ(年, "各桁") + "年";
+    const 年数 = 年 - 項目.年 + 1;
+    return 項目.名 + (年数 === 1 ? "元" : 漢数字へ(年数)) + "年";
 }
 
 /** 明示された暦法だけを使用し、日付の補間では旧暦を推測しない。 */
 export function 日付を整える(入力: string, 旧暦: boolean): string | null {
     const 日付 = 日本の日付(入力);
     if (!日付) return null;
-    const 接頭 = 元号(日付);
+    const 接頭 = 元号(入力);
     if (!旧暦) {
         const 月 = Number(入力.slice(5, 7));
         const 日 = Number(入力.slice(8, 10));
