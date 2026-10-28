@@ -82,7 +82,7 @@ try {
     const 人物の読み = await 頁.locator(".物語巻 ruby rt").allTextContents();
     const 表意文字 = await 頁.locator(".物語巻 .綴り-原字").allTextContents();
     const 章数 = await 頁.locator(".物語章").count();
-    if (JSON.stringify(見出し) !== JSON.stringify(期待)) throw new Error("歴史的な章の日付が一致しません");
+    if (JSON.stringify(見出し) !== JSON.stringify(期待)) throw new Error("歴史的な章の日付が一致しません: " + JSON.stringify({ 見出し, 期待 }));
     if (JSON.stringify(日付属性) !== JSON.stringify(元の日付)) throw new Error("原稿の日付が西暦で保存されていません");
     if (章数 !== 7) throw new Error("物語の章数が一致しません");
     for (const 読み of ["せいしち", "はつね", "きゅうべえ"]) {
