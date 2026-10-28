@@ -11,7 +11,8 @@
     "test": "bun test 試験",
     "test:browser": "bun 試験/画面.ts",
     "check": "bun run guard && bun run typecheck && bun run test",
-    "build": "bun run check && bun 道具/構築.ts && bun 例/構築.tsx",
+    "build:lib": "bun 道具/構築.ts",
+    "build": "bun run check && bun run build:lib && bun 例/構築.tsx",
     "pages": "bun run build"
   },
   "devDependencies": {

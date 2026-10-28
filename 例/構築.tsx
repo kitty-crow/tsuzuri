@@ -172,6 +172,11 @@ const 画面 = (
 );
 
 await mkdir("site", { recursive: true });
+await mkdir("site/dist", { recursive: true });
+for (const 名前 of ["furigana", "tategaki", "shoudou", "kumihan", "kansuji", "koyomi", "tsuzuri"]) {
+    await copyFile("dist/" + 名前 + ".js", "site/dist/" + 名前 + ".js");
+    await copyFile("dist/" + 名前 + ".css", "site/dist/" + 名前 + ".css");
+}
 await writeFile("site/index.html", "<!doctype html>\n" + render2Mkup(画面) + "\n", "utf8");
 await copyFile("例/様式.css", "site/様式.css");
 await copyFile("例/綴.svg", "site/綴.svg");

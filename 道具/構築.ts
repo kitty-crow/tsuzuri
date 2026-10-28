@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 const 対応 = [
@@ -21,11 +21,6 @@ for (const [名前, 入口, 様式名] of 対応) {
     if (!結果.success) throw new Error("構築に失敗しました: " + 名前);
     const 内容 = await Promise.all(様式名.map((名) => readFile(join("styles", 名 + ".css"), "utf8")));
     await writeFile(join("dist", 名前 + ".css"), 内容.join("\n\n"), "utf8");
-}
-await mkdir("site/dist", { recursive: true });
-for (const [名前] of 対応) {
-    await copyFile(join("dist", 名前 + ".js"), join("site/dist", 名前 + ".js"));
-    await copyFile(join("dist", 名前 + ".css"), join("site/dist", 名前 + ".css"));
 }
 console.log("配布ファイルの構築が完了しました。");
 
