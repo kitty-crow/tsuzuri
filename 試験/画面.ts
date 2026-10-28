@@ -151,11 +151,13 @@ try {
         || Math.abs(標章.全体の中心差) > 2.5
         || !標章.読みは右側 || !標章.読みは枠内
         || await 頁.locator(".上部 .印 img").count() !== 0
-        || アイコン先 !== "./綴.svg"
-        || (標章の原文.match(/<path /g) ?? []).length !== 5
+        || アイコン先 !== "./綴.svg?mark=kanji-only"
+        || (標章の原文.match(/<path /g) ?? []).length !== 2
         || !標章の原文.includes('x="8" y="8" width="112" height="112"')
-        || !["translate(95 48)", "translate(95 67)", "translate(95 86)"]
+        || !["translate(18 95)", "translate(64 95)"]
             .every((座標) => 標章の原文.includes(座標))
+        || 標章の原文.includes("ふりがな")
+        || 標章の原文.includes("つづり")
         || 標章の原文.includes("<text ") || 標章の原文.includes("<image ")) {
         throw new Error("標章の生きた合成文字・振仮名とベクターのファビコンが不正です: "
             + JSON.stringify({ 標章, アイコン先 }));

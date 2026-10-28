@@ -40,7 +40,7 @@ const 画面 = (
             <meta name="description" content="綴り。日本語の縦書き、振仮名、合成漢字、組版、漢数字、暦を一つにする描画ライブラリー。" />
             <meta name="theme-color" content="#f6f4ed" />
             <title>綴り | 日本語組版の小さな道具箱</title>
-            <link rel="icon" type="image/svg+xml" href="./綴.svg" />
+            <link rel="icon" type="image/svg+xml" href="./綴.svg?mark=kanji-only" />
             <link rel="stylesheet" href="./様式.css" />
             <link rel="stylesheet" href="./物語.css" />
             <link rel="stylesheet" href="./朗読.css" />
