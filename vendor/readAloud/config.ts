@@ -6,4 +6,4 @@ export const READ_ALOUD_REGIONS = [
     "uksouth", "japaneast", "japanwest", "westeurope", "northeurope",
     "eastus", "eastus2", "westus2", "southeastasia", "australiaeast",
 ] as const;
-export const SPEECH_SDK_CDN = "https://cdn.jsdelivr.net/npm/microsoft-cognitiveservices-speech-sdk@1.44.0/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle.js";
+export const SPEECH_SDK_PATH = "./音声SDK.js";

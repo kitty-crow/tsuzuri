@@ -5,7 +5,7 @@ const 配信 = Bun.serve({
     fetch(要求) {
         const 道 = decodeURIComponent(new URL(要求.url).pathname);
         const 対象 = 道 === "/" ? "index.html" : 道.replace(/^\//, "");
-        if (!["index.html", "綴.svg", "様式.css", "物語.css", "朗読.css", "支援.css", "配色.js", "目次.js", "朗読.js", "dist/tsuzuri.js", "dist/tsuzuri.css", "dist/tsuzuri.js.map"].includes(対象)) {
+        if (!["index.html", "綴.svg", "様式.css", "物語.css", "朗読.css", "支援.css", "配色.js", "目次.js", "朗読.js", "音声SDK.js", "dist/tsuzuri.js", "dist/tsuzuri.css", "dist/tsuzuri.js.map"].includes(対象)) {
             return new Response("未登録", { status: 404 });
         }
         return new Response(Bun.file("site/" + 対象));
@@ -46,6 +46,27 @@ try {
         || !音声設定.朗読内容.some((文章) =>文章?.includes("白萩"))) {
         throw new Error("日本語の女性音声と物語の段落が設定されていません: "
             + JSON.stringify(音声設定));
+    }
+
+    // Azure SDK は GitHub Pages の同一生成物から取得できること。
+    const SDK配信 = await 頁.evaluate(async () => {
+        const 応答 = await fetch("./音声SDK.js");
+        const 中身 = await 応答.text();
+        const 読込 = await new Promise<boolean>((完了) => {
+            const 読込器 = document.createElement("script");
+            読込器.src = "./音声SDK.js";
+            読込器.onload = () => 完了(Boolean(window.SpeechSDK));
+            読込器.onerror = () => 完了(false);
+            document.head.append(読込器);
+        });
+        return {
+            状態: 応答.status, 大きさ: 中身.length, 読込,
+            同一発行元: new URL("./音声SDK.js", document.baseURI).origin === location.origin,
+        };
+    });
+    if (SDK配信.状態 !== 200 || SDK配信.大きさ < 100_000
+        || !SDK配信.読込 || !SDK配信.同一発行元) {
+        throw new Error("Azure 音声 SDK がサイトから配信されていません: " + JSON.stringify(SDK配信));
     }
 
     const 標章 = 頁.locator(".上部 .印 img.印章");
@@ -898,6 +919,76 @@ try {
     }
     // 偽音声は再生できないため、再生完了後の停止ボタンは無効でもよい。
     await 頁.evaluate(() => sessionStorage.removeItem("綴り-朗読鍵"));
+
+    // 自動地域検出、漢字より振仮名を優先する読み、秘密鍵を隠した失敗表示。
+    const 自動試験 = await ブラウザー.newPage();
+    await 自動試験.route("**/cognitiveservices/voices/list", async (経路) => {
+        const URLの地域 = new URL(経路.request().url).hostname.split(".")[0];
+        await 経路.fulfill({ status: URLの地域 === "uksouth" ? 200 : 401,
+            contentType: "application/json", body: "[]" });
+    });
+    await 自動試験.addInitScript(() => {
+        const 偽音声 = {
+            SpeechConfig: {
+                fromSubscription: (鍵: string, 地域: string) => {
+                    document.documentElement.dataset.自動地域 = 地域;
+                    return { speechSynthesisVoiceName: "",
+                        setProperty: (_種類: number, _番号: number): void => {} };
+                },
+            },
+            SpeechSynthesizer: class {
+                speakSsmlAsync(
+                    原文: string,
+                    _完了: (結果: { reason: number; audioData: ArrayBuffer }) => void,
+                    失敗: (理由: unknown) => void,
+                ): void {
+                    document.documentElement.dataset.振仮名の検査 = 原文;
+                    失敗(new Error("接続拒否: 綴り朗読検査用"));
+                }
+                close(): void {}
+            },
+            PropertyId: { SpeechSynthesisOutputFormat: 1 },
+            SpeechSynthesisOutputFormat: { Audio16Khz32KBitRateMonoMp3: 1 },
+            ResultReason: { SynthesizingAudioCompleted: 1 },
+        };
+        Object.assign(window, { SpeechSDK: 偽音声 });
+    });
+    const 自動例外: string[] = [];
+    自動試験.on("pageerror", (例外内容) => 自動例外.push(例外内容.message));
+    await 自動試験.goto("http://127.0.0.1:" + String(配信.port));
+    await 自動試験.waitForSelector("#朗読再生");
+    await 自動試験.evaluate(() => {
+        const 読む = document.createElement("p");
+        読む.innerHTML = '<ruby>初音<rt>はつね</rt></ruby>は<ruby>⿰燈心<rt>とうしん</rt></ruby>を持つ。江戸の夜。';
+        window.readAloudState.paragraphs[0] = 読む;
+    });
+    await 自動試験.locator("#朗読設定").evaluate((詳細) => {
+        if (詳細 instanceof HTMLDetailsElement) 詳細.open = true;
+    });
+    await 自動試験.locator("#朗読鍵").fill("綴り朗読検査用");
+    if (await 自動試験.locator("#朗読地域").inputValue() !== "") {
+        throw new Error("地域の既定値が自動検出になっていません");
+    }
+    await 自動試験.locator("#朗読再生").click();
+    await 自動試験.waitForFunction(() => Boolean(document.documentElement.dataset.振仮名の検査));
+    await 自動試験.waitForFunction(() =>
+        document.querySelector("#朗読状態")?.textContent?.includes("接続拒否") ?? false);
+    const 自動結果 = await 自動試験.evaluate(() => ({
+        地域: document.documentElement.dataset.自動地域,
+        発声: document.documentElement.dataset.振仮名の検査 ?? "",
+        エラー: document.querySelector("#朗読状態")?.textContent ?? "",
+    }));
+    if (自動結果.地域 !== "uksouth" || !自動結果.発声.includes("はつね")
+        || !自動結果.発声.includes("とうしん")
+        || !自動結果.発声.includes("江戸")
+        || 自動結果.発声.includes("初音") || 自動結果.発声.includes("⿰燈心")
+        || !自動結果.エラー.includes("[秘匿]")
+        || 自動結果.エラー.includes("綴り朗読検査用")
+        || 自動例外.length > 0) {
+        throw new Error("自動地域・振仮名・安全な失敗表示が不正です: "
+            + JSON.stringify({ ...自動結果, 例外: 自動例外 }));
+    }
+    await 自動試験.close();
 
     console.log("実ブラウザーでの表示検査に合格しました。");
 } finally {

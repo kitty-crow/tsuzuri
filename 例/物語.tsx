@@ -231,7 +231,8 @@ export async function 物語の見本(): Promise<ReactNode> {
                             <input id="朗読鍵" type="password" autoComplete="off"
                                 placeholder="ご自身の Azure Speech キー" spellCheck={false} />
                             <label htmlFor="朗読地域">Azure の地域</label>
-                            <select id="朗読地域" defaultValue="uksouth">
+                            <select id="朗読地域" defaultValue="">
+                                <option value="">自動検出（英国南部を優先）</option>
                                 <option value="uksouth">英国南部</option>
                                 <option value="japaneast">日本東部</option>
                                 <option value="japanwest">日本西部</option>

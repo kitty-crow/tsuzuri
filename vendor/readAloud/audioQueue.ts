@@ -129,6 +129,8 @@ export class AudioQueue {
             timRes = resolve;
             timRej = reject;
         });
+        // 先読み用音声も拒否を監視し、接続失敗の未処理例外を防ぐ。
+        void audP.catch(() => undefined);
 
         const req: ReadAloudReq = {
             key,

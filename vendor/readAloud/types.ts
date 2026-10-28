@@ -112,6 +112,7 @@ export type RegionResolveReason =
   | "ok"
   | "rate_limited"
   | "not_found"
+  | "network_error"
   | "locked"
   | "cached"
   | "no_key";

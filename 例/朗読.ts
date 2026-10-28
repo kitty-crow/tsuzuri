@@ -2,6 +2,7 @@
 import { AudioQueue } from "../vendor/readAloud/audioQueue.ts";
 import { speechSdkReady } from "../vendor/readAloud/sdk.ts";
 import { READ_ALOUD_VOICE } from "../vendor/readAloud/config.ts";
+import { resolveRegionForKey } from "../vendor/readAloud/regionResolver.ts";
 import type { ReadAloudState } from "../vendor/readAloud/types.ts";
 
 const 本文 = document.querySelector<HTMLElement>("#物語本文");
@@ -133,6 +134,43 @@ class 物語朗読 {
         void this.#読み進む(this.#世代);
     }
 
+    /** 地域の入力がなければ移植元と同じ voice-list API で確認する。 */
+    async #地域を決める(キー: string): Promise<string | null> {
+        const 指定 = this.#画面.地域.value;
+        if (指定) return 指定;
+
+        this.#表示する("Azure Speech の地域を自動検出しています。");
+        const 結果 = await resolveRegionForKey(キー, "uksouth");
+        if (結果.region) {
+            this.#表示する("音声の地域を検出しました: " + 結果.region);
+            return 結果.region;
+        }
+
+        const 理由: Readonly<Record<string, string>> = {
+            no_key: "Azure のキーが入力されていません。",
+            rate_limited: "Azure の地域確認が制限されました（HTTP 429）。時間をおいてお試しください。",
+            network_error: "地域確認の通信が遮断されました。手動で英国南部（uksouth）を選択できます。",
+            not_found: "キーに対応する Azure Speech の地域を確認できませんでした。手動で地域を指定できます。",
+            ok: "地域の確認結果を取得できませんでした。",
+            cached: "地域の確認結果を取得できませんでした。",
+            locked: "地域の確認結果を取得できませんでした。",
+        };
+        this.#進行中 = false;
+        window.readAloudState.paused = true;
+        this.#画面.設定.open = true;
+        this.#表示する(理由[結果.reason] ?? "地域の確認に失敗しました。");
+        return null;
+    }
+
+    #失敗の表示(原因: unknown): void {
+        const 説明 = 原因 instanceof Error ? 原因.message
+            : typeof 原因 === "string" ? 原因 : "原因を特定できませんでした。";
+        const 鍵の文字 = this.#画面.鍵.value.trim();
+        const 安全な内容 = 鍵の文字 ? 説明.replaceAll(鍵の文字, "[秘匿]") : 説明;
+        this.#表示する("朗読に失敗しました: " + 安全な内容.slice(0, 350));
+        this.#画面.設定.open = true;
+    }
+
     async #切り替える(): Promise<void> {
         if (this.#進行中) {
             this.#進行中 = false;
@@ -152,7 +190,6 @@ class 物語朗読 {
         保存(キー);
         const 前状態 = window.readAloudState;
         前状態.speechKey = キー;
-        前状態.serviceRegion = this.#画面.地域.value;
         前状態.voiceName = READ_ALOUD_VOICE;
         前状態.paused = false;
         this.#進行中 = true;
@@ -160,15 +197,20 @@ class 物語朗読 {
         if (this.#再生音) {
             try {
                 await this.#再生音.play();
-            } catch {
-                this.#表示する("音声の再開に失敗しました。");
+            } catch (原因: unknown) {
                 this.#進行中 = false;
+                this.#失敗の表示(原因);
+                return;
             }
-            this.#表示する(this.#進行中 ? "朗読中" : "再開できませんでした。");
+            this.#表示する("朗読中");
             return;
         }
-        this.#世代 += 1;
-        void this.#読み進む(this.#世代);
+        const 世代 = ++this.#世代;
+        const 使用地域 = await this.#地域を決める(キー);
+        if (世代 !== this.#世代 || !使用地域) return;
+        前状態.serviceRegion = 使用地域;
+        this.#表示する("Azure の日本語音声を準備しています: " + 使用地域);
+        void this.#読み進む(世代);
     }
 
     async #読み進む(世代: number): Promise<void> {
@@ -204,13 +246,12 @@ class 物語朗読 {
                 this.#表示する("合成された音声を再生できませんでした。");
             }, { once: true });
             await 音.play();
-        } catch {
+        } catch (原因: unknown) {
             if (世代 !== this.#世代) return;
             this.#進行中 = false;
             window.readAloudState.paused = true;
             this.#音を捨てる();
-            this.#表示する("音声の合成に失敗しました。キー・地域・通信状態をご確認ください。");
-            this.#画面.設定.open = true;
+            this.#失敗の表示(原因);
         }
     }
 }

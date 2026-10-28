@@ -177,6 +177,7 @@ await copyFile("例/様式.css", "site/様式.css");
 await copyFile("例/綴.svg", "site/綴.svg");
 await copyFile("例/物語.css", "site/物語.css");
 await copyFile("例/朗読.css", "site/朗読.css");
+await copyFile("node_modules/microsoft-cognitiveservices-speech-sdk/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js", "site/音声SDK.js");
 await copyFile("例/支援.css", "site/支援.css");
 await writeFile("site/.nojekyll", "", "utf8");
 const 配色の構築 = await Bun.build({

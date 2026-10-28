@@ -193,8 +193,19 @@ export function paragraphSpeech(
 
     const clone = paragraph.cloneNode(true) as HTMLElement;
     // 漢字の文字列や合成字形の代わりに、指定された振仮名を発声する。
-    clone.querySelectorAll("ruby").forEach((要素) => {
-        const 読み = 要素.querySelector("rt")?.textContent?.trim();
+    // 表示専用の合成字形は発声しない。振仮名があれば元の漢字を完全に除く。
+    clone.querySelectorAll('[aria-hidden="true"], .綴り-視字').forEach((要素) => 要素.remove());
+    // 内側から変換し、読みのない漢字だけ Azure の通常の発音に任せる。
+    Array.from(clone.querySelectorAll("ruby")).reverse().forEach((要素) => {
+        const 読み = Array.from(要素.children)
+            .filter((子) => 子.tagName.toLowerCase() === "rt")
+            .map((子) =>子.textContent?.trim() ?? "")
+            .filter(Boolean).join("");
+        if (読み) 要素.textContent = 読み;
+        if (!読み) 要素.querySelectorAll("rt, rp").forEach((子) =>子.remove());
+    });
+    clone.querySelectorAll("jp-furigana, jp-kanji").forEach((要素) => {
+        const 読み = (要素.getAttribute("reading") ?? 要素.getAttribute("rt") ?? "").trim();
         if (読み) 要素.textContent = 読み;
     });
     hydrateTooltipMeta(clone);
