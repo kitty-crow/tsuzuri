@@ -875,6 +875,9 @@ try {
         };
         Object.assign(window, { SpeechSDK: 偽の音声 });
     });
+    await 頁.locator("#朗読設定").evaluate((詳細) => {
+        if (詳細 instanceof HTMLDetailsElement) 詳細.open = true;
+    });
     await 頁.locator("#朗読鍵").fill("綴り朗読検査用");
     await 頁.locator("#朗読地域").selectOption("japaneast");
     await 頁.locator("#朗読再生").click();
