@@ -24,16 +24,24 @@ try {
         const 収納 = 箱.querySelector(".朗読収納")?.getBoundingClientRect();
         const 引手 = 箱.querySelector(".朗読看板")?.getBoundingClientRect();
         const 操作 = 箱.querySelector(".朗読内容")?.getBoundingClientRect();
+        const 看板 = 箱.querySelector(".朗読看板");
+        const 枠線 = 看板 ? getComputedStyle(看板) : null;
         return {
             巻上: 巻?.top ?? 0, 収納下: 収納?.bottom ?? 0,
             収納高: 収納?.height ?? 0, 引手高: 引手?.height ?? 0,
             操作高: 操作?.height ?? -1,
             収納右: 収納?.right ?? 0, 巻右: 巻?.right ?? 0,
+            上枠線: 枠線?.borderTopWidth ?? "",
+            上枠色: 枠線?.borderTopColor ?? "",
+            左枠色: 枠線?.borderLeftColor ?? "",
+            上枠種: 枠線?.borderTopStyle ?? "",
         };
     });
     if (Math.abs(朗読領域.巻上 - 朗読領域.収納下) > 1.5
         || 朗読領域.収納高 < 36 || 朗読領域.収納高 > 46
-        || 朗読領域.操作高 > 1 || Math.abs(朗読領域.収納右 - 朗読領域.巻右) > 3) {
+        || 朗読領域.操作高 > 1 || Math.abs(朗読領域.収納右 - 朗読領域.巻右) > 3
+        || 朗読領域.上枠線 !== "1px" || 朗読領域.上枠種 !== "solid"
+        || 朗読領域.上枠色 !== 朗読領域.左枠色) {
         throw new Error("朗読の収納場所か予約領域が不正です: " + JSON.stringify(朗読領域));
     }
 
