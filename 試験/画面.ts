@@ -923,8 +923,8 @@ try {
     // 自動地域検出、漢字より振仮名を優先する読み、秘密鍵を隠した失敗表示。
     const 自動試験 = await ブラウザー.newPage();
     await 自動試験.addInitScript(() => {
-        const 元の取得 = window.fetch.bind(window);
-        window.fetch = (入力: RequestInfo | URL, 初期?: RequestInit): Promise<Response> => {
+        const 元の取得 = window.fetch;
+        window.fetch = Object.assign((入力: RequestInfo | URL, 初期?: RequestInit): Promise<Response> => {
             const 先 = typeof 入力 === "string" ? 入力
                 : 入力 instanceof URL ? 入力.href : 入力.url;
             if (先.includes(".tts.speech.microsoft.com/cognitiveservices/voices/list")) {
@@ -932,7 +932,7 @@ try {
                 return Promise.resolve(new Response("[]", { status: 200 }));
             }
             return 元の取得(入力, 初期);
-        };
+        }, { preconnect: 元の取得.preconnect });
         const 偽音声 = {
             SpeechConfig: {
                 fromSubscription: (_鍵: string, 地域: string) => {
