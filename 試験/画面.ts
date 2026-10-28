@@ -289,13 +289,34 @@ try {
         document.querySelector(".目次側")?.getBoundingClientRect().width !== undefined
         && Math.abs((document.querySelector(".目次側")?.getBoundingClientRect().right ?? 0)
             - (document.querySelector(".物語読書面")?.getBoundingClientRect().right ?? 0)) < 5);
-    const 収納時の幅 = await 頁.locator(".物語読書面").evaluate((面) => ({
-        面: 面.getBoundingClientRect().width,
-        本文: 面.querySelector(".物語巻")?.getBoundingClientRect().width ?? 0,
-        右余白: Number.parseFloat(getComputedStyle(面.querySelector(".物語巻")!).paddingRight),
-    }));
-    if (Math.abs(収納時の幅.面 - 収納時の幅.本文) > 2) {
-        throw new Error("非固定の目次が本文を押し縮めました: " + JSON.stringify(収納時の幅));
+    await 頁.mouse.move(5, 5);
+    await 頁.waitForFunction(() => {
+        const 面 = document.querySelector(".物語読書面");
+        const 本文 = 面?.querySelector(".物語巻");
+        const 引手 = 面?.querySelector(".目次引手");
+        if (!面 || !本文 || !引手) return false;
+        const 差 = 引手.getBoundingClientRect().left - 本文.getBoundingClientRect().right;
+        return 差 >= 10;
+    });
+    const 収納時の幅 = await 頁.locator(".物語読書面").evaluate((面) => {
+        const 本文 = 面.querySelector(".物語巻");
+        const 引手 = 面.querySelector(".目次引手");
+        const 本文枠 = 本文?.getBoundingClientRect();
+        const 引手枠 = 引手?.getBoundingClientRect();
+        return {
+            面: 面.getBoundingClientRect().width,
+            本文: 本文枠?.width ?? 0,
+            右余白: 本文 ? Number.parseFloat(getComputedStyle(本文).paddingRight) : 0,
+            引手左: 引手枠?.left ?? 0,
+            本文右: 本文枠?.right ?? 0,
+            収納幅: Number.parseFloat(getComputedStyle(面).getPropertyValue("--目次引手幅")),
+            隙間: Number.parseFloat(getComputedStyle(面).getPropertyValue("--目次隙間")),
+        };
+    });
+    if (収納時の幅.引手左 - 収納時の幅.本文右 < 10
+        || Math.abs(収納時の幅.面 - 収納時の幅.本文
+            - 収納時の幅.収納幅 - 収納時の幅.隙間) > 3) {
+        throw new Error("収納中の目次がスクロールバーを覆っています: " + JSON.stringify(収納時の幅));
     }
     await 固定.click();
     if (await 固定.getAttribute("aria-pressed") !== "true"
@@ -456,7 +477,10 @@ try {
     await 頁.waitForFunction(() => {
         const 側 = document.querySelector(".目次側")?.getBoundingClientRect();
         const 親 = document.querySelector(".物語読書面")?.getBoundingClientRect();
-        return Boolean(側 && 親 && Math.abs(親.right - 側.left - 34) < 5);
+        const 本文 = document.querySelector(".物語巻")?.getBoundingClientRect();
+        return Boolean(側 && 親 && 本文
+            && Math.abs(親.right - 側.left - 34) < 5
+            && 側.left - 本文.right >= 10);
     });
 
     const 保存済み = await 頁.locator("html").getAttribute("data-theme");
@@ -508,6 +532,14 @@ try {
         throw new Error("携帯の縦組が画面に収まりません: " + JSON.stringify(携帯の軌道));
     }
 
+    const 携帯収納 = await 頁.locator(".物語読書面").evaluate((面) => {
+        const 本文 = 面.querySelector(".物語巻")?.getBoundingClientRect();
+        const 引手 = 面.querySelector(".目次引手")?.getBoundingClientRect();
+        return { 本文右: 本文?.right ?? 0, 引手左: 引手?.left ?? 0 };
+    });
+    if (携帯収納.引手左 - 携帯収納.本文右 < 10) {
+        throw new Error("携帯画面で目次がスクロールバーを隠しています: " + JSON.stringify(携帯収納));
+    }
     const 円形 = await 頁.locator(".floatingchat-container-wrap-mobi").evaluate((要素) => {
         const 装飾 = getComputedStyle(要素);
         return { 幅: 要素.getBoundingClientRect().width, 高さ: 要素.getBoundingClientRect().height,

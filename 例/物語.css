@@ -302,21 +302,23 @@
 /* 目次の収納: 巻物全幅を保持し、右端の細い引手だけを残す。 */
 .物語読書面 {
     --目次横幅: clamp(208px, 26vw, 296px);
+    --目次引手幅: 34px;
+    --目次隙間: 12px;
     position: relative;
     display: block;
 }
 .物語読書面 .物語巻 {
-    width: 100%;
+    /* 収納中も引手とスクロールバーの間に専用の余白を確保する。 */
+    width: calc(100% - var(--目次引手幅) - var(--目次隙間));
     transition: width .48s cubic-bezier(.2,.85,.2,1),
         padding-right .48s cubic-bezier(.2,.85,.2,1);
 }
-/* 固定中のみ本文の領域を縮め、右側の目次と重ならないようにする。 */
+/* 固定中は目次の全幅を確保し、本文と横スクロールバーを守る。 */
 .物語読書面[data-index-pinned="true"] .物語巻 {
     width: calc(100% - var(--目次横幅));
     padding-right: clamp(44px, 5vw, 64px);
 }
 .目次側 {
-    --目次引手幅: 34px;
     position: absolute;
     z-index: 5;
     inset: 0 0 0 auto;
