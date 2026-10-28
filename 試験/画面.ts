@@ -211,6 +211,7 @@ try {
             折返し: 様式.flexWrap,
             数: 要素一覧.length,
             同じ左端: 要素一覧.every((枠) => Math.abs(枠.left - 要素一覧[0]!.left) <= 1),
+            同じ幅: 要素一覧.every((枠) => Math.abs(枠.width - 要素一覧[0]!.width) <= 1),
             上から順: 要素一覧.every((枠, i) => i === 0 || 枠.top >= 要素一覧[i - 1]!.bottom + 7),
             囲い幅: 欄.closest(".一覧")?.getBoundingClientRect().width ?? 0,
             収まる: Boolean(欄.closest(".一覧") && 欄.getBoundingClientRect().right
@@ -219,6 +220,7 @@ try {
     });
     if (単独版の縦並び.方向 !== "column" || 単独版の縦並び.折返し !== "nowrap"
         || 単独版の縦並び.数 !== 6 || !単独版の縦並び.同じ左端
+        || !単独版の縦並び.同じ幅
         || !単独版の縦並び.上から順 || 単独版の縦並び.囲い幅 > 360
         || !単独版の縦並び.収まる) {
         throw new Error("デスクトップで単独ライブラリー名が縦一列ではありません: "
