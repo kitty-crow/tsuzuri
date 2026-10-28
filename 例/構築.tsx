@@ -43,10 +43,12 @@ const 画面 = (
             <link rel="icon" type="image/svg+xml" href="./綴.svg" />
             <link rel="stylesheet" href="./様式.css" />
             <link rel="stylesheet" href="./物語.css" />
+            <link rel="stylesheet" href="./朗読.css" />
             <link rel="stylesheet" href="./支援.css" />
             <script src="./dist/tsuzuri.js" defer={true}></script>
             <script src="./配色.js" defer={true}></script>
             <script src="./目次.js" defer={true}></script>
+            <script src="./朗読.js" defer={true}></script>
         </head>
         <body>
             <header className="上部">
@@ -174,6 +176,7 @@ await writeFile("site/index.html", "<!doctype html>\n" + render2Mkup(画面) + "
 await copyFile("例/様式.css", "site/様式.css");
 await copyFile("例/綴.svg", "site/綴.svg");
 await copyFile("例/物語.css", "site/物語.css");
+await copyFile("例/朗読.css", "site/朗読.css");
 await copyFile("例/支援.css", "site/支援.css");
 await writeFile("site/.nojekyll", "", "utf8");
 const 配色の構築 = await Bun.build({
@@ -194,5 +197,15 @@ const 目次の構築 = await Bun.build({
     minify: true,
 });
 if (!目次の構築.success) throw new Error("目次の構築に失敗しました");
+const 朗読の構築 = await Bun.build({
+    entrypoints: ["例/朗読.ts"],
+    outdir: "site",
+    naming: { entry: "朗読.js" },
+    target: "browser",
+    format: "iife",
+    minify: true,
+});
+if (!朗読の構築.success) throw new Error("朗読の構築に失敗しました");
+
 console.log("紹介ページを構築しました。");
 

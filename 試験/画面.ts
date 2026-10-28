@@ -5,7 +5,7 @@ const 配信 = Bun.serve({
     fetch(要求) {
         const 道 = decodeURIComponent(new URL(要求.url).pathname);
         const 対象 = 道 === "/" ? "index.html" : 道.replace(/^\//, "");
-        if (!["index.html", "綴.svg", "様式.css", "物語.css", "支援.css", "配色.js", "目次.js", "dist/tsuzuri.js", "dist/tsuzuri.css", "dist/tsuzuri.js.map"].includes(対象)) {
+        if (!["index.html", "綴.svg", "様式.css", "物語.css", "朗読.css", "支援.css", "配色.js", "目次.js", "朗読.js", "dist/tsuzuri.js", "dist/tsuzuri.css", "dist/tsuzuri.js.map"].includes(対象)) {
             return new Response("未登録", { status: 404 });
         }
         return new Response(Bun.file("site/" + 対象));
@@ -18,6 +18,36 @@ try {
     頁.on("pageerror", (例外内容) => 例外.push(例外内容.message));
     await 頁.goto("http://127.0.0.1:" + String(配信.port));
     await 頁.waitForSelector(".綴り-文字");
+    // 音声モジュールは物語でだけ起動し、音声合成の設定を公開 HTML に埋め込まない。
+    const 朗読表示 = 頁.locator(".朗読操作");
+    await 頁.waitForSelector("#朗読再生");
+    const 表示確認 = await 朗読表示.evaluate((節) => ({
+        状態: 節.querySelector("#朗読状態")?.textContent,
+        声: 節.querySelector(".朗読声")?.textContent,
+        鍵種: 節.querySelector("#朗読鍵")?.getAttribute("type"),
+        設定: (節.querySelector("#朗読設定") as HTMLDetailsElement | null)?.open,
+        領域: 節.closest(".容器")?.querySelector(".物語読書面") !== null,
+    }));
+    if (!表示確認.状態?.includes("準備") || !表示確認.声?.includes("七海")
+        || 表示確認.鍵種 !== "password" || !表示確認.領域) {
+        throw new Error("物語専用の朗読操作が正しくありません: " + JSON.stringify(表示確認));
+    }
+    await 頁.locator("#朗読再生").click();
+    if (await 頁.locator("#朗読設定").getAttribute("open") === null
+        || !((await 頁.locator("#朗読状態").textContent()) ?? "").includes("キー")) {
+        throw new Error("Azure のキーがない場合に設定画面を案内していません");
+    }
+    const 音声設定 = await 頁.evaluate(() => ({
+        声: window.readAloudState.voiceName,
+        段落数: window.readAloudState.paragraphs.length,
+        朗読内容: window.readAloudState.paragraphs.slice(0, 3).map((段落) =>段落.textContent),
+    }));
+    if (音声設定.声 !== "ja-JP-NanamiNeural" || 音声設定.段落数 < 100
+        || !音声設定.朗読内容.some((文章) =>文章?.includes("白萩"))) {
+        throw new Error("日本語の女性音声と物語の段落が設定されていません: "
+            + JSON.stringify(音声設定));
+    }
+
     const 標章 = 頁.locator(".上部 .印 img.印章");
     const 標章の読込 = await 標章.evaluate((要素) => {
         const 画像 = 要素 as HTMLImageElement;

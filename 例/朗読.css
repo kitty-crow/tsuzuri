@@ -1,0 +1,104 @@
+/* 書物を声に出す操作。紹介ページにだけ存在し、配布ライブラリーには含めない。 */
+.物語節 > .容器 { grid-template-rows: auto minmax(0, 1fr); }
+.物語節 .物語冒頭 { grid-column: 2; grid-row: 1 / span 2; }
+.物語節 .物語読書面 { grid-column: 1; grid-row: 2; }
+.朗読操作 {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: stretch;
+    gap: 7px;
+    width: 100%;
+    min-width: 0;
+    padding: 10px 13px 11px;
+    border: 1px solid var(--線);
+    border-bottom: 0;
+    background: var(--面);
+    font: .8rem "Yu Mincho", "Hiragino Mincho ProN", serif;
+}
+.朗読主操作 {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    min-width: 0;
+}
+.朗読題 { font-weight: 700; color: var(--墨); letter-spacing: .07em; }
+.朗読声 { color: var(--薄); margin-right: auto; font-size: .87em; }
+.朗読操作 button,
+.朗読操作 summary {
+    display: inline-block;
+    background: color-mix(in srgb, var(--面) 83%, var(--緑));
+    color: var(--墨);
+    border: 1px solid var(--線);
+    border-radius: 4px;
+    padding: 5px 8px;
+    min-width: 40px;
+    font: inherit;
+    line-height: 1.35;
+    cursor: pointer;
+    transition: color .18s ease, background-color .18s ease;
+}
+.朗読操作 button:hover:not(:disabled),
+.朗読操作 summary:hover { background: color-mix(in srgb, var(--面) 60%, var(--緑)); }
+.朗読操作 button[aria-pressed="true"] {
+    background: var(--緑);
+    color: var(--主要文字);
+}
+.朗読操作 button:disabled { opacity: .42; cursor: not-allowed; }
+.朗読操作 :is(button,summary,input,select):focus-visible { outline: 2px solid var(--朱); outline-offset: 2px; }
+.朗読設定 { min-width: 0; }
+.朗読設定 summary {
+    width: max-content;
+    font-size: .8rem;
+    list-style-position: inside;
+}
+.朗読設定中 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 7px 12px;
+    padding: 11px 3px;
+}
+.朗読設定中 label { color: var(--薄); font-size: .8rem; }
+.朗読設定中 input,
+.朗読設定中 select {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    padding: 7px 8px;
+    border: 1px solid var(--線);
+    border-radius: 4px;
+    color: var(--墨);
+    background: var(--紙);
+    font: .85rem ui-monospace, monospace;
+}
+.朗読設定中 p {
+    grid-column: 1 / -1;
+    margin: 4px 0 0;
+    color: var(--薄);
+    line-height: 1.5;
+    font-size: .75rem;
+}
+.朗読操作 output { color: var(--薄); font-size: .75rem; }
+.物語巻 .朗読中 {
+    background: color-mix(in srgb, var(--朱) 17%, transparent);
+    border-radius: 3px;
+    transition: background-color .25s;
+}
+@media (max-width: 720px) {
+    .物語節 > .容器 { grid-template-rows: auto auto minmax(0, 1fr); }
+    .物語節 .物語冒頭 { grid-column: 1; grid-row: 1; }
+    .物語節 .朗読操作 { grid-column: 1; grid-row: 2; }
+    .物語節 .物語読書面 { grid-column: 1; grid-row: 3; }
+    .朗読操作 { padding: 9px; font-size: .74rem; }
+    .朗読主操作 { gap: 6px; }
+    .朗読題 { width: 100%; }
+    .朗読声 { width: 100%; margin: 0; }
+    .朗読操作 button { padding: 6px 7px; min-width: 36px; }
+    .朗読設定中 { grid-template-columns: minmax(0, 1fr); }
+    .朗読設定中 p { grid-column: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .朗読操作 button, .物語巻 .朗読中 { transition: none; }
+}
