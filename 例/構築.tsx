@@ -40,6 +40,7 @@ const 画面 = (
             <meta name="description" content="綴り。日本語の縦書き、振仮名、合成漢字、組版、漢数字、暦を一つにする描画ライブラリー。" />
             <meta name="theme-color" content="#f6f4ed" />
             <title>綴り | 日本語組版の小さな道具箱</title>
+            <link rel="icon" type="image/svg+xml" href="./綴.svg" />
             <link rel="stylesheet" href="./様式.css" />
             <link rel="stylesheet" href="./物語.css" />
             <link rel="stylesheet" href="./支援.css" />
@@ -51,7 +52,7 @@ const 画面 = (
         <body>
             <header className="上部">
                 <div className="容器 上部中">
-                    <a className="印" href="#先頭">綴り <span>つづり</span></a>
+                    <a className="印" href="#先頭"><img className="印章" src="./綴.svg" alt="" aria-hidden="true" />綴り <span>つづり</span></a>
                     <nav aria-label="ページ内の案内">
                         <a href="#組版">組版</a><a href="#合成">合成漢字</a><a href="#書式">使い方</a><a href="#物語">物語</a>
                         <a href="https://github.com/kitty-crow/tsuzuri">原稿</a>
@@ -162,6 +163,7 @@ const 画面 = (
 await mkdir("site", { recursive: true });
 await writeFile("site/index.html", "<!doctype html>\n" + render2Mkup(画面) + "\n", "utf8");
 await copyFile("例/様式.css", "site/様式.css");
+await copyFile("例/綴.svg", "site/綴.svg");
 await copyFile("例/物語.css", "site/物語.css");
 await copyFile("例/支援.css", "site/支援.css");
 await writeFile("site/.nojekyll", "", "utf8");

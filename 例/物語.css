@@ -301,16 +301,24 @@
 
 /* 目次の収納: 巻物全幅を保持し、右端の細い引手だけを残す。 */
 .物語読書面 {
+    --目次横幅: clamp(208px, 26vw, 296px);
     position: relative;
     display: block;
 }
-.物語読書面 .物語巻 { width: 100%; }
+.物語読書面 .物語巻 {
+    width: 100%;
+    transition: width .48s cubic-bezier(.2,.85,.2,1);
+}
+/* 固定中のみ本文の領域を縮め、右側の目次と重ならないようにする。 */
+.物語読書面[data-index-pinned="true"] .物語巻 {
+    width: calc(100% - var(--目次横幅));
+}
 .目次側 {
     --目次引手幅: 34px;
     position: absolute;
     z-index: 5;
     inset: 0 0 0 auto;
-    width: clamp(208px, 26vw, 296px);
+    width: var(--目次横幅);
     padding-left: var(--目次引手幅);
     border-left: 1px solid var(--線);
     border-radius: 5px 0 0 5px;
@@ -382,12 +390,13 @@
 .目次固定 { touch-action: manipulation; }
 @media (max-width: 760px) {
     .物語読書面 { display: block; }
-    .目次側 { width: min(245px, calc(100% - 28px)); }
+    .物語読書面 { --目次横幅: min(245px, calc(100% - 28px)); }
     .目次引手 { height: 100px; font-size: .78rem; }
     .目次看板 { padding: 10px 6px; }
     .目次固定 { width: 29px; height: 29px; }
 }
 @media (prefers-reduced-motion: reduce) {
+    .物語読書面 .物語巻 { transition: none; }
     .目次側, .目次引手 svg, .目次引手,
     .目次固定, .目次固定 svg { transition: none; }
 }

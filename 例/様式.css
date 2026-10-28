@@ -8,6 +8,8 @@ a { color: inherit; }
 .上部 { position: sticky; top: 0; background: color-mix(in srgb, var(--紙) 95%, transparent); backdrop-filter: blur(16px); z-index: 10; border-bottom: 1px solid var(--線); }
 .上部中 { min-height: 74px; display: flex; gap: 28px; align-items: center; justify-content: space-between; }
 .印 { font-family: serif; font-size: 1.65rem; font-weight: bold; text-decoration: none; letter-spacing: .12em; }
+.印 { display: inline-flex; align-items: center; gap: .38em; }
+.印章 { display: block; width: 1.12em; height: 1.12em; flex: 0 0 auto; }
 .印 span { font-size: .7rem; font-weight: normal; color: var(--薄); letter-spacing: .1em; margin-left: 12px; }
 nav { display: flex; align-items: center; gap: clamp(12px, 2vw, 28px); flex-wrap: wrap; }
 nav a { text-decoration: none; font-size: .88rem; }

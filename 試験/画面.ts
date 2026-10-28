@@ -5,7 +5,7 @@ const 配信 = Bun.serve({
     fetch(要求) {
         const 道 = decodeURIComponent(new URL(要求.url).pathname);
         const 対象 = 道 === "/" ? "index.html" : 道.replace(/^\//, "");
-        if (!["index.html", "様式.css", "物語.css", "支援.css", "配色.js", "目次.js", "支援.js", "dist/tsuzuri.js", "dist/tsuzuri.css", "dist/tsuzuri.js.map"].includes(対象)) {
+        if (!["index.html", "綴.svg", "様式.css", "物語.css", "支援.css", "配色.js", "目次.js", "支援.js", "dist/tsuzuri.js", "dist/tsuzuri.css", "dist/tsuzuri.js.map"].includes(対象)) {
             return new Response("未登録", { status: 404 });
         }
         return new Response(Bun.file("site/" + 対象));
@@ -18,6 +18,26 @@ try {
     頁.on("pageerror", (例外内容) => 例外.push(例外内容.message));
     await 頁.goto("http://127.0.0.1:" + String(配信.port));
     await 頁.waitForSelector(".綴り-文字");
+    const 標章 = 頁.locator(".上部 .印 img.印章");
+    const 標章の読込 = await 標章.evaluate((要素) => {
+        const 画像 = 要素 as HTMLImageElement;
+        return { 読込: 画像.complete, 幅: 画像.naturalWidth, 高さ: 画像.naturalHeight,
+            代替: 画像.alt, 元: 画像.getAttribute("src") };
+    });
+    const アイコン先 = await 頁.locator('head link[rel="icon"][type="image/svg+xml"]').getAttribute("href");
+    const 印の文字 = await 頁.locator(".上部 .印").textContent();
+    const 標章の原文 = await 頁.evaluate(async () => {
+        const 応答 = await fetch("./綴.svg");
+        return 応答.ok ? await 応答.text() : "";
+    });
+    if (!標章の読込.読込 || 標章の読込.幅 !== 128 || 標章の読込.高さ !== 128
+        || 標章の読込.代替 !== "" || アイコン先 !== "./綴.svg"
+        || 標章の読込.元 !== アイコン先 || !印の文字?.includes("綴り")
+        || !標章の原文.includes("<path ") || 標章の原文.includes("<text ")) {
+        throw new Error("文字を輪郭化した標章とファビコンが不正です: "
+            + JSON.stringify({ 標章の読込, アイコン先, 印の文字 }));
+    }
+
     const 合成数 = await 頁.locator(".綴り-文字").count();
     const 縦書数 = await 頁.locator(".綴り-縦書").count();
     const 読み数 = await 頁.locator(".綴り-振仮名").count();
@@ -203,6 +223,13 @@ try {
         document.querySelector(".目次側")?.getBoundingClientRect().width !== undefined
         && Math.abs((document.querySelector(".目次側")?.getBoundingClientRect().right ?? 0)
             - (document.querySelector(".物語読書面")?.getBoundingClientRect().right ?? 0)) < 5);
+    const 収納時の幅 = await 頁.locator(".物語読書面").evaluate((面) => ({
+        面: 面.getBoundingClientRect().width,
+        本文: 面.querySelector(".物語巻")?.getBoundingClientRect().width ?? 0,
+    }));
+    if (Math.abs(収納時の幅.面 - 収納時の幅.本文) > 2) {
+        throw new Error("非固定の目次が本文を押し縮めました: " + JSON.stringify(収納時の幅));
+    }
     await 固定.click();
     if (await 固定.getAttribute("aria-pressed") !== "true"
         || await 頁.evaluate(() => localStorage.getItem("綴り-物語目次固定")) !== "true") {
@@ -215,6 +242,28 @@ try {
     }));
     if (Math.abs(固定後.親右 - 固定後.右) > 5) {
         throw new Error("固定された目次が閉じています: " + JSON.stringify(固定後));
+    }
+
+    await 頁.waitForFunction(() => {
+        const 読書面 = document.querySelector(".物語読書面");
+        const 本文 = document.querySelector(".物語読書面 .物語巻");
+        const 側帯 = document.querySelector(".物語読書面 .目次側");
+        if (!読書面 || !本文 || !側帯) return false;
+        const 左 = 本文.getBoundingClientRect();
+        const 右 = 側帯.getBoundingClientRect();
+        return Math.abs(左.right - 右.left) < 3
+            && Math.abs(左.width + 右.width - 読書面.getBoundingClientRect().width) < 3;
+    });
+    const 固定寸法 = await 頁.locator(".物語読書面").evaluate((面) => {
+        const 本文 = 面.querySelector(".物語巻")?.getBoundingClientRect();
+        const 側 = 面.querySelector(".目次側")?.getBoundingClientRect();
+        return { 全幅: 面.getBoundingClientRect().width,
+            本文右: 本文?.right ?? 0, 目次左: 側?.left ?? 0,
+            本文幅: 本文?.width ?? 0, 目次幅: 側?.width ?? 0 };
+    });
+    if (Math.abs(固定寸法.本文右 - 固定寸法.目次左) > 3
+        || Math.abs(固定寸法.本文幅 + 固定寸法.目次幅 - 固定寸法.全幅) > 3) {
+        throw new Error("固定した目次が本文を隠しています: " + JSON.stringify(固定寸法));
     }
 
     const ルビ位置 = await 頁.locator(".物語巻 .綴り-合成ルビ").evaluateAll((要素一覧) =>
@@ -322,6 +371,12 @@ try {
     if (await 頁.evaluate(() => localStorage.getItem("綴り-物語目次固定")) !== "false") {
         throw new Error("目次の固定解除が保存されませんでした");
     }
+    await 頁.waitForFunction(() => {
+        const 面 = document.querySelector(".物語読書面");
+        const 本文 = document.querySelector(".物語巻");
+        return Boolean(面 && 本文
+            && Math.abs(面.getBoundingClientRect().width - 本文.getBoundingClientRect().width) < 3);
+    });
     await 頁.locator("#物語本文").focus();
     await 頁.mouse.move(5, 5);
     await 頁.waitForFunction(() => {
