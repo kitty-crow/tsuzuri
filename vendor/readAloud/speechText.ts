@@ -1,4 +1,4 @@
-import * as helpers from "../helpers.ts";
+import * as helpers from "./helpers.ts";
 import type {
     ReadAloudParagraphSpeech,
     ReadAloudSsmlToken
