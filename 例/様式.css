@@ -316,6 +316,14 @@ body {
 .一覧題 h3 { font-size: 1.2rem; margin: 0 0 0 .6em; }
 .一覧題 p { margin: 0; }
 .一覧 .一覧格子 { grid-column: 1; grid-row: 1; }
+/* デスクトップでは配布ライブラリー名を一列に並べる。携帯の折返しは維持する。 */
+@media (min-width: 721px) {
+    .縦案内節 .一覧格子 {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: flex-start;
+    }
+}
 @media (max-width: 900px) {
     :root { --右軌道: 66px; --左軌道: 56px; --左余白: 8px; --支援高: 125px; }
     .主題 { grid-template-columns: 1fr; padding-block: 42px; }

@@ -188,6 +188,23 @@ try {
         || await 頁.locator(".物語注記").count() !== 0) {
         throw new Error("左右の縦書き軌道と書体が不正です: " + JSON.stringify(組版方向));
     }
+    const 単独版の縦並び = await 頁.locator(".一覧格子").evaluate((欄) => {
+        const 要素一覧 = Array.from(欄.querySelectorAll("code"), (要素) => 要素.getBoundingClientRect());
+        const 様式 = getComputedStyle(欄);
+        return {
+            方向: 様式.flexDirection,
+            折返し: 様式.flexWrap,
+            数: 要素一覧.length,
+            同じ左端: 要素一覧.every((枠) => Math.abs(枠.left - 要素一覧[0]!.left) <= 1),
+            上から順: 要素一覧.every((枠, i) => i === 0 || 枠.top >= 要素一覧[i - 1]!.bottom + 7),
+        };
+    });
+    if (単独版の縦並び.方向 !== "column" || 単独版の縦並び.折返し !== "nowrap"
+        || 単独版の縦並び.数 !== 6 || !単独版の縦並び.同じ左端
+        || !単独版の縦並び.上から順) {
+        throw new Error("デスクトップで単独ライブラリー名が縦一列ではありません: "
+            + JSON.stringify(単独版の縦並び));
+    }
     const 軌道の寸法 = await 頁.evaluate(() => {
         const 計測 = (軌道: string, 項目: string): Readonly<{
             内幅: number; 使用幅: number; 位置: readonly number[];
@@ -950,6 +967,14 @@ try {
             throw new Error("携帯表示が欄外へ溢れたり内容を重ねています: "
                 + JSON.stringify({ 横幅, ...配置, はみ出し }));
         }
+    }
+    const 携帯版の並び = await 頁.locator(".一覧格子").evaluate((欄) => {
+        const 様式 = getComputedStyle(欄);
+        return { 方向: 様式.flexDirection, 折返し: 様式.flexWrap };
+    });
+    if (携帯版の並び.方向 !== "row" || 携帯版の並び.折返し !== "wrap") {
+        throw new Error("携帯の単独ライブラリー名が従来の折返しになっていません: "
+            + JSON.stringify(携帯版の並び));
     }
     await 頁.setViewportSize({ width: 1280, height: 800 });
     // Azure の実契約を使わず、SDK と同じ口で日本語女性音声の合成要求を検証する。
