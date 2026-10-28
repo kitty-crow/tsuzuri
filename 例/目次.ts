@@ -102,7 +102,7 @@ function 巻物の車輪を起動(本文: HTMLElement): void {
         if (Math.abs(次 - 現在) < .5) return;
 
         出来事.preventDefault();
-        本文.scrollLeft = 次;
+        本文.scrollTo({ left: 次, behavior: "instant" });
     }, { passive: false });
 }
 

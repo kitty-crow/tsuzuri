@@ -329,7 +329,7 @@ try {
 
     const 車輪対象 = 頁.locator("#物語本文");
     await 車輪対象.scrollIntoViewIfNeeded();
-    await 車輪対象.evaluate((要素) => { 要素.scrollLeft = 0; });
+    await 車輪対象.evaluate((要素) => { 要素.scrollTo({ left: 0, behavior: "instant" }); });
     const 車輪幅 = await 車輪対象.evaluate((要素) => 要素.scrollWidth - 要素.clientWidth);
     if (車輪幅 < 400) throw new Error("物語に横スクロールの余地がありません");
     await 車輪対象.hover({ position: { x: 35, y: 35 } });
@@ -351,10 +351,10 @@ try {
             + JSON.stringify({ 左へ, 右へ }));
     }
     const 端の検査 = await 車輪対象.evaluate((要素) => {
-        要素.scrollLeft = 要素.clientWidth - 要素.scrollWidth;
+        要素.scrollTo({ left: 要素.clientWidth - 要素.scrollWidth, behavior: "instant" });
         const 下向き = new WheelEvent("wheel", { deltaY: 240, bubbles: true, cancelable: true });
         const 左端で許可 = 要素.dispatchEvent(下向き);
-        要素.scrollLeft = 0;
+        要素.scrollTo({ left: 0, behavior: "instant" });
         const 上向き = new WheelEvent("wheel", { deltaY: -240, bubbles: true, cancelable: true });
         const 右端で許可 = 要素.dispatchEvent(上向き);
         const 拡大 = new WheelEvent("wheel", { deltaY: 240, ctrlKey: true, bubbles: true, cancelable: true });
