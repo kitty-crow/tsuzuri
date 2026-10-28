@@ -283,6 +283,7 @@ try {
                 読み中央: 読み枠 ? (読み枠.top + 読み枠.bottom) / 2 : 0,
                 向き: getComputedStyle(ルビ).writingMode,
                 間隔: Number.parseFloat(getComputedStyle(ルビ).gap),
+                文字大きさ: Number.parseFloat(getComputedStyle(ルビ).fontSize),
             };
         })
     );
@@ -291,7 +292,8 @@ try {
     }
     for (const 位置 of ルビ位置) {
         if (位置.向き !== "vertical-rl" || 位置.読み左 - 位置.字右 < 1
-            || 位置.読み左 - 位置.字右 > 8 || 位置.間隔 > 3
+            || 位置.読み左 - 位置.字右 > 8
+            || 位置.間隔 > 位置.文字大きさ * .11
             || Math.abs(位置.読み中央 - 位置.字中央) > 18) {
             throw new Error("合成漢字と振仮名が重なっています: " + JSON.stringify(位置));
         }
