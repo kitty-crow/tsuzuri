@@ -290,14 +290,7 @@ try {
         && Math.abs((document.querySelector(".目次側")?.getBoundingClientRect().right ?? 0)
             - (document.querySelector(".物語読書面")?.getBoundingClientRect().right ?? 0)) < 5);
     await 頁.mouse.move(5, 5);
-    await 頁.waitForFunction(() => {
-        const 面 = document.querySelector(".物語読書面");
-        const 本文 = 面?.querySelector(".物語巻");
-        const 引手 = 面?.querySelector(".目次引手");
-        if (!面 || !本文 || !引手) return false;
-        const 差 = 引手.getBoundingClientRect().left - 本文.getBoundingClientRect().right;
-        return 差 >= 10;
-    });
+    await 頁.waitForTimeout(600);
     const 収納時の幅 = await 頁.locator(".物語読書面").evaluate((面) => {
         const 本文 = 面.querySelector(".物語巻");
         const 引手 = 面.querySelector(".目次引手");
@@ -474,14 +467,20 @@ try {
     });
     await 頁.locator("#物語本文").focus();
     await 頁.mouse.move(5, 5);
-    await 頁.waitForFunction(() => {
-        const 側 = document.querySelector(".目次側")?.getBoundingClientRect();
-        const 親 = document.querySelector(".物語読書面")?.getBoundingClientRect();
-        const 本文 = document.querySelector(".物語巻")?.getBoundingClientRect();
-        return Boolean(側 && 親 && 本文
-            && Math.abs(親.right - 側.left - 34) < 5
-            && 側.left - 本文.right >= 10);
+    await 頁.waitForTimeout(600);
+    const 解除後の余白 = await 頁.locator(".物語読書面").evaluate((面) => {
+        const 本文 = 面.querySelector(".物語巻")?.getBoundingClientRect();
+        const 引手 = 面.querySelector(".目次引手")?.getBoundingClientRect();
+        const 側 = 面.querySelector(".目次側")?.getBoundingClientRect();
+        return {
+            隙間: (引手?.left ?? 0) - (本文?.right ?? 0),
+            側面: (面.getBoundingClientRect().right - (側?.left ?? 0)),
+            固定: 面.getAttribute("data-index-pinned"),
+        };
     });
+    if (解除後の余白.隙間 < 10 || Math.abs(解除後の余白.側面 - 34) > 5) {
+        throw new Error("固定解除後に目次の余白が保たれていません: " + JSON.stringify(解除後の余白));
+    }
 
     const 保存済み = await 頁.locator("html").getAttribute("data-theme");
     if (保存済み !== 新しい配色) throw new Error("配色が保存されていません");
