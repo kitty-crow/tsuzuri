@@ -1,115 +1,69 @@
-# GitHub Pages Template
+# 綴り
 
-Unbranded GitHub Pages build, runtime and component foundation for static web applications.
+**綴り**は、日本語の書字表現を扱う、フレームワーク非依存の描画ライブラリーです。縦書き、振仮名、合成漢字、組版、漢数字、暦の機能を、意味の分かる要素だけで使えます。
 
-It covers Pages concerns only. Application logic, domain code, page content, project branding and project-specific CSS remain in the consuming repository.
+## 最小構成
 
-## Use as a pinned submodule
-
-```bash
-git submodule add https://github.com/kitty-crow/github-pages-template vendor/pages
-git -C vendor/pages checkout <commit-sha>
-git add .gitmodules vendor/pages
+```html
+<script src="dist/tsuzuri.js"></script>
+<tsuzuri>
+  <jp-furigana reading="つづり">綴り</jp-furigana>
+  <jp-kanji reading="にほん">⿱日本</jp-kanji>
+</tsuzuri>
 ```
 
-The parent repository records the exact template commit. Updating the shared layer is an explicit submodule pointer change.
+追加の初期化処理や設定は不要です。配布物は構築時に依存物をまとめた独立したファイルです。各配布ファイルは同じ場所にある対応する様式ファイルを自動読込します。
 
-## Commands
+## 原稿と配布物
 
-```bash
-bun vendor/pages/src/cli.ts check pages.config.ts
-bun vendor/pages/src/cli.ts build pages.config.ts
-bun vendor/pages/src/cli.ts version patch
+| 原稿 | 配布ファイル | 役割 |
+|---|---|---|
+| `src/振仮名.ts` | `furigana.js` | 振仮名の略記 |
+| `src/縦書.ts` | `tategaki.js` | 縦書きと横書き |
+| `src/書道.ts` | `shoudou.js` | 合成文字と読み |
+| `src/組版.ts` | `kumihan.js` | 日本語組版 |
+| `src/漢数字.ts` | `kansuji.js` | 漢数字 |
+| `src/暦.ts` | `koyomi.js` | 和暦と限定的な旧暦 |
+| `src/綴り.ts` | `tsuzuri.js` | 全機能の統合 |
+
+`styles/` に機能別の原稿を置きます。構築時に配布用の対応した様式ファイルも生成します。
+
+## 要素の使い方
+
+```html
+<tsuzuri>春はあけぼの。</tsuzuri>
+<tsuzuri direction="horizontal">横書きです。</tsuzuri>
+<jp-tategaki>縦書きです。</jp-tategaki>
+<jp-yokogaki>横書きです。</jp-yokogaki>
+<jp-furigana reading="ことば">言葉</jp-furigana>
+<jp-kanji reading="にほんご">⿱⿰日本語</jp-kanji>
+<jp-kansuji value="2026" style="digits"></jp-kansuji>
+<jp-kansuji value="18" style="daiji"></jp-kansuji>
+<jp-koyomi date="2026-10-28" calendar="kyureki"></jp-koyomi>
 ```
 
-Create a neutral starter:
+合成漢字は `⿰`（左右）と `⿱`（上下）に対応し、入れ子にできます。構文や異体字そのものを複写できることを重視しています。
 
-```bash
-bun vendor/pages/src/cli.ts init . \
-  --name "Project" \
-  --repo owner/project \
-  --base /project/
+### 暦について
+
+`calendar="kyureki"` は現時点で**2026年10月11日から12月8日まで**の照合済み期間のみ対応しています。未対応の日付を推測して表示することはありません。通常の和暦表記は `calendar` を省略します。旧暦の正確な一般変換は今後の課題です。
+
+## 構築・検査
+
+```sh
+bun install
+bun run check
+bun run build
+bun 試験/画面.ts
 ```
 
-The scaffold contains separate Home, About, README and 404 pages, clean routes, version loading, theme controls, responsive shell styles and Pages workflows. Ko-fi is disabled unless `--kofi <user>` is supplied.
+厳密な型検査、曖昧な型の禁止、条件分岐の入れ子禁止、型検査無効化の禁止を継続的に確認します。紹介ページの構築には `vendor/website` に固定したウェブサイト用補助コードを使用しますが、配布ライブラリーには含めません。紹介ページ以外でこの補助コードを読み込むことはありません。
 
-## Configuration
+## 掲載例
 
-```ts
-import { definePages } from "./vendor/pages/src/index.ts";
+紹介ページは `例/構築.tsx` から生成します。`dist/` と `site/` は構築時の生成物です。公開用の構築処理が `site/` を配信します。
 
-export default definePages({
-  source: "web",
-  out: "site",
-  pages: [
-    { from: "index.html", route: "/" },
-    { from: "about.html", route: "/about/", legacy: ["about.html"] },
-    { from: "readme.html", route: "/readme/", legacy: ["readme.html"] }
-  ],
-  runtime: {
-    base: "/project/",
-    theme: {
-      key: "project.theme",
-      colours: { light: "#f5f6f8", dark: "#11131a" }
-    },
-    version: { file: "version.json" },
-    readme: { owner: "owner", repo: "project" }
-  }
-});
-```
+## ライセンス
 
-See [Configuration](docs/config.md).
+MIT
 
-## Shared Pages elements
-
-- early theme boot with OS preference detection and persisted override
-- generic light/dark controls and optional theme events
-- responsive Ko-fi overlay placement and footer link
-- version text loaded from an independent JSON file
-- sanitised README rendering with link and image rewriting
-- clean-route compilation and optional legacy redirects
-- `.nojekyll`, 404 and Pages artefact support
-- neutral shell, navigation, field, button, panel, footer and Markdown styles
-- reusable and copyable GitHub Actions workflows
-
-Every runtime feature is optional. Selectors, storage keys, colours, repository details and donation account are supplied by the consuming project.
-
-## CSS
-
-Shared CSS is stored under `web/styles/`, separated by concern, strongly indented and written with native `&` nesting. `web/styles.css` is the complete index.
-
-Consumers select only the files they need. Project CSS remains local and loads after the shared layer, so an existing visual state can be retained exactly.
-
-See [CSS](docs/css.md).
-
-## Existing sites
-
-Adoption is parity-first. Keep the current HTML and CSS, add the submodule, compile only the shared runtime pieces needed, and remove duplicated code after the built output matches the current site.
-
-See [Adoption](docs/adoption.md) and [Submodules](docs/submodule.md).
-
-## Workflows
-
-The repository includes reusable `pages.yml` and `version.yml` workflows. The scaffold also contains standalone workflows that call the pinned local submodule. Version commits use `[skip ci]` so the version workflow can deploy without triggering a second Pages run.
-
-See [Workflows](docs/workflows.md).
-
-## Project layout
-
-```text
-src/          strict TypeScript builder, CLI and browser runtime
-web/styles/   optional concern-separated shared CSS
-scaffold/     neutral starter copied by the init command
-docs/         adoption and implementation documentation
-tests/        Bun tests
-example/      buildable neutral example
-```
-
-## Author
-
-Kitty Crow  
-https://kittycrow.dev
-
-## Licence
-
-[MIT](LICENSE)

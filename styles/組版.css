@@ -1,0 +1,3 @@
+.綴り-本文, .綴り-組版 { line-break: strict; word-break: normal; font-kerning: normal; font-feature-settings: "palt" 1; text-spacing-trim: trim-start; }
+.綴り-組版 { display: inline; }
+

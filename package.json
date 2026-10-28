@@ -1,47 +1,27 @@
 {
-  "name": "@kitty-crow/github-pages-template",
-  "version": "0.2.4",
-  "description": "Unbranded GitHub Pages build, runtime and component foundation.",
+  "name": "@kitty-crow/tsuzuri",
+  "version": "0.1.0",
+  "description": "日本語組版・振仮名・合成漢字の独立した描画ライブラリー",
   "type": "module",
+  "private": true,
   "license": "MIT",
-  "author": "Kitty Crow <kitty@kittycrow.dev> (https://kittycrow.dev)",
-  "repository": "github:kitty-crow/github-pages-template",
-  "bin": {
-    "pages-template": "./src/cli.ts"
-  },
-  "exports": {
-    ".": "./src/index.ts",
-    "./runtime": "./src/run/index.ts"
-  },
-  "files": [
-    "src",
-    "web",
-    "scaffold",
-    "docs",
-    "README.md",
-    "LICENSE",
-    "version.json"
-  ],
   "scripts": {
-    "check": "bunx tsc --noEmit && bun test",
-    "test": "bun test",
-    "example:build": "bun src/cli.ts build example/pages.config.ts",
-    "example:audit-mobile": "bun src/cli.ts audit-mobile example/site",
-    "example:serve": "bun src/serve.ts example/site"
+    "guard": "bun 道具/検査.ts",
+    "typecheck": "bunx tsc --noEmit",
+    "test": "bun test 試験/漢数字.test.ts",
+    "test:browser": "bun 試験/画面.ts",
+    "check": "bun run guard && bun run typecheck && bun run test",
+    "build": "bun run check && bun 道具/構築.ts && bun 例/構築.tsx",
+    "pages": "bun run build"
   },
   "devDependencies": {
-    "@types/bun": "1.3.14",
+    "@types/bun": "^1.3.14",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "playwright": "^1.55.0",
-    "typescript": "5.9.3"
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "typescript": "^5.9.3"
   },
-  "engines": {
-    "bun": ">=1.3.14"
-  },
-  "keywords": [
-    "github-pages",
-    "static-site",
-    "bun",
-    "typescript",
-    "submodule"
-  ]
+  "engines": { "bun": ">=1.3.14" }
 }

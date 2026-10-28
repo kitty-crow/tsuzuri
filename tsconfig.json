@@ -3,31 +3,23 @@
     "target": "ES2024",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": [
-      "ES2024",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "types": [
-      "bun"
-    ],
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "types": ["bun"],
     "strict": true,
+    "noImplicitAny": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
     "useUnknownInCatchVariables": true,
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
-    "resolveJsonModule": true,
     "skipLibCheck": true,
+    "jsx": "react-jsx",
     "noEmit": true
   },
-  "include": [
-    "src/**/*.ts",
-    "tests/**/*.ts",
-    "example/**/*.ts"
-  ]
+  "include": ["src/**/*.ts", "道具/**/*.ts", "試験/**/*.ts", "例/**/*.tsx"]
 }

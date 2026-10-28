@@ -1,0 +1,4 @@
+[submodule "vendor/website"]
+    path = vendor/website
+    url = https://github.com/kittyCrypto-gg/website.git
+

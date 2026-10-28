@@ -1,0 +1,46 @@
+name: 検査
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    name: 型・規則・描画・構築
+    runs-on: ubuntu-latest
+    steps:
+      - name: 原稿取得
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: 実行環境
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+      - name: 依存関係の取得
+        run: bun install
+      - name: 検査と構築
+        run: bun run build
+      - name: ブラウザーの準備
+        run: bunx playwright install --with-deps chromium
+      - name: 描画の動作確認
+        run: bun run test:browser
+      - name: 紹介ページを保存
+        uses: actions/upload-artifact@v4
+        with:
+          name: 綴り紹介ページ
+          path: site
+          retention-days: 14
+      - name: 配布物の確認
+        run: |
+          test -f dist/tsuzuri.js
+          test -f dist/furigana.js
+          test -f dist/tategaki.js
+          test -f dist/shoudou.js
+          test -f dist/kumihan.js
+          test -f dist/kansuji.js
+          test -f dist/koyomi.js
+          test -f site/index.html
+

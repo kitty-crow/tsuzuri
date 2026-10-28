@@ -1,4 +1,6 @@
 node_modules/
-.pages-cache/
-example/site/
+dist/
+site/
+*.tsbuildinfo
 .DS_Store
+
