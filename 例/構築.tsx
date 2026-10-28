@@ -78,7 +78,13 @@ const 画面 = (
                     </div>
                     <div className="主題見本" aria-label="縦書きの例">
                         <span className="朱印">和</span>
-                        {縦書(<><strong>言の葉を<br/>編む。</strong><small>書を愉しむ、すべての人へ。</small></>)}
+                        {縦書(<>
+                            <span className="主題見本文">
+                                <strong className="主題見本先">言の葉を</strong>
+                                <strong className="主題見本後">編む。</strong>
+                            </span>
+                            <small className="主題見本添">書を愉しむ、すべての人へ。</small>
+                        </>)}
                     </div>
                 </section>
                 <section id="組版" className="節 容器 縦案内節">

@@ -697,3 +697,10 @@ body {
         font-size: clamp(.76rem, 1vw, .88rem);
     }
 }
+
+/* 既存の small 用の右余白を相殺する。 */
+.主題見本 .主題見本添 {
+    margin: 0;
+    font-size: .33em;
+    letter-spacing: .1em;
+}

@@ -195,6 +195,45 @@ try {
     }
     await 頁.setViewportSize({ width: 1280, height: 800 });
 
+    // 縦組見本の大字二列・小字・朱印が一切重ならないことを実測する。
+    await 頁.evaluate(() => document.fonts.ready);
+    for (const 横幅 of [1280, 1024, 820, 390, 320]) {
+        await 頁.setViewportSize({ width: 横幅, height: 800 });
+        const 見本配置 = await 頁.locator(".主題見本").evaluate((要素) => {
+            const 矩形 = (式: string): DOMRect => {
+                const 対象 = 要素.querySelector(式);
+                if (!対象) throw new Error("見本の文字列が見つかりません: " + 式);
+                return 対象.getBoundingClientRect();
+            };
+            const 第一 = 矩形(".主題見本先");
+            const 第二 = 矩形(".主題見本後");
+            const 添字 = 矩形(".主題見本添");
+            const 朱印 = 矩形(".朱印");
+            const 外枠 = 要素.getBoundingClientRect();
+            const 重なる = (甲: DOMRect, 乙: DOMRect): boolean =>
+                Math.min(甲.right, 乙.right) - Math.max(甲.left, 乙.left) > 1
+                && Math.min(甲.bottom, 乙.bottom) - Math.max(甲.top, 乙.top) > 1;
+            const 文字 = [第一, 第二, 添字];
+            return {
+                列間: [第一.left - 第二.right, 第二.left - 添字.right],
+                順序: 第一.left > 第二.left && 第二.left > 添字.left,
+                重複: 文字.some((甲, i) => 文字.some((乙, j) => i < j && 重なる(甲, 乙))),
+                印と重複: 文字.some((甲) => 重なる(甲, 朱印)),
+                枠内: 文字.every((枠) => 枠.left >= 外枠.left - 1 && 枠.right <= 外枠.right + 1),
+                向き: getComputedStyle(要素.querySelector(".主題見本先")!).writingMode,
+                文字: 要素.textContent,
+            };
+        });
+        if (!見本配置.順序 || 見本配置.重複 || 見本配置.印と重複
+            || !見本配置.枠内 || 見本配置.向き !== "vertical-rl"
+            || 見本配置.列間.some((距離) => 距離 < 5)
+            || !見本配置.文字?.includes("書を愉しむ、すべての人へ。")) {
+            throw new Error("縦組見本の文字または朱印が重なっています: "
+                + JSON.stringify({ 横幅, ...見本配置 }));
+        }
+    }
+    await 頁.setViewportSize({ width: 1280, height: 800 });
+
     const 合成数 = await 頁.locator(".綴り-文字").count();
     const 縦書数 = await 頁.locator(".綴り-縦書").count();
     const 読み数 = await 頁.locator(".綴り-振仮名").count();
