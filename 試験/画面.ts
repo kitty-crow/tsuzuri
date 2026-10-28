@@ -327,6 +327,48 @@ try {
     if (元の例 !== "したり") throw new Error("元の孤立字が残っています: " + 元の例);
 
 
+    const 車輪対象 = 頁.locator("#物語本文");
+    await 車輪対象.scrollIntoViewIfNeeded();
+    await 車輪対象.evaluate((要素) => { 要素.scrollLeft = 0; });
+    const 車輪幅 = await 車輪対象.evaluate((要素) => 要素.scrollWidth - 要素.clientWidth);
+    if (車輪幅 < 400) throw new Error("物語に横スクロールの余地がありません");
+    await 車輪対象.hover({ position: { x: 35, y: 35 } });
+    const 車輪前の縦位置 = await 頁.evaluate(() => window.scrollY);
+    await 頁.mouse.wheel(0, 360);
+    await 頁.waitForFunction(() => (document.querySelector("#物語本文")?.scrollLeft ?? 0) < -180);
+    const 左へ = await 車輪対象.evaluate((要素) => 要素.scrollLeft);
+    const 車輪後の縦位置 = await 頁.evaluate(() => window.scrollY);
+    if (Math.abs(車輪後の縦位置 - 車輪前の縦位置) > 2) {
+        throw new Error("物語を読んでいる間にページが縦に動きました");
+    }
+    await 頁.mouse.wheel(0, -200);
+    await 頁.waitForFunction((以前: number) =>
+        (document.querySelector("#物語本文")?.scrollLeft ?? Number.NEGATIVE_INFINITY) > 以前 + 80,
+        左へ);
+    const 右へ = await 車輪対象.evaluate((要素) => 要素.scrollLeft);
+    if (右へ >= 0 || 右へ <= 左へ) {
+        throw new Error("車輪を上へ回しても物語が右へ戻りません: "
+            + JSON.stringify({ 左へ, 右へ }));
+    }
+    const 端の検査 = await 車輪対象.evaluate((要素) => {
+        要素.scrollLeft = 要素.clientWidth - 要素.scrollWidth;
+        const 下向き = new WheelEvent("wheel", { deltaY: 240, bubbles: true, cancelable: true });
+        const 左端で許可 = 要素.dispatchEvent(下向き);
+        要素.scrollLeft = 0;
+        const 上向き = new WheelEvent("wheel", { deltaY: -240, bubbles: true, cancelable: true });
+        const 右端で許可 = 要素.dispatchEvent(上向き);
+        const 拡大 = new WheelEvent("wheel", { deltaY: 240, ctrlKey: true, bubbles: true, cancelable: true });
+        const 拡大許可 = 要素.dispatchEvent(拡大);
+        const 横向き = new WheelEvent("wheel", { deltaX: 320, deltaY: 30, bubbles: true, cancelable: true });
+        const 横移動許可 = 要素.dispatchEvent(横向き);
+        return { 左端で許可, 右端で許可, 拡大許可, 横移動許可 };
+    });
+    if (!端の検査.左端で許可 || !端の検査.右端で許可
+        || !端の検査.拡大許可 || !端の検査.横移動許可) {
+        throw new Error("巻物の端や拡大操作で通常の車輪操作を妨げています: "
+            + JSON.stringify(端の検査));
+    }
+
     const 読書面 = 頁.locator(".物語読書面");
     const 目次側 = 頁.locator(".目次側");
     const 引手 = 頁.locator("#目次引手");

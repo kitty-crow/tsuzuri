@@ -86,8 +86,29 @@ function 目次収納を起動(本文: HTMLElement, 案内: HTMLElement): void {
     });
 }
 
+/** 物語の上では上下の車輪操作を右から左へ読む巻物の移動に変換する。 */
+function 巻物の車輪を起動(本文: HTMLElement): void {
+    本文.addEventListener("wheel", (出来事: WheelEvent) => {
+        if (出来事.ctrlKey || 出来事.metaKey) return;
+        if (Math.abs(出来事.deltaX) > Math.abs(出来事.deltaY)) return;
+        if (出来事.deltaY === 0) return;
+
+        const 倍率 = 出来事.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16
+            : 出来事.deltaMode === WheelEvent.DOM_DELTA_PAGE ? 本文.clientWidth : 1;
+        const 移動量 = 出来事.deltaY * 倍率;
+        const 左端 = Math.min(0, 本文.clientWidth - 本文.scrollWidth);
+        const 現在 = Math.min(0, Math.max(左端, 本文.scrollLeft));
+        const 次 = Math.min(0, Math.max(左端, 現在 - 移動量));
+        if (Math.abs(次 - 現在) < .5) return;
+
+        出来事.preventDefault();
+        本文.scrollLeft = 次;
+    }, { passive: false });
+}
+
 function 目次を起動(本文: HTMLElement, 案内: HTMLElement): void {
     目次収納を起動(本文, 案内);
+    巻物の車輪を起動(本文);
     const リンク = Array.from(案内.querySelectorAll<HTMLAnchorElement>("a[data-target]"));
     const 見出し = リンク.flatMap((項目) => {
         const 識別 = 項目.dataset.target;
