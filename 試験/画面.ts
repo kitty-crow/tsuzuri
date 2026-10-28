@@ -94,6 +94,19 @@ try {
     for (const 構文 of ["⿱白萩", "⿰燈心", "⿱行燈", "⿰初音"]) {
         if (!表意文字.includes(構文)) throw new Error("合成文字が欠けています: " + 構文);
     }
+
+    const 書状数 = await 頁.locator(".物語巻 blockquote.物語書状").count();
+    const 強調数 = await 頁.locator(".物語巻 strong").count();
+    const 流れ = await 頁.locator(".物語巻 .物語段落").first().evaluate((要素) => ({
+        方向: getComputedStyle(要素).direction,
+        揃え: getComputedStyle(要素).textAlign,
+    }));
+    if (書状数 < 7 || 強調数 < 3) {
+        throw new Error("Markdown の書状と強調が描画されていません: " + JSON.stringify({ 書状数, 強調数 }));
+    }
+    if (流れ.方向 !== "ltr" || 流れ.揃え !== "start") {
+        throw new Error("縦書きの行が上から始まりません: " + JSON.stringify(流れ));
+    }
     console.log("実ブラウザーでの表示検査に合格しました。");
 } finally {
     await ブラウザー.close();

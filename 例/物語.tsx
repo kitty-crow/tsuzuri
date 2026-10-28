@@ -1,7 +1,8 @@
 import { readFile } from "node:fs/promises";
-import { createElement, type ReactNode } from "react";
+import { createElement, Fragment, type ReactNode } from "react";
+import { marked, type Token } from "marked";
 
-type 章 = Readonly<{ 日付: string; 段落: readonly string[] }>;
+type 章 = Readonly<{ 日付: string; 段落: readonly string[]; 字句: readonly Token[] }>;
 type 合成語 = Readonly<{ 構文: string; 読み: string }>;
 
 const 人名: Readonly<Record<string, string>> = {
@@ -40,8 +41,56 @@ export function 原稿を章に分ける(原稿: string): readonly 章[] {
         const [見出し, ...段落] = 本文.trim().split(/\n\n/);
         const 日付 = /^### (\d{4}-\d{2}-\d{2})$/.exec(見出し ?? "")?.[1];
         if (!日付 || 段落.length === 0) throw new Error("章の日付と本文が必要です");
-        return { 日付, 段落 };
+        return { 日付, 段落, 字句: marked.lexer(段落.join("\n\n")) };
     });
+}
+
+
+/** Markdown を型付きの字句から安全な要素へ変換する。 */
+function 文中を描く(字句: readonly Token[], 使用済み: Set<string>): ReactNode[] {
+    return 字句.map((項目, 番号) => {
+        if (項目.type === "text" || 項目.type === "escape") {
+            return <Fragment key={番号}>{文章を装ふ(項目.text, 使用済み)}</Fragment>;
+        }
+        if (項目.type === "strong") return <strong key={番号}>{文中を描く(項目.tokens, 使用済み)}</strong>;
+        if (項目.type === "em") return <em key={番号}>{文中を描く(項目.tokens, 使用済み)}</em>;
+        if (項目.type === "del") return <del key={番号}>{文中を描く(項目.tokens, 使用済み)}</del>;
+        if (項目.type === "codespan") return <code key={番号}>{項目.text}</code>;
+        if (項目.type === "br") return <br key={番号} />;
+        if (項目.type === "link") return リンクを描く(項目.href, 文中を描く(項目.tokens, 使用済み), 番号);
+        if ("text" in 項目 && typeof 項目.text === "string") {
+            return <Fragment key={番号}>{文章を装ふ(項目.text, 使用済み)}</Fragment>;
+        }
+        return null;
+    });
+}
+
+function リンクを描く(行先: string, 内容: ReactNode, 番号: number): ReactNode {
+    const 安全 = /^(https?:\/\/|#)/i.test(行先);
+    return 安全 ? <a key={番号} href={行先}>{内容}</a> : <Fragment key={番号}>{内容}</Fragment>;
+}
+
+function 段落を描く(項目: Token, 使用済み: Set<string>, 番号: number): ReactNode {
+    if (項目.type === "paragraph" || 項目.type === "text") {
+        return <p key={番号} className="物語段落">{文中を描く(項目.tokens ?? [], 使用済み)}</p>;
+    }
+    if (項目.type === "blockquote") {
+        return <blockquote key={番号} className="物語書状">{区画を描く(項目.tokens, 使用済み)}</blockquote>;
+    }
+    if (項目.type === "heading") {
+        return <h4 key={番号} className="物語小見出し">{文中を描く(項目.tokens, 使用済み)}</h4>;
+    }
+    if (項目.type === "hr") return <hr key={番号} className="物語区切り" />;
+    if (項目.type === "code") return <pre key={番号} className="物語原文"><code>{項目.text}</code></pre>;
+    if (項目.type === "list") {
+        const 内容 = 項目.items.map((要素, 順) => <li key={順}>{区画を描く(要素.tokens, 使用済み)}</li>);
+        return 項目.ordered ? <ol key={番号} className="物語列挙">{内容}</ol> : <ul key={番号} className="物語列挙">{内容}</ul>;
+    }
+    return null;
+}
+
+function 区画を描く(字句: readonly Token[], 使用済み: Set<string>): ReactNode[] {
+    return 字句.map((項目, 番号) => 段落を描く(項目, 使用済み, 番号));
 }
 
 /** React は静的な紹介ページの組み立て専用。配布物には含めない。 */
@@ -79,9 +128,7 @@ export async function 物語の見本(): Promise<ReactNode> {
                         </header>
                         <div className="物語巻">
                             {createElement("tsuzuri", null,
-                                一章.段落.map((段落, 順) =>
-                                    <p key={順} className="物語段落">{文章を装ふ(段落, 使用済み)}</p>
-                                )
+                                区画を描く(一章.字句, 使用済み)
                             )}
                         </div>
                     </article>

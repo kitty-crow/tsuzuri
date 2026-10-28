@@ -12,7 +12,9 @@ describe("白萩の露", () => {
             "1814-10-10", "1814-10-21", "1814-11-26",
         ]);
         expect(章[0]?.段落[0]).toContain("夜霧");
-        expect(章[6]?.段落.at(-1)).toBe("露と消えにし人の名を　花のみぞ知る");
+        expect(章[6]?.段落.at(-1)).toBe("**露と消えにし人の名を　花のみぞ知る**");
+        expect(章.flatMap((一章) => 一章.字句).filter((字) => 字.type === "blockquote").length).toBeGreaterThanOrEqual(7);
+        expect(章.flatMap((一章) => 一章.字句).some((字) => 字.type === "paragraph" && 字.text.includes("**"))).toBe(true);
     });
     test("同じ人名には何度でも同じ読みを付ける", () => {
         const 使用済 = new Set<string>();

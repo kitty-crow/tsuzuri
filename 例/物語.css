@@ -7,7 +7,7 @@
 .物語章頭 .綴り-暦 { font-size: clamp(.95rem,1.8vw,1.3rem); font-family: "Yu Mincho", serif; white-space: normal; }
 .章番号 { color: var(--朱); font-size: .7rem; letter-spacing: .16em; white-space: nowrap; }
 .物語巻 { overflow-x: auto; overflow-y: hidden; width: 100%; padding: 26px 30px; direction: rtl; scrollbar-width: thin; scrollbar-color: var(--朱) var(--紙); }
-.物語巻 > .綴り-縦書 { display: block; width: max-content; max-width: none; height: min(69vh, 660px); max-height: min(69vh, 660px); font-family: "Yu Mincho", "Hiragino Mincho ProN", serif; font-size: clamp(1rem,1.6vw,1.22rem); line-height: 2.45; text-orientation: mixed; }
+.物語巻 > .綴り-縦書 { direction: ltr; text-align: start; display: block; width: max-content; max-width: none; height: min(69vh, 660px); max-height: min(69vh, 660px); font-family: "Yu Mincho", "Hiragino Mincho ProN", serif; font-size: clamp(1rem,1.6vw,1.22rem); line-height: 2.45; text-orientation: mixed; }
 .物語段落 { display: block; margin: 0 0 0 1.45em; padding: 0; line-break: strict; text-align: start; text-indent: 0; }
 .物語巻 .綴り-文字 { vertical-align: middle; }
 .物語巻 .綴り-合成ルビ { line-height: 1; }
@@ -19,3 +19,23 @@
   .物語巻 { padding: 16px; }
   .物語巻 > .綴り-縦書 { height: min(65vh, 550px); max-height: min(65vh, 550px); font-size: 1.08rem; line-height: 2.1; }
 }
+
+/* 左右の巻物は右から左へ移動し、各行の文字は上から下へ流す。 */
+.物語巻 .物語段落 { direction: ltr; text-align: start; }
+.物語書状 {
+  display: block;
+  margin: 0 0 0 1.6em;
+  padding: 0 .9em;
+  border-right: 1px solid var(--朱);
+  background: #f7f3e8;
+  color: #444c40;
+}
+.物語書状 > .物語段落 { margin-left: 1em; }
+.物語書状 > .物語段落:first-child { margin-right: .25em; }
+.物語段落 strong { font-weight: 700; color: #61442f; }
+.物語段落 em { font-style: normal; text-decoration: underline; text-decoration-color: var(--朱); text-underline-offset: .2em; }
+.物語段落 a { color: var(--緑); text-decoration-color: var(--朱); }
+.物語小見出し { font-family: "Yu Mincho", serif; font-size: 1.15em; font-weight: 600; margin: 0 0 0 1.5em; }
+.物語区切り { height: auto; width: 1px; border: 0; background: var(--線); margin: 0 0 0 1.4em; }
+.物語列挙 { margin: 0 0 0 1.4em; padding: 0 1em 0 0; }
+.物語原文 { writing-mode: horizontal-tb; white-space: pre-wrap; font-size: .85em; }
