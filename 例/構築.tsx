@@ -1,6 +1,7 @@
 import { copyFile, mkdir, writeFile } from "node:fs/promises";
 import { createElement, type ReactNode } from "react";
 import { render2Mkup } from "../vendor/website/src/reactHelpers.tsx";
+import { 物語の見本 } from "./物語.tsx";
 
 function 合成(構文: string, 読み?: string): ReactNode {
     return createElement("jp-kanji", { reading: 読み }, 構文);
@@ -28,6 +29,8 @@ function 例示(名称: string, 内容: string, 読み: string, 説明: string):
     );
 }
 
+const 物語 = await 物語の見本();
+
 const 画面 = (
     <html lang="ja">
         <head>
@@ -37,6 +40,7 @@ const 画面 = (
             <meta name="theme-color" content="#f6f4ed" />
             <title>綴り | 日本語組版の小さな道具箱</title>
             <link rel="stylesheet" href="./様式.css" />
+            <link rel="stylesheet" href="./物語.css" />
             <script src="./dist/tsuzuri.js" defer={true}></script>
         </head>
         <body>
@@ -44,7 +48,7 @@ const 画面 = (
                 <div className="容器 上部中">
                     <a className="印" href="#先頭">綴り <span>つづり</span></a>
                     <nav aria-label="ページ内の案内">
-                        <a href="#組版">組版</a><a href="#合成">合成漢字</a><a href="#書式">使い方</a>
+                        <a href="#組版">組版</a><a href="#合成">合成漢字</a><a href="#書式">使い方</a><a href="#物語">物語</a>
                         <a href="https://github.com/kitty-crow/tsuzuri">原稿</a>
                     </nav>
                 </div>
@@ -119,6 +123,7 @@ const 画面 = (
                         </div>
                     </div>
                 </section>
+                {物語}
             </main>
             <footer className="下部"><div className="容器 下部中"><span>綴り · 日本語のための文字表現</span><a href="https://github.com/kitty-crow/tsuzuri">ソースコードを見る</a></div></footer>
         </body>
@@ -128,6 +133,7 @@ const 画面 = (
 await mkdir("site", { recursive: true });
 await writeFile("site/index.html", "<!doctype html>\n" + render2Mkup(画面) + "\n", "utf8");
 await copyFile("例/様式.css", "site/様式.css");
+await copyFile("例/物語.css", "site/物語.css");
 await writeFile("site/.nojekyll", "", "utf8");
 console.log("紹介ページを構築しました。");
 
