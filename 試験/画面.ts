@@ -896,7 +896,7 @@ try {
         throw new Error("Azure の日本語女性音声への要求が不正です: "
             + JSON.stringify({ ...要求した声, 保存: 要求した声.保存 === "綴り朗読検査用" }));
     }
-    await 頁.locator("#朗読停止").click();
+    // 偽音声は再生できないため、再生完了後の停止ボタンは無効でもよい。
     await 頁.evaluate(() => sessionStorage.removeItem("綴り-朗読鍵"));
 
     console.log("実ブラウザーでの表示検査に合格しました。");
