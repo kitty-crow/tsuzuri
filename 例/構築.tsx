@@ -43,6 +43,7 @@ const 画面 = (
             <link rel="stylesheet" href="./物語.css" />
             <script src="./dist/tsuzuri.js" defer={true}></script>
             <script src="./配色.js" defer={true}></script>
+            <script src="./目次.js" defer={true}></script>
         </head>
         <body>
             <header className="上部">
@@ -146,5 +147,14 @@ const 配色の構築 = await Bun.build({
     minify: true,
 });
 if (!配色の構築.success) throw new Error("配色の構築に失敗しました");
+const 目次の構築 = await Bun.build({
+    entrypoints: ["例/目次.ts"],
+    outdir: "site",
+    naming: { entry: "目次.js" },
+    target: "browser",
+    format: "iife",
+    minify: true,
+});
+if (!目次の構築.success) throw new Error("目次の構築に失敗しました");
 console.log("紹介ページを構築しました。");
 

@@ -65,6 +65,75 @@ export function 原稿を読む(原稿: string): readonly Token[] {
     return 字句;
 }
 
+type 目次節 = {
+    識別: string;
+    階層: number;
+    表記: string;
+    子: 目次節[];
+};
+
+export type 目次構成 = Readonly<{
+    節: readonly 目次節[];
+    識別表: ReadonlyMap<Tokens.Heading, string>;
+}>;
+
+/** 見出しの名称と階層を Markdown の字句から取り出す。 */
+export function 目次を組む(字句: readonly Token[]): 目次構成 {
+    const 節: 目次節[] = [];
+    const 親の列: 目次節[] = [];
+    const 識別表 = new Map<Tokens.Heading, string>();
+    for (const 項目 of 字句) {
+        if (!見出しか(項目)) continue;
+        const 番号 = 識別表.size + 1;
+        const 見出し: 目次節 = {
+            識別: "物語-見出し-" + String(番号).padStart(3, "0"),
+            階層: 項目.depth,
+            表記: 項目.text.trim(),
+            子: [],
+        };
+        識別表.set(項目, 見出し.識別);
+        if (見出し.階層 <= 2) 親の列.length = 0;
+        while (親の列.length > 0 && 親の列[親の列.length - 1]!.階層 >= 見出し.階層) 親の列.pop();
+        const 親 = 親の列[親の列.length - 1];
+        if (親) 親.子.push(見出し);
+        if (!親) 節.push(見出し);
+        親の列.push(見出し);
+    }
+    return { 節, 識別表 };
+}
+
+function 目次リンク(節: 目次節): ReactNode {
+    const 日付 = 節.階層 === 3 && 西暦.test(節.表記);
+    return (
+        <a className={"目次リンク 目次リンク-" + String(節.階層)}
+            href={"#" + 節.識別} data-target={節.識別}>
+            <span className="目次リンク文字">{日付 ? 日付を描く(節.表記) : 節.表記}</span>
+        </a>
+    );
+}
+
+/** 折り畳みは標準の details と CSS に任せる。 */
+function 目次の節(節: 目次節, 初期展開: boolean): ReactNode {
+    return (
+        <li key={節.識別} className={"目次節 目次段-" + String(節.階層)}>
+            {目次リンク(節)}
+            {節.子.length > 0 ? (
+                <details className="目次開閉" open={初期展開}>
+                    <summary aria-label={節.表記 + "の見出し一覧を開閉"} title="見出しを開閉">
+                        <span className="目次開閉印" aria-hidden="true">⌄</span>
+                        <span className="目次開閉案内">章を開く</span>
+                    </summary>
+                    <div className="目次展開">
+                        <ul className="目次子">
+                            {節.子.map((子) => 目次の節(子, false))}
+                        </ul>
+                    </div>
+                </details>
+            ) : null}
+        </li>
+    );
+}
+
 function 日付を描く(日付: string): ReactNode {
     const 設定 = 日付の装ひ[日付];
     return createElement("jp-koyomi", {
@@ -99,44 +168,45 @@ function 文中を描く(字句: readonly Token[], 使用済み: Set<string>): R
     });
 }
 
-function 見出しを描く(項目: Tokens.Heading, 使用済み: Set<string>, 番号: number): ReactNode {
+function 見出しを描く(項目: Tokens.Heading, 使用済み: Set<string>, 番号: number, 識別: string): ReactNode {
     if (項目.depth === 1) {
-        return <h2 key={番号} className="物語大題">{文中を描く(項目.tokens ?? [], 使用済み)}</h2>;
+        return <h2 key={番号} id={識別} className="物語大題">{文中を描く(項目.tokens ?? [], 使用済み)}</h2>;
     }
     if (項目.depth === 2) {
-        return <h3 key={番号} id="後日譚" className="物語後日題">{文中を描く(項目.tokens ?? [], 使用済み)}</h3>;
+        return <h3 key={番号} id={識別} className="物語後日題">{文中を描く(項目.tokens ?? [], 使用済み)}</h3>;
     }
     if (項目.depth === 3 && 西暦.test(項目.text.trim())) {
-        return <h4 key={番号} className="物語年月">{日付を描く(項目.text.trim())}</h4>;
+        return <h4 key={番号} id={識別} className="物語年月">{日付を描く(項目.text.trim())}</h4>;
     }
-    return <h4 key={番号} className="物語小見出し">{文中を描く(項目.tokens ?? [], 使用済み)}</h4>;
+    return <h4 key={番号} id={識別} className="物語小見出し">{文中を描く(項目.tokens ?? [], 使用済み)}</h4>;
 }
 
-function 段落を描く(項目: Token, 使用済み: Set<string>, 番号: number): ReactNode {
-    if (見出しか(項目)) return 見出しを描く(項目, 使用済み, 番号);
+function 段落を描く(項目: Token, 使用済み: Set<string>, 番号: number, 識別表: ReadonlyMap<Tokens.Heading, string>): ReactNode {
+    if (見出しか(項目)) return 見出しを描く(項目, 使用済み, 番号, 識別表.get(項目) ?? "");
     if (項目.type === "paragraph" || 項目.type === "text") {
         return <p key={番号} className="物語段落">{文中を描く(項目.tokens ?? [], 使用済み)}</p>;
     }
     if (項目.type === "blockquote") {
-        return <blockquote key={番号} className="物語書状">{区画を描く(項目.tokens ?? [], 使用済み)}</blockquote>;
+        return <blockquote key={番号} className="物語書状">{区画を描く(項目.tokens ?? [], 使用済み, 識別表)}</blockquote>;
     }
     if (項目.type === "hr") return <hr key={番号} className="物語区切り" />;
     if (項目.type === "code") return <pre key={番号} className="物語原文"><code>{項目.text}</code></pre>;
     if (項目.type === "list") {
-        const 内容 = 項目.items.map((要素: Tokens.ListItem, 順: number) => <li key={順}>{区画を描く(要素.tokens ?? [], 使用済み)}</li>);
+        const 内容 = 項目.items.map((要素: Tokens.ListItem, 順: number) => <li key={順}>{区画を描く(要素.tokens ?? [], 使用済み, 識別表)}</li>);
         return 項目.ordered ? <ol key={番号} className="物語列挙">{内容}</ol> : <ul key={番号} className="物語列挙">{内容}</ul>;
     }
     return null;
 }
 
-function 区画を描く(字句: readonly Token[], 使用済み: Set<string>): ReactNode[] {
-    return 字句.map((項目, 番号) => 段落を描く(項目, 使用済み, 番号));
+function 区画を描く(字句: readonly Token[], 使用済み: Set<string>, 識別表: ReadonlyMap<Tokens.Heading, string>): ReactNode[] {
+    return 字句.map((項目, 番号) => 段落を描く(項目, 使用済み, 番号, 識別表));
 }
 
 /** 一つの巻物として組む。書式は Markdown、和暦は綴りに委ねる。 */
 export async function 物語の見本(): Promise<ReactNode> {
     const 原稿 = await readFile("例/白萩の露.md", "utf8");
     const 字句 = 原稿を読む(原稿);
+    const 目次 = 目次を組む(字句);
     const 使用済み = new Set<string>();
 
     return (
@@ -153,9 +223,25 @@ export async function 物語の見本(): Promise<ReactNode> {
                     <span>旧暦の章題</span>
                     <span>右から左へ読む一巻の物語</span>
                 </div>
-                <article className="物語巻" aria-label="白萩の露と後日譚">
-                    {createElement("tsuzuri", null, 区画を描く(字句, 使用済み))}
-                </article>
+                <div className="物語読書面">
+                    <article id="物語本文" className="物語巻" aria-label="白萩の露と後日譚" tabIndex={0}>
+                        {createElement("tsuzuri", null, 区画を描く(字句, 使用済み, 目次.識別表))}
+                    </article>
+                    <aside className="目次側" aria-label="物語の目次">
+                        <div className="目次看板">
+                            <span className="目次小印">目録</span>
+                            <span className="目次題字">目次</span>
+                            <span className="目次数">{String(目次.識別表.size).padStart(2, "0")} 節</span>
+                        </div>
+                        <nav id="物語目次" className="目次領域" aria-label="題名と日付の目次">
+                            {createElement("tsuzuri", null,
+                                <ul className="目次列">{目次.節.map((節, 番号) => 目次の節(節, 番号 === 0))}</ul>
+                            )}
+                        </nav>
+                        <div className="目次進度" aria-hidden="true"><span /></div>
+                        <span className="目次案内">項目を選ぶと巻物が移動します</span>
+                    </aside>
+                </div>
                 <p className="物語注記">※ 祝言の吉日は日付が特定されていないため、文化十二年弥生の一日を資料内の代表日として用ゐてをります。</p>
             </div>
         </section>

@@ -133,3 +133,167 @@
         line-height: 2.1;
     }
 }
+
+/* 目次は巻物の右側に独立して置き、本文は一巻のままにする。 */
+.物語読書面 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(180px, 23vw, 270px);
+    border: 1px solid var(--線);
+    border-radius: 5px;
+    background: var(--面);
+    overflow: hidden;
+    min-width: 0;
+    timeline-scope: --巻物進行;
+}
+.物語読書面 .物語巻 {
+    border: 0;
+    border-radius: 0;
+    scroll-behavior: smooth;
+    scroll-padding-inline-start: 1.5em;
+    min-width: 0;
+    scroll-timeline-name: --巻物進行;
+    scroll-timeline-axis: x;
+}
+.目次側 {
+    position: relative;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--線);
+    background:
+        radial-gradient(circle at 95% 5%, color-mix(in srgb, var(--朱) 8%, transparent), transparent 53%),
+        color-mix(in srgb, var(--面) 94%, var(--紙));
+    isolation: isolate;
+}
+.目次看板 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 18px;
+    border-bottom: 1px solid var(--線);
+    font-family: "Yu Mincho", serif;
+}
+.目次小印 { font-size: .67rem; color: var(--朱); letter-spacing: .2em; }
+.目次題字 { font-size: 1.3rem; font-weight: 700; letter-spacing: .16em; }
+.目次数 { margin-left: auto; color: var(--薄); font-size: .7rem; white-space: nowrap; }
+.目次領域 {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    height: min(76vh, 730px);
+    max-height: min(76vh, 730px);
+    overflow-x: auto;
+    overflow-y: hidden;
+    direction: rtl;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--朱) transparent;
+    mask-image: linear-gradient(to left, transparent 0, black 16px, black calc(100% - 14px), transparent 100%);
+    padding: 19px 14px 15px;
+}
+.目次領域 > .綴り-縦書 {
+    display: block;
+    direction: ltr;
+    width: max-content;
+    height: 100%;
+    max-height: none;
+    max-width: none;
+    font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+    font-size: clamp(.82rem, 1.15vw, .95rem);
+    line-height: 1.55;
+    text-orientation: mixed;
+}
+.目次列, .目次子 {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .8em;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+.目次節 { display: flex; flex-direction: column; align-items: flex-start; gap: .5em; padding: 0; margin: 0; min-width: 0; }
+.目次リンク {
+    display: inline-flex;
+    align-items: flex-start;
+    position: relative;
+    padding: .5em .4em;
+    text-decoration: none;
+    white-space: nowrap;
+    color: var(--薄);
+    border-right: 2px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+    user-select: none;
+    transition: color .3s ease, background-color .3s ease, transform .34s cubic-bezier(.22,1,.36,1), border-color .3s;
+}
+.目次リンク:hover, .目次リンク:focus-visible {
+    color: var(--朱);
+    background: color-mix(in srgb, var(--朱) 10%, transparent);
+    border-right-color: var(--朱);
+    transform: translateX(-4px);
+}
+.目次リンク:focus-visible, .目次開閉 summary:focus-visible {
+    outline: 2px solid var(--朱);
+    outline-offset: 3px;
+}
+.目次リンク[aria-current="location"] {
+    color: var(--墨);
+    background: color-mix(in srgb, var(--朱) 16%, transparent);
+    border-right-color: var(--朱);
+    font-weight: 700;
+}
+.目次リンク-1, .目次リンク-2 { font-size: 1.1em; font-weight: 700; color: var(--墨); letter-spacing: .09em; }
+.目次リンク-2 { color: var(--朱); }
+.目次リンク-3 { font-size: .92em; }
+.目次リンク-3 .綴り-暦 { white-space: nowrap; }
+.目次開閉 { interpolate-size: allow-keywords; display: block; }
+.目次開閉 summary {
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: .4em;
+    padding: .4em;
+    border: 1px solid var(--線);
+    border-radius: 4px;
+    background: var(--面);
+    color: var(--薄);
+    cursor: pointer;
+    font-size: .73em;
+    letter-spacing: .12em;
+    transition: color .3s, border-color .3s, background-color .3s, transform .3s;
+}
+.目次開閉 summary::-webkit-details-marker { display: none; }
+.目次開閉 summary:hover { color: var(--朱); border-color: var(--朱); transform: translateX(-2px); }
+.目次開閉印 { display: inline-block; transition: transform .42s cubic-bezier(.22,1,.36,1); font-size: 1.3em; line-height: 1; }
+.目次開閉[open] .目次開閉印 { transform: rotate(180deg); color: var(--朱); }
+.目次開閉::details-content {
+    block-size: 0;
+    opacity: 0;
+    overflow: clip;
+    transition: block-size .52s cubic-bezier(.22,1,.36,1), opacity .32s ease, content-visibility .52s allow-discrete;
+}
+.目次開閉[open]::details-content { block-size: auto; opacity: 1; }
+.目次展開 { padding: .7em .45em .4em; border-right: 1px solid var(--線); }
+.目次子 { gap: .45em; }
+.目次案内 { padding: 10px 15px 14px; color: var(--薄); text-align: center; font-size: .66rem; letter-spacing: .06em; }
+.目次進度 { height: 3px; background: color-mix(in srgb, var(--朱) 12%, var(--線)); overflow: hidden; }
+.目次進度 span { display: block; width: 100%; height: 100%; background: var(--朱); transform-origin: right center; transform: scaleX(.02); }
+@supports (animation-timeline: scroll()) {
+    .目次進度 span { animation: 巻物の進み linear both; animation-timeline: --巻物進行; }
+}
+@keyframes 巻物の進み { from { transform: scaleX(.02); } to { transform: scaleX(1); } }
+@media (max-width: 760px) {
+    .物語読書面 { grid-template-columns: minmax(0, 1fr) clamp(124px, 26vw, 190px); }
+    .目次領域 { height: min(68vh, 570px); max-height: min(68vh, 570px); padding: 12px 8px; }
+    .目次看板 { padding: 12px 8px; gap: 5px; }
+    .目次題字 { font-size: 1rem; }
+    .目次小印, .目次数 { font-size: .57rem; }
+    .目次領域 > .綴り-縦書 { font-size: .8rem; }
+    .目次案内 { font-size: .6rem; padding: 8px 5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .物語読書面 .物語巻 { scroll-behavior: auto; }
+    .目次リンク, .目次開閉 summary, .目次開閉印, .目次開閉::details-content { transition: none; }
+    .目次進度 span { animation: none; }
+}

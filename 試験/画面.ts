@@ -5,7 +5,7 @@ const 配信 = Bun.serve({
     fetch(要求) {
         const 道 = decodeURIComponent(new URL(要求.url).pathname);
         const 対象 = 道 === "/" ? "index.html" : 道.replace(/^\//, "");
-        if (!["index.html", "様式.css", "物語.css", "配色.js", "dist/tsuzuri.js", "dist/tsuzuri.css", "dist/tsuzuri.js.map"].includes(対象)) {
+        if (!["index.html", "様式.css", "物語.css", "配色.js", "目次.js", "dist/tsuzuri.js", "dist/tsuzuri.css", "dist/tsuzuri.js.map"].includes(対象)) {
             return new Response("未登録", { status: 404 });
         }
         return new Response(Bun.file("site/" + 対象));
@@ -184,6 +184,61 @@ try {
     const 元の例 = await 頁.locator(".物語巻 .物語段落").filter({ hasText: "簪や指輪" }).first()
         .locator(".綴り-孤立防止").textContent();
     if (元の例 !== "したり") throw new Error("元の孤立字が残っています: " + 元の例);
+
+
+    const 目次リンク = 頁.locator("#物語目次 a[data-target]");
+    const 目次数 = await 目次リンク.count();
+    const 目次の検証 = await 目次リンク.evaluateAll((一覧) =>
+        一覧.every((リンク) => {
+            const 識別 = (リンク as HTMLAnchorElement).dataset.target ?? "";
+            const 見出し = document.getElementById(識別);
+            return 見出し !== null && document.querySelector("#物語本文")?.contains(見出し);
+        })
+    );
+    const 目次の方向 = await 頁.locator("#物語目次 > .綴り-縦書")
+        .evaluate((要素) => getComputedStyle(要素).writingMode);
+    const 展開の数 = await 頁.locator("#物語目次 details.目次開閉").count();
+    if (目次数 !== 12 || !目次の検証 || 目次の方向 !== "vertical-rl" || 展開の数 !== 2) {
+        throw new Error("縦書きの目次が見出しと一致しません: "
+            + JSON.stringify({ 目次数, 目次の検証, 目次の方向, 展開の数 }));
+    }
+    const 後日譚の展開 = 頁.locator("#物語目次 details.目次開閉").last();
+    if (await 後日譚の展開.evaluate((要素) => (要素 as HTMLDetailsElement).open)) {
+        throw new Error("後日譚は初期状態で折り畳まれる必要があります");
+    }
+    await 後日譚の展開.locator("summary").click();
+    if (!(await 後日譚の展開.evaluate((要素) => (要素 as HTMLDetailsElement).open))) {
+        throw new Error("目次の展開操作に失敗しました");
+    }
+    const 巻物 = 頁.locator("#物語本文");
+    await 巻物.scrollIntoViewIfNeeded();
+    const 移動前 = await 巻物.evaluate((要素) => ({
+        横: 要素.scrollLeft, 頁: window.scrollY,
+    }));
+    const 目標 = 頁.locator('.物語年月:has(time[datetime="1814-10-21"])');
+    const 目標識別 = await 目標.getAttribute("id");
+    if (!目標識別) throw new Error("目次に使う識別子がありません");
+    const 跳躍先 = 頁.locator('#物語目次 a[data-target="' + 目標識別 + '"]');
+    await 跳躍先.click();
+    await 頁.waitForFunction((識別) => {
+        const 見出し = document.getElementById(識別);
+        const 巻物 = document.querySelector("#物語本文");
+        if (!見出し || !巻物) return false;
+        const ずれ = 見出し.getBoundingClientRect().right - 巻物.getBoundingClientRect().right;
+        return Math.abs(ずれ + 28) < 52 && Math.abs(巻物.scrollLeft) > 100;
+    }, 目標識別);
+    await 頁.waitForFunction((識別) =>
+        document.querySelector('#物語目次 a[data-target="' + 識別 + '"]')
+            ?.getAttribute("aria-current") === "location", 目標識別);
+    const 移動後 = await 巻物.evaluate((要素) => ({
+        横: 要素.scrollLeft, 頁: window.scrollY,
+    }));
+    if (移動後.横 >= 移動前.横 || Math.abs(移動後.頁 - 移動前.頁) > 20) {
+        throw new Error("巻物の横移動が不正です: " + JSON.stringify({ 移動前, 移動後 }));
+    }
+    if (!頁.url().endsWith("#" + encodeURIComponent(目標識別))) {
+        throw new Error("目次の移動先が URL に記録されていません");
+    }
 
     const ボタン = 頁.locator("#配色切替");
     const 初期の配色 = await 頁.locator("html").getAttribute("data-theme");

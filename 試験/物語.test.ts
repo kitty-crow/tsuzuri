@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFile } from "node:fs/promises";
-import { 文章を装ふ, 原稿を読む, 見出しか } from "../例/物語.tsx";
+import { 文章を装ふ, 原稿を読む, 見出しか, 目次を組む } from "../例/物語.tsx";
+import { marked } from "marked";
 
 describe("白萩の露と後日譚", () => {
     test("全篇が一つの Markdown 原稿に収められている", async () => {
@@ -28,6 +29,22 @@ describe("白萩の露と後日譚", () => {
         expect(原稿).toContain("「清七さん　もう燈心を撚ることはおやめなんし」");
         expect(原稿).toContain("**「主様　来年も白萩を見せておくんなんし」**");
         expect(原稿).toContain("「初音さま」");
+    });
+    test("目次を原稿の見出しから自動生成する", async () => {
+        const 原稿 = await readFile("例/白萩の露.md", "utf8");
+        const 字句 = 原稿を読む(原稿);
+        const 目次 = 目次を組む(字句);
+        expect(目次.識別表.size).toBe(12);
+        expect(目次.節.map((節) => 節.表記)).toEqual(["白萩の露", "白萩の露　後日譚"]);
+        expect(目次.節.map((節) => 節.子.length)).toEqual([7, 3]);
+        const 識別 = Array.from(目次.識別表.values());
+        expect(new Set(識別).size).toBe(識別.length);
+        expect(目次.節[0]?.子[0]?.表記).toBe("1809-12-22");
+        const 自由な原稿 = marked.lexer("# 題名\n\n### 1900-01-01\n\n## 第二部\n\n### 1901-01-01");
+        const 動的 = 目次を組む(自由な原稿);
+        expect(動的.節.map((節) => 節.子.map((子) => 子.表記))).toEqual([
+            ["1900-01-01"], ["1901-01-01"],
+        ]);
     });
     test("人名の読みはすべての登場箇所に付く", () => {
         const 使用済み = new Set<string>();
