@@ -1,6 +1,6 @@
 {
   "name": "@kitty-crow/tsuzuri",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "日本語組版・振仮名・合成漢字の独立した描画ライブラリー",
   "type": "module",
   "private": true,

@@ -1,5 +1,7 @@
 import { chromium } from "playwright";
 
+const 公開版 = (await Bun.file("package.json").json() as { readonly version: string }).version;
+
 const 配信 = Bun.serve({
     port: 0,
     fetch(要求) {
@@ -756,7 +758,7 @@ try {
     const 下部版 = await 頁.locator(".下部版").textContent();
     if (縦方向 !== "vertical-rl" || デスクトップ案内.固定 !== "fixed"
         || デスクトップ案内.表示 === "none" || 支援先 !== "https://ko-fi.com/kittycrow"
-        || await 下部リンク.getAttribute("href") !== 支援先 || !下部版?.includes("v0.1.0")) {
+        || await 下部リンク.getAttribute("href") !== 支援先 || !下部版?.includes("v" + 公開版)) {
         throw new Error("日本語の縦書き支援案内とフッターが不正です: "
             + JSON.stringify({ 縦方向, デスクトップ案内, 支援先, 下部版 }));
     }
