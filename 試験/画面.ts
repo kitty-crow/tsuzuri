@@ -928,7 +928,7 @@ try {
         言語: document.documentElement.dataset.azureSsml ?? "",
         地域: document.documentElement.dataset.azureRegion,
         鍵: document.documentElement.dataset.azureKeyAccepted,
-        保存: sessionStorage.getItem("綴り-朗読鍵"),
+        保存: localStorage.getItem("綴り-朗読鍵"),
     }));
     if (!要求した声.言語.includes('xml:lang="ja-JP"')
         || !要求した声.言語.includes('voice name="ja-JP-NanamiNeural"')
@@ -938,8 +938,45 @@ try {
         throw new Error("Azure の日本語女性音声への要求が不正です: "
             + JSON.stringify({ ...要求した声, 保存: 要求した声.保存 === "綴り朗読検査用" }));
     }
+    // 目の SVG ボタンは、表示と非表示を切り替える。
+    const 目 = 頁.locator("#朗読鍵表示");
+    if (await 頁.locator("#朗読鍵").getAttribute("type") !== "password") {
+        throw new Error("キーの初期表示が隠されていません");
+    }
+    await 目.click();
+    if (await 頁.locator("#朗読鍵").getAttribute("type") !== "text"
+        || await 目.getAttribute("aria-pressed") !== "true") {
+        throw new Error("キーの表示切替が動作していません");
+    }
+    await 目.click();
+    if (await 頁.locator("#朗読鍵").getAttribute("type") !== "password"
+        || await 目.getAttribute("aria-pressed") !== "false") {
+        throw new Error("キーを再び隠せません");
+    }
+
+    // タブを再読込してもキーは残るが、可視状態は引き継がない。
+    await 頁.reload();
+    if (await 頁.locator("#朗読鍵").inputValue() !== "綴り朗読検査用"
+        || await 頁.locator("#朗読鍵").getAttribute("type") !== "password") {
+        throw new Error("localStorage のキーが再読込後に復元されません");
+    }
+    await 頁.locator("#朗読鍵").fill("");
+    if (await 頁.evaluate(() => localStorage.getItem("綴り-朗読鍵")) !== null) {
+        throw new Error("キーを空にした際の保存削除が動作していません");
+    }
+    // 旧版 sessionStorage の値は一度移して削除する。
+    await 頁.evaluate(() => sessionStorage.setItem("綴り-朗読鍵", "旧版の鍵"));
+    await 頁.reload();
+    const 移行 = await 頁.evaluate(() => ({
+        鍵: (document.querySelector("#朗読鍵") as HTMLInputElement).value,
+        保存: localStorage.getItem("綴り-朗読鍵"),
+        旧保存: sessionStorage.getItem("綴り-朗読鍵"),
+    }));
+    if (移行.鍵 !== "旧版の鍵" || 移行.保存 !== "旧版の鍵" || 移行.旧保存 !== null) {
+        throw new Error("旧版のキーを移行できません: " + JSON.stringify(移行));
+    }
+    await 頁.locator("#朗読鍵").fill("");
     // 偽音声は再生できないため、再生完了後の停止ボタンは無効でもよい。
-    await 頁.evaluate(() => sessionStorage.removeItem("綴り-朗読鍵"));
 
     // 自動地域検出、漢字より振仮名を優先する読み、秘密鍵を隠した失敗表示。
     const 自動試験 = await ブラウザー.newPage();
@@ -1026,7 +1063,7 @@ try {
     await 収納試験.waitForSelector("#朗読固定");
     const 収納の接合を調べる = async (): Promise<Readonly<{
         間隔: number; 左ずれ: number; 右ずれ: number;
-        上枠: number; 見出し間隔: number;
+        上枠: number; 見出し間隔: number; 同じ容器: boolean;
     }>> => 収納試験.locator(".物語節 > .容器").evaluate((箱) => {
         const 巻 = 箱.querySelector(".物語読書面")?.getBoundingClientRect();
         const 朗読 = 箱.querySelector(".朗読収納")?.getBoundingClientRect();
@@ -1037,12 +1074,18 @@ try {
             左ずれ: Math.abs((朗読?.left ?? 0) - (巻?.left ?? 0)),
             右ずれ: Math.abs((朗読?.right ?? 0) - (巻?.right ?? 0)),
             上枠: 枠 ? Number.parseFloat(getComputedStyle(枠).borderTopWidth) : -1,
+            同じ容器: (() => {
+                const 読書枠 = 箱.querySelector(".物語読書枠");
+                return Boolean(読書枠 && 読書枠.children[0] === 箱.querySelector(".物語読書面")
+                    && 読書枠.children[1] === 箱.querySelector(".朗読収納")
+                    && getComputedStyle(読書枠).flexDirection === "column");
+            })(),
             見出し間隔: (巻?.top ?? 0) - (見出し?.bottom ?? 0),
         };
     });
     const 接合を確認する = (位置: string, 寸法: Awaited<ReturnType<typeof 収納の接合を調べる>>): void => {
         if (Math.abs(寸法.間隔) > 1.5 || 寸法.左ずれ > 1.5
-            || 寸法.右ずれ > 1.5 || 寸法.上枠 !== 0) {
+            || 寸法.右ずれ > 1.5 || 寸法.上枠 !== 0 || !寸法.同じ容器) {
             throw new Error("朗読の引手が巻物の下辺に接続していません: "
                 + JSON.stringify({ 位置, ...寸法 }));
         }
