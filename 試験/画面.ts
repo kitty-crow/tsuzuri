@@ -5,7 +5,7 @@ const 配信 = Bun.serve({
     fetch(要求) {
         const 道 = decodeURIComponent(new URL(要求.url).pathname);
         const 対象 = 道 === "/" ? "index.html" : 道.replace(/^\//, "");
-        if (!["index.html", "綴.svg", "様式.css", "物語.css", "支援.css", "配色.js", "目次.js", "支援.js", "dist/tsuzuri.js", "dist/tsuzuri.css", "dist/tsuzuri.js.map"].includes(対象)) {
+        if (!["index.html", "綴.svg", "様式.css", "物語.css", "支援.css", "配色.js", "目次.js", "dist/tsuzuri.js", "dist/tsuzuri.css", "dist/tsuzuri.js.map"].includes(対象)) {
             return new Response("未登録", { status: 404 });
         }
         return new Response(Bun.file("site/" + 対象));
@@ -563,17 +563,8 @@ try {
             + JSON.stringify({ 縦方向, デスクトップ案内, 支援先, 下部版 }));
     }
 
-    // 外部の Ko-fi スクリプトを模擬し、携帯画面でも円形の表示を検査する。
-    await 頁.route("https://storage.ko-fi.com/cdn/scripts/overlay-widget.js", async (通信) => {
-        await 通信.fulfill({
-            status: 200,
-            contentType: "application/javascript",
-            body: "window.kofiWidgetOverlay={draw:function(名前,設定){document.documentElement.dataset.kofiAccount=名前;const 外枠=document.createElement('div');外枠.className='floatingchat-container-wrap-mobi';const 内枠=document.createElement('iframe');内枠.title='珈琲で応援';外枠.append(内枠);document.body.append(外枠);}};",
-        });
-    });
+    // 携帯の Ko-fi は外部の円形ウィジェットではなく、縦書きの固定案内を使用する。
     await 頁.setViewportSize({ width: 390, height: 840 });
-
-    await 頁.waitForFunction(() => document.documentElement.dataset.kofiReady === "true");
     const 携帯の軌道 = await 頁.evaluate(() => {
         const 頭 = document.querySelector(".上部")?.getBoundingClientRect();
         const 足 = document.querySelector(".下部")?.getBoundingClientRect();
@@ -625,25 +616,86 @@ try {
     if (携帯収納.引手左 - 携帯収納.本文右 < 10) {
         throw new Error("携帯画面で目次がスクロールバーを隠しています: " + JSON.stringify(携帯収納));
     }
-    const 円形 = await 頁.locator(".floatingchat-container-wrap-mobi").evaluate((要素) => {
-        const 装飾 = getComputedStyle(要素);
-        return { 幅: 要素.getBoundingClientRect().width, 高さ: 要素.getBoundingClientRect().height,
-            角丸: 装飾.borderRadius, 固定: 装飾.position, 左: 装飾.left, 下: 装飾.bottom };
+    const 携帯支援 = await 頁.locator(".支援側帯").evaluate((要素) => {
+        const 箱 = 要素.getBoundingClientRect();
+        const 頭 = document.querySelector(".上部")?.getBoundingClientRect();
+        const 表示 = getComputedStyle(要素);
+        return {
+            表示: 表示.display,
+            向き: getComputedStyle(要素.querySelector(".綴り-縦書")!).writingMode,
+            右: 箱.right, 下: 箱.bottom, 上: 箱.top,
+            頭下: 頭?.bottom ?? 0,
+            高さ: 箱.height,
+        };
     });
-    const 名義 = await 頁.locator("html").getAttribute("data-kofi-account");
-    const 円形の控え = await 頁.locator(".支援浮輪").evaluate((要素) => getComputedStyle(要素).visibility);
-    const 携帯の縦帯 = await 頁.locator(".支援側帯").evaluate((要素) => getComputedStyle(要素).display);
-    if (円形.幅 !== 56 || 円形.高さ !== 56 || 円形.角丸 !== "50%"
-        || 円形.固定 !== "fixed" || 携帯の縦帯 !== "none"
-        || 円形の控え !== "hidden" || 名義 !== "kittycrow") {
-        throw new Error("携帯表示の円形ウィジェットが不正です: "
-            + JSON.stringify({ 円形, 携帯の縦帯, 円形の控え, 名義 }));
+    if (携帯支援.表示 === "none" || 携帯支援.向き !== "vertical-rl"
+        || Math.abs(携帯支援.右 - 390) > 2 || Math.abs(携帯支援.下 - 840) > 2
+        || Math.abs(携帯支援.上 - 携帯支援.頭下) > 2
+        || await 頁.locator(".支援浮輪").count() !== 0
+        || await 頁.locator('script[data-kofi-script="true"]').count() !== 0) {
+        throw new Error("携帯用の縦書き珈琲案内が不正です: " + JSON.stringify(携帯支援));
+    }
+
+    // 本文は左右の固定欄に入り込まず、見出しと本文は別段に置かれる。
+    for (const 横幅 of [375, 390, 430, 320]) {
+        await 頁.setViewportSize({ width: 横幅, height: 840 });
+        const 配置 = await 頁.evaluate(() => {
+            const 根 = document.documentElement;
+            const 頭 = document.querySelector(".上部")?.getBoundingClientRect();
+            const 足 = document.querySelector(".下部")?.getBoundingClientRect();
+            const 見出し = document.querySelector(".主題見出し")?.getBoundingClientRect();
+            const 主題 = document.querySelector(".主題")?.getBoundingClientRect();
+            const 左端 = 足?.right ?? 0;
+            const 右端 = 頭?.left ?? innerWidth;
+            const 選択 = [
+                ".主題見出し", ".主題縦案内", ".主題見本",
+                ".縦案内節 > .節題", ".縦案内節 .機能",
+                ".縦案内節 .作品", ".縦案内節 .手順 article",
+                ".縦案内節 .一覧", ".縦案内節 .一覧格子",
+                ".物語冒頭", ".物語読書面",
+            ];
+            const 範囲 = 選択.flatMap((式) => Array.from(document.querySelectorAll(式), (要素) => ({
+                要素: 式, 左: 要素.getBoundingClientRect().left,
+                右: 要素.getBoundingClientRect().right,
+            })));
+            const 重なり = Array.from(document.querySelectorAll(".縦案内節"), (節) => {
+                const 題 = 節.querySelector(".節題")?.getBoundingClientRect();
+                const 本文 = 節.querySelector(".機能格子, .作品格子, .手順")?.getBoundingClientRect();
+                return { 差: (本文?.top ?? 0) - (題?.bottom ?? 0) };
+            });
+            const 手順 = Array.from(document.querySelectorAll(".手順 article"), (記事) => {
+                const 文 = 記事.querySelector("pre")?.getBoundingClientRect();
+                const 題 = 記事.querySelector(".手順題")?.getBoundingClientRect();
+                return { 間隔: (題?.left ?? 0) - (文?.right ?? 0) };
+            });
+            const 一覧 = document.querySelector(".一覧")?.getBoundingClientRect();
+            const 配布 = document.querySelector(".一覧格子")?.getBoundingClientRect();
+            return {
+                窓幅: innerWidth,
+                超過幅: 根.scrollWidth - 根.clientWidth,
+                左端, 右端, 主題幅: 主題?.width ?? 0,
+                主題中心差: ((見出し?.left ?? 0) + (見出し?.right ?? 0)) / 2
+                    - (左端 + 右端) / 2,
+                範囲, 重なり, 手順,
+                一覧内: Boolean(一覧 && 配布 && 配布.left >= 一覧.left - 1
+                    && 配布.right <= 一覧.right + 1
+                    && 配布.top >= 一覧.top - 1
+                    && 配布.bottom <= 一覧.bottom + 1),
+            };
+        });
+        const はみ出し = 配置.範囲.filter((項目) =>
+            項目.左 < 配置.左端 - 2 || 項目.右 > 配置.右端 + 2
+        );
+        if (配置.超過幅 > 2 || はみ出し.length > 0
+            || Math.abs(配置.主題中心差) > 22
+            || 配置.重なり.some((項目) => 項目.差 < 12)
+            || 配置.手順.some((項目) => 項目.間隔 < 2)
+            || !配置.一覧内) {
+            throw new Error("携帯表示が欄外へ溢れたり内容を重ねています: "
+                + JSON.stringify({ 横幅, ...配置, はみ出し }));
+        }
     }
     await 頁.setViewportSize({ width: 1280, height: 800 });
-
-    await 頁.waitForFunction(() =>
-        document.documentElement.dataset.kofiReady === "false"
-        && !document.querySelector(".floatingchat-container-wrap-mobi"));
     console.log("実ブラウザーでの表示検査に合格しました。");
 } finally {
     await ブラウザー.close();

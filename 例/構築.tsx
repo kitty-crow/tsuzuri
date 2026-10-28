@@ -47,7 +47,6 @@ const 画面 = (
             <script src="./dist/tsuzuri.js" defer={true}></script>
             <script src="./配色.js" defer={true}></script>
             <script src="./目次.js" defer={true}></script>
-            <script src="./支援.js" defer={true}></script>
         </head>
         <body>
             <header className="上部">
@@ -160,10 +159,6 @@ const 画面 = (
                 <img className="支援杯" src="https://storage.ko-fi.com/cdn/cup-border.png" alt="" />
                 {createElement("jp-tategaki", null, "珈琲で応援")}
             </a>
-            <a className="支援浮輪" href="https://ko-fi.com/kittycrow"
-                target="_blank" rel="noopener noreferrer" aria-label="珈琲で応援する">
-                <img src="https://storage.ko-fi.com/cdn/cup-border.png" alt="" />
-            </a>
         </body>
     </html>
 );
@@ -193,14 +188,5 @@ const 目次の構築 = await Bun.build({
     minify: true,
 });
 if (!目次の構築.success) throw new Error("目次の構築に失敗しました");
-const 支援の構築 = await Bun.build({
-    entrypoints: ["例/支援.ts"],
-    outdir: "site",
-    naming: { entry: "支援.js" },
-    target: "browser",
-    format: "iife",
-    minify: true,
-});
-if (!支援の構築.success) throw new Error("支援の構築に失敗しました");
 console.log("紹介ページを構築しました。");
 

@@ -452,3 +452,76 @@
     .物語冒頭 > .綴り-縦書 { height: 450px; font-size: .74rem; }
     .物語冒頭 h2 { font-size: 1.27rem; }
 }
+
+/* 狭い画面では巻物と縦書きの表題を重ねず、上下に収める。 */
+@media (max-width: 720px) {
+    .物語節 > .容器 {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-auto-rows: auto;
+        gap: 18px;
+        min-width: 0;
+        max-width: 100%;
+    }
+    .物語冒頭 {
+        display: flex;
+        justify-content: flex-end;
+        grid-column: 1;
+        grid-row: 1;
+        align-self: auto;
+        justify-self: stretch;
+        width: 100%;
+        min-width: 0;
+        padding: 0 0 12px;
+        border-left: 0;
+        border-bottom: 1px solid var(--線);
+    }
+    .物語冒頭 > .綴り-縦書 {
+        width: max-content;
+        max-width: 100%;
+        height: 300px;
+        max-height: none;
+    }
+    .物語冒頭 h2 { font-size: clamp(1.05rem, 4.5vw, 1.4rem); }
+    .物語節 .物語読書面 {
+        grid-column: 1;
+        grid-row: 2;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        overflow: clip;
+    }
+    .物語読書面 > .物語巻 {
+        max-width: 100%;
+        padding: 15px 10px;
+    }
+    .物語巻 > .綴り-縦書 {
+        height: min(68vh, 560px);
+        max-height: min(68vh, 560px);
+        font-size: .93rem;
+        line-height: 1.9;
+    }
+    .物語読書面[data-index-pinned="true"] {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .物語読書面[data-index-pinned="true"] > .目次側 {
+        position: relative;
+        grid-row: 1;
+        grid-column: 1;
+        width: 100%;
+        max-width: 100%;
+        height: 280px;
+        transform: none;
+    }
+    .物語読書面[data-index-pinned="true"] > .物語巻 {
+        grid-row: 2;
+        grid-column: 1;
+        width: 100%;
+        padding-right: 10px;
+    }
+    .物語読書面[data-index-pinned="true"] .目次領域 {
+        height: 190px;
+        max-height: 190px;
+    }
+}
