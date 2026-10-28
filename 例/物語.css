@@ -1,0 +1,21 @@
+.物語節 { border-top: 1px solid var(--線); padding-top: 94px; }
+.物語節 .節題 > p:nth-child(3) { font-family: "Yu Mincho", serif; letter-spacing: .2em; color: var(--朱); }
+.物語説明 { display: flex; flex-wrap: wrap; gap: 11px 24px; font-size: .76rem; color: var(--薄); margin-bottom: 36px; }
+.物語説明 span::before { content: "・"; color: var(--朱); }
+.物語章 { margin-bottom: 52px; border: 1px solid var(--線); background: var(--面); overflow: hidden; }
+.物語章頭 { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 19px 27px; border-bottom: 1px solid var(--線); background: #f1efe6; }
+.物語章頭 .綴り-暦 { font-size: clamp(.95rem,1.8vw,1.3rem); font-family: "Yu Mincho", serif; white-space: normal; }
+.章番号 { color: var(--朱); font-size: .7rem; letter-spacing: .16em; white-space: nowrap; }
+.物語巻 { overflow-x: auto; overflow-y: hidden; width: 100%; padding: 26px 30px; direction: rtl; scrollbar-width: thin; scrollbar-color: var(--朱) var(--紙); }
+.物語巻 > .綴り-縦書 { display: block; width: max-content; max-width: none; height: min(69vh, 660px); max-height: min(69vh, 660px); font-family: "Yu Mincho", "Hiragino Mincho ProN", serif; font-size: clamp(1rem,1.6vw,1.22rem); line-height: 2.45; text-orientation: mixed; }
+.物語段落 { display: block; margin: 0 0 0 1.45em; padding: 0; line-break: strict; text-align: start; text-indent: 0; }
+.物語巻 .綴り-文字 { vertical-align: middle; }
+.物語巻 .綴り-合成ルビ { line-height: 1; }
+.物語結語 { text-align: center; margin-block: 50px 16px; color: var(--朱); font-family: "Yu Mincho",serif; font-size: clamp(1.1rem,2.5vw,1.6rem); letter-spacing: .08em; }
+@media (max-width: 760px) {
+  .物語節 { padding-top: 60px; }
+  .物語章 { margin-bottom: 26px; }
+  .物語章頭 { padding: 14px 15px; }
+  .物語巻 { padding: 16px; }
+  .物語巻 > .綴り-縦書 { height: min(65vh, 550px); max-height: min(65vh, 550px); font-size: 1.08rem; line-height: 2.1; }
+}

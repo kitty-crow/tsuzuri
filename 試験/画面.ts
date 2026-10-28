@@ -5,7 +5,7 @@ const 配信 = Bun.serve({
     fetch(要求) {
         const 道 = new URL(要求.url).pathname;
         const 対象 = 道 === "/" ? "index.html" : 道.replace(/^\//, "");
-        if (!["index.html", "様式.css", "dist/tsuzuri.js", "dist/tsuzuri.css", "dist/tsuzuri.js.map"].includes(対象)) {
+        if (!["index.html", "様式.css", "物語.css", "dist/tsuzuri.js", "dist/tsuzuri.css", "dist/tsuzuri.js.map"].includes(対象)) {
             return new Response("未登録", { status: 404 });
         }
         return new Response(Bun.file("site/" + 対象));
@@ -61,6 +61,36 @@ try {
     await 頁.waitForSelector(".綴り-伸縮字 .綴り-単字");
     const 伸縮 = await 頁.locator(".綴り-伸縮字 .綴り-単字").count();
     if (伸縮 !== 3) throw new Error("未知の合成文字の伸縮描画に失敗しました");
+
+    const 見出し = await 頁.locator(".物語章頭 .綴り-暦").allTextContents();
+    const 期待 = [
+        "文化六年己巳　霜月十六日",
+        "文化八年辛未　卯月三日",
+        "文化十年癸酉　長月十三日",
+        "文化十一年甲戌　弥生二十日",
+        "同年　葉月廿七日",
+        "同年　長月九日",
+        "同年　神無月十五日",
+    ];
+    const 日付属性 = await 頁.locator(".物語章頭 time").evaluateAll((要素) =>
+        要素.map((項目) => 項目.getAttribute("datetime"))
+    );
+    const 元の日付 = [
+        "1809-12-22", "1811-05-24", "1813-10-06", "1814-05-09",
+        "1814-10-10", "1814-10-21", "1814-11-26",
+    ];
+    const 人物の読み = await 頁.locator(".物語巻 ruby rt").allTextContents();
+    const 表意文字 = await 頁.locator(".物語巻 .綴り-原字").allTextContents();
+    const 章数 = await 頁.locator(".物語章").count();
+    if (JSON.stringify(見出し) !== JSON.stringify(期待)) throw new Error("歴史的な章の日付が一致しません");
+    if (JSON.stringify(日付属性) !== JSON.stringify(元の日付)) throw new Error("原稿の日付が西暦で保存されていません");
+    if (章数 !== 7) throw new Error("物語の章数が一致しません");
+    for (const 読み of ["せいしち", "はつね", "きゅうべえ"]) {
+        if (!人物の読み.includes(読み)) throw new Error("人名の振仮名が欠けています: " + 読み);
+    }
+    for (const 構文 of ["⿱白萩", "⿰燈心", "⿱行燈", "⿰初音"]) {
+        if (!表意文字.includes(構文)) throw new Error("合成文字が欠けています: " + 構文);
+    }
     console.log("実ブラウザーでの表示検査に合格しました。");
 } finally {
     await ブラウザー.close();
