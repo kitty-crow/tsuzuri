@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { readFile } from "node:fs/promises";
-import { 文章を装ふ, 原稿を読む } from "../例/物語.tsx";
+import { 文章を装ふ, 原稿を読む, 見出しか } from "../例/物語.tsx";
 
 describe("白萩の露と後日譚", () => {
     test("全篇が一つの Markdown 原稿に収められている", async () => {
         const 原稿 = await readFile("例/白萩の露.md", "utf8");
         const 字句 = 原稿を読む(原稿);
-        const 見出し = 字句.filter((項目) => 項目.type === "heading");
+        const 見出し = 字句.filter(見出しか);
         expect(見出し.filter((項目) => 項目.depth === 1).map((項目) => 項目.text)).toEqual(["白萩の露"]);
         expect(見出し.filter((項目) => 項目.depth === 2).map((項目) => 項目.text)).toEqual(["白萩の露　後日譚"]);
         expect(見出し.filter((項目) => 項目.depth === 3).map((項目) => 項目.text)).toEqual([

@@ -34,6 +34,11 @@ const 日付の装ひ: Readonly<Record<string, 日付設定>> = {
 const 特徴的な語 = /(清七|初音|久兵衛|白萩|燈心|行燈)/g;
 const 西暦 = /^\d{4}-\d{2}-\d{2}$/;
 
+export function 見出しか(項目: Token): 項目 is Tokens.Heading {
+    return 項目.type === "heading" && "depth" in 項目 && typeof 項目.depth === "number"
+        && "text" in 項目 && typeof 項目.text === "string";
+}
+
 /** 人名の読みをすべて示し、合成文字はそれぞれ初出に限る。 */
 export function 文章を装ふ(文章: string, 使用済み: Set<string>): ReactNode[] {
     return 文章.split(特徴的な語).map((語, 番号) => {
@@ -51,7 +56,7 @@ export function 文章を装ふ(文章: string, 使用済み: Set<string>): Reac
 /** 一つの Markdown 原稿をそのまま字句へ変換する。章ごとには分割しない。 */
 export function 原稿を読む(原稿: string): readonly Token[] {
     const 字句 = marked.lexer(原稿);
-    const 見出し = 字句.filter((項目): 項目 is Tokens.Heading => 項目.type === "heading");
+    const 見出し = 字句.filter(見出しか);
     const 日付 = 見出し.filter((項目) => 項目.depth === 3 && 西暦.test(項目.text.trim()));
     if (見出し.filter((項目) => 項目.depth === 1).length !== 1) throw new Error("題名は一つ必要です");
     if (日付.length !== 10) throw new Error("物語と後日譚の日付は十箇所必要です");
@@ -106,7 +111,7 @@ function 見出しを描く(項目: Tokens.Heading, 使用済み: Set<string>, �
 }
 
 function 段落を描く(項目: Token, 使用済み: Set<string>, 番号: number): ReactNode {
-    if (項目.type === "heading") return 見出しを描く(項目, 使用済み, 番号);
+    if (見出しか(項目)) return 見出しを描く(項目, 使用済み, 番号);
     if (項目.type === "paragraph" || 項目.type === "text") {
         return <p key={番号} className="物語段落">{文中を描く(項目.tokens ?? [], 使用済み)}</p>;
     }
