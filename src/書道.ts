@@ -87,6 +87,23 @@ const 既定字形: Readonly<Record<string, string>> = {
     "⿱⿰日本⿰語学": "\uE103",
 };
 
+
+function 合成表示を作る(構造: 文字): DocumentFragment {
+    const 断片 = document.createDocumentFragment();
+    const 原文 = document.createElement("span");
+    原文.className = "綴り-原字";
+    原文.textContent = 表意記号(構造);
+    const 視覚 = document.createElement("span");
+    視覚.className = "綴り-視字";
+    視覚.setAttribute("aria-hidden", "true");
+    const 専用字 = 既定字形[原文.textContent];
+    視覚.classList.add(専用字 ? "綴り-既定字" : "綴り-伸縮字");
+    if (専用字) 視覚.textContent = 専用字;
+    if (!専用字) 視覚.append(描画(構造));
+    断片.append(原文, 視覚);
+    return 断片;
+}
+
 /** IDS と入れ子になった要素の双方に対応する。 */
 export function 書道を描く(根: ParentNode): void {
     置換(根, "jp-kanji", (元) => {
@@ -95,19 +112,7 @@ export function 書道を描く(根: ParentNode): void {
         表示.className = "綴り-文字";
         表示.lang = "ja";
         if (!解析) 表示.textContent = 元.textContent;
-        if (解析) {
-            const 原文 = document.createElement("span");
-            原文.className = "綴り-原字";
-            原文.textContent = 表意記号(解析);
-            const 視覚 = document.createElement("span");
-            視覚.className = "綴り-視字";
-            視覚.setAttribute("aria-hidden", "true");
-            const 専用字 = 既定字形[原文.textContent ?? ""];
-            視覚.classList.add(専用字 ? "綴り-既定字" : "綴り-伸縮字");
-            if (専用字) 視覚.textContent = 専用字;
-            if (!専用字) 視覚.append(描画(解析));
-            表示.append(原文, 視覚);
-        }
+        if (解析) 表示.append(合成表示を作る(解析));
         const 読み = 属性(元, "reading");
         if (!読み) return 表示;
         const ルビ = document.createElement("ruby");
