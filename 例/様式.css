@@ -698,9 +698,66 @@ body {
     }
 }
 
-/* 既存の small 用の右余白を相殺する。 */
+/* 大字・小字・朱印に独立した場所を確保する。
+   縦書きの文字列を横方向のフレックスに配置し、各列はそれぞれ縦組に保つ。 */
+.主題見本 {
+    padding-top: 65px;
+}
+.主題見本 > .綴り-縦書 {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: flex-start;
+    justify-content: center;
+    column-gap: clamp(12px, 1.6vw, 20px);
+    writing-mode: horizontal-tb;
+    width: max-content;
+    max-width: 100%;
+    height: 300px;
+    max-height: none;
+    min-width: 0;
+    letter-spacing: 0;
+}
+.主題見本文 {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: flex-start;
+    flex: 0 0 auto;
+    gap: .32em;
+    width: max-content;
+    min-width: 0;
+}
+.主題見本先,
+.主題見本後,
+.主題見本添 {
+    display: block;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    white-space: nowrap;
+    padding: 0;
+}
+.主題見本先,
+.主題見本後 {
+    font-size: 1em;
+    font-weight: 500;
+    line-height: 1.2;
+}
 .主題見本 .主題見本添 {
+    flex: 0 0 auto;
     margin: 0;
     font-size: .33em;
+    line-height: 1.4;
     letter-spacing: .1em;
+}
+.主題見本 > .朱印 {
+    top: 12px;
+    right: 12px;
+}
+@media (max-width: 900px) {
+    .主題見本 { padding: 58px 12px 16px; }
+    .主題見本 > .綴り-縦書 {
+        height: 175px;
+        font-size: clamp(1.25rem, 4vw, 2rem);
+        column-gap: 12px;
+    }
+    .主題見本文 { gap: .26em; }
 }
