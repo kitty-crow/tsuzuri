@@ -19,13 +19,21 @@ describe("白萩の露と後日譚", () => {
         expect(JSON.stringify(字句)).toContain('"type":"em"');
         expect(原稿).toContain("胸が張り裂けそうなので、もう一つの結末を。");
         expect(原稿).toContain("白萩の露　終");
+        expect(原稿).toContain("松葉屋の主たる海藤を訪ねたり");
+        expect(原稿).toContain("松葉屋の海藤を枕元に呼びて");
+        expect(原稿).toContain("> 清七さま");
+        expect(原稿).toContain("「清七さん　もう燈心を撚ることはおやめなんし」");
+        expect(原稿).toContain("**「主様　来年も白萩を見せておくんなんし」**");
+        expect(原稿).toContain("「初音さま」");
     });
     test("人名の読みはすべての登場箇所に付く", () => {
         const 使用済み = new Set<string>();
-        const 要素 = 文章を装ふ("清七と初音　久兵衛と清七", 使用済み);
+        const 要素 = 文章を装ふ("清七と初音　久兵衛と海藤　主様と清七", 使用済み);
         expect(JSON.stringify(要素)).toContain("せいしち");
         expect(JSON.stringify(要素)).toContain("はつね");
         expect(JSON.stringify(要素)).toContain("きゅうべえ");
+        expect(JSON.stringify(要素)).toContain("かいとう");
+        expect(JSON.stringify(要素)).toContain("ぬしさま");
     });
     test("合成字形は最初の一回だけ表示する", () => {
         const 使用済み = new Set<string>();

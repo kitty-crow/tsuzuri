@@ -9,6 +9,8 @@ const 人名: Readonly<Record<string, string>> = {
     "清七": "せいしち",
     "初音": "はつね",
     "久兵衛": "きゅうべえ",
+    "海藤": "かいとう",
+    "主様": "ぬしさま",
 };
 
 const 合成候補: Readonly<Record<string, 合成語>> = {
@@ -31,7 +33,7 @@ const 日付の装ひ: Readonly<Record<string, 日付設定>> = {
     "1815-04-15": { 干支: true, 吉日: true },
 };
 
-const 特徴的な語 = /(清七|初音|久兵衛|白萩|燈心|行燈)/g;
+const 特徴的な語 = /(清七|初音|久兵衛|海藤|主様|白萩|燈心|行燈)/g;
 const 西暦 = /^\d{4}-\d{2}-\d{2}$/;
 
 export function 見出しか(項目: Token): 項目 is Tokens.Heading {
