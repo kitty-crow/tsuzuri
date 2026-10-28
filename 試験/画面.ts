@@ -335,7 +335,7 @@ try {
     const 読み数 = await 頁.locator(".綴り-振仮名").count();
     const 旧暦 = await 頁.locator(".綴り-暦").first().textContent();
     const 向き = await 頁.locator(".綴り-縦書").first().evaluate((要素) => getComputedStyle(要素).writingMode);
-    const 表記 = await 頁.locator(".綴り-原字").first().textContent();
+    const 表記 = await 頁.locator(".作品見本 .綴り-原字").first().textContent();
     const 描画字 = await 頁.locator(".綴り-既定字").allTextContents();
     await 頁.evaluate(() => document.fonts.ready);
     const 書体 = await 頁.locator(".綴り-既定字").first()
@@ -345,7 +345,7 @@ try {
             候補.family.includes("IDS Composer Demo") && 候補.status === "loaded"
         )
     );
-    const 選択 = await 頁.locator(".綴り-原字").first().evaluate((要素) => {
+    const 選択 = await 頁.locator(".作品見本 .綴り-原字").first().evaluate((要素) => {
         const 選択範囲 = window.getSelection();
         選択範囲?.selectAllChildren(要素);
         return 選択範囲?.toString() ?? "";
