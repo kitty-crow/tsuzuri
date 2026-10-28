@@ -17,7 +17,7 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <script src="https://kitty-crow.github.io/tsuzuri/dist/tsuzuri.js" defer></script>
+  <script src="https://app.kittycrow.dev/tsuzuri/dist/tsuzuri.js" defer></script>
 </head>
 <body>
   <tsuzuri>
@@ -30,10 +30,10 @@
 必要な機能だけを読み込む場合は、たとえば振仮名専用の `furigana.js` に変更します。
 
 ~~~html
-<script src="https://kitty-crow.github.io/tsuzuri/dist/furigana.js" defer></script>
+<script src="https://app.kittycrow.dev/tsuzuri/dist/furigana.js" defer></script>
 ~~~
 
-これは GitHub Pages で公開しているビルド済み配布物の直接 URL です。各 JavaScript は**同じディレクトリーにある同名の CSS を自動的に読み込む**ため、通常は別途 `<link>` を追加する必要はありません。
+これは `app.kittycrow.dev` のリバースプロキシ経由で提供するビルド済み配布物の URL です。各 JavaScript は**同じディレクトリーにある同名の CSS を自動的に読み込む**ため、通常は別途 `<link>` を追加する必要はありません。
 
 **注意：** 上記 URL は公開中の最新版を指し、特定の版に固定されません。バージョンを固定したい本番サイトでは、次の方法で JS と CSS を手元に保存し、自分のサーバーから配信してください。`dist/` は Git にコミットしていないため、`cdn.jsdelivr.net/gh/.../dist/` のパスでは配布できません。
 
@@ -45,10 +45,10 @@
 mkdir -p public/vendor/tsuzuri
 curl -fL --retry 3 \
   -o public/vendor/tsuzuri/tsuzuri.js \
-  https://kitty-crow.github.io/tsuzuri/dist/tsuzuri.js
+  https://app.kittycrow.dev/tsuzuri/dist/tsuzuri.js
 curl -fL --retry 3 \
   -o public/vendor/tsuzuri/tsuzuri.css \
-  https://kitty-crow.github.io/tsuzuri/dist/tsuzuri.css
+  https://app.kittycrow.dev/tsuzuri/dist/tsuzuri.css
 ~~~
 
 全機能版と各単独版を一括取得したい場合：
@@ -59,7 +59,7 @@ for name in tsuzuri furigana tategaki shoudou kumihan kansuji koyomi; do
   for ext in js css; do
     curl -fL --retry 3 \
       -o "public/vendor/tsuzuri/$name.$ext" \
-      "https://kitty-crow.github.io/tsuzuri/dist/$name.$ext" || exit 1
+      "https://app.kittycrow.dev/tsuzuri/dist/$name.$ext" || exit 1
   done
 done
 ~~~
