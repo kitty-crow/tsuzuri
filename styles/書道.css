@@ -1,4 +1,4 @@
-.綴り-文字 { display: inline-flex; width: 1em; height: 1em; font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif CJK JP", serif; line-height: 1; vertical-align: middle; writing-mode: horizontal-tb; text-orientation: upright; }
+.綴り-文字 { position: relative; display: inline-flex; width: 1em; height: 1em; font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif CJK JP", serif; line-height: 1; vertical-align: middle; writing-mode: horizontal-tb; text-orientation: upright; }
 .綴り-合成 { display: grid; width: 100%; height: 100%; min-width: 0; min-height: 0; align-content: stretch; justify-content: stretch; overflow: visible; }
 .綴り-左右 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
 .綴り-上下 { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); }
@@ -6,3 +6,6 @@
 .綴り-単字 { display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; font-size: 1em; line-height: 1; }
 .綴り-部分 > .綴り-合成 { font-size: 1em; }
 
+
+.綴り-原字 { position: absolute; inset: 0; width: 1em; height: 1em; overflow: hidden; color: transparent; white-space: nowrap; user-select: text; z-index: 1; }
+.綴り-視字 { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; user-select: none; }

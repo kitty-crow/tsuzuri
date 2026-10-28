@@ -41,6 +41,12 @@ function 要素から解析(元: Element): 文字 | null {
     return { 配置, 部品: [{ 字: 記号[0]! }, { 字: 記号[1]! }] };
 }
 
+function 表意記号(構造: 文字): string {
+    if ("字" in 構造) return 構造.字;
+    const 指示 = 構造.配置 === "左右" ? "⿰" : "⿱";
+    return 指示 + 表意記号(構造.部品[0]) + 表意記号(構造.部品[1]);
+}
+
 function 描画(構造: 文字): HTMLElement {
     const 葉 = "字" in 構造;
     const 箱 = document.createElement("span");
@@ -62,10 +68,20 @@ function 描画(構造: 文字): HTMLElement {
 export function 書道を描く(根: ParentNode): void {
     置換(根, "jp-kanji", (元) => {
         const 解析 = 要素から解析(元);
-        const 表示 = 解析 ? 描画(解析) : document.createElement("span");
-        if (!解析) 表示.textContent = 元.textContent;
-        表示.classList.add("綴り-文字");
+        const 表示 = document.createElement("span");
+        表示.className = "綴り-文字";
         表示.lang = "ja";
+        if (!解析) 表示.textContent = 元.textContent;
+        if (解析) {
+            const 原文 = document.createElement("span");
+            原文.className = "綴り-原字";
+            原文.textContent = 表意記号(解析);
+            const 視覚 = document.createElement("span");
+            視覚.className = "綴り-視字";
+            視覚.setAttribute("aria-hidden", "true");
+            視覚.append(描画(解析));
+            表示.append(原文, 視覚);
+        }
         const 読み = 属性(元, "reading");
         if (!読み) return 表示;
         const ルビ = document.createElement("ruby");

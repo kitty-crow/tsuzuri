@@ -23,10 +23,15 @@ try {
     const 読み数 = await 頁.locator(".綴り-振仮名").count();
     const 旧暦 = await 頁.locator(".綴り-暦").first().textContent();
     const 向き = await 頁.locator(".綴り-縦書").first().evaluate((要素) => getComputedStyle(要素).writingMode);
-    const 表記 = await 頁.locator(".綴り-文字").first().textContent();
+    const 表記 = await 頁.locator(".綴り-原字").first().textContent();
+    const 選択 = await 頁.locator(".綴り-原字").first().evaluate((要素) => {
+        const 選択範囲 = window.getSelection();
+        選択範囲?.selectAllChildren(要素);
+        return 選択範囲?.toString() ?? "";
+    });
     if (合成数 < 4 || 縦書数 < 2 || 読み数 < 5 || 旧暦 !== "令和八年長月十八日"
-        || 向き !== "vertical-rl" || 表記 !== "⿱日本" || 例外.length > 0) {
-        throw new Error(JSON.stringify({ 合成数, 縦書数, 読み数, 旧暦, 向き, 表記, 例外 }));
+        || 向き !== "vertical-rl" || 表記 !== "⿱日本" || 選択 !== "⿱日本" || 例外.length > 0) {
+        throw new Error(JSON.stringify({ 合成数, 縦書数, 読み数, 旧暦, 向き, 表記, 選択, 例外 }));
     }
     console.log("実ブラウザーでの表示検査に合格しました。");
 } finally {
