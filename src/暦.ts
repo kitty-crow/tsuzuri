@@ -72,7 +72,7 @@ function 新暦の年(入力: string): string {
     return 条件 ? 年数表記(条件.名, 条件.年, 年) : "西暦" + 漢数字へ(年, "各桁") + "年";
 }
 
-function 旧暦を整える(入力: string, 西暦: number, 書式: 暦書式): string | null {
+function 旧暦を整える(西暦: number, 書式: 暦書式): string | null {
     const 月 = 照合済.find((候補) => {
         const 始 = 西暦日(候補.始);
         return 始 !== null && 西暦 >= 始 && 西暦 < 始 + 候補.日数 * 86400000;
@@ -92,7 +92,7 @@ function 旧暦を整える(入力: string, 西暦: number, 書式: 暦書式): 
 export function 日付を整える(入力: string, 旧暦: boolean, 書式: 暦書式 = {}): string | null {
     const 西暦 = 西暦日(入力);
     if (西暦 === null) return null;
-    if (旧暦) return 旧暦を整える(入力, 西暦, 書式);
+    if (旧暦) return 旧暦を整える(西暦, 書式);
     const 月 = Number(入力.slice(5, 7));
     const 日 = Number(入力.slice(8, 10));
     return 新暦の年(入力) + 漢数字へ(月) + "月" + 漢数字へ(日) + "日";
