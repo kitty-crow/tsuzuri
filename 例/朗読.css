@@ -149,8 +149,10 @@
     .物語節 .物語冒頭 { margin-bottom: 0; }
 }
 
-/* 巻物の上に常設の引手を置く。閉じたときも高さを確保するので巻物を覆わない。 */
+/* 巻物の上には引手の高さだけを常設し、非固定の朗読操作は重ねて表示する。 */
 .物語節 .朗読収納 {
+    position: relative;
+    z-index: 6;
     flex: 0 0 auto;
     width: 100%;
     min-width: 0;
@@ -223,15 +225,25 @@
 .朗読操作 .朗読固定 svg { transition: transform .35s cubic-bezier(.22,1,.36,1); }
 .朗読操作 .朗読固定[aria-pressed="true"] svg { transform: rotate(-35deg); }
 .朗読引手, .朗読固定 { touch-action: manipulation; }
-/* 収納中は内容の高さがゼロ。展開中も表示領域は文書内に収まる。 */
+/* 非固定時は目次と同様に本文の上へ展開し、巻物を移動させない。 */
 .朗読内容 {
+    position: absolute;
+    top: 100%;
+    left: 0;
     max-height: 0;
     min-width: 0;
     width: 100%;
     box-sizing: border-box;
     overflow: hidden;
     visibility: hidden;
-    transition: max-height .3s ease, visibility .3s ease;
+    box-shadow: none;
+    transition: max-height .3s ease, visibility .3s ease, box-shadow .3s ease;
+}
+/* 固定した場合のみ通常の文書フローへ戻し、巻物の領域を下へ確保する。 */
+.朗読収納[data-readaloud-pinned="true"] .朗読内容 {
+    position: relative;
+    top: auto;
+    left: auto;
 }
 .朗読収納:is(:hover, :focus-within) .朗読内容,
 .朗読収納[data-readaloud-open="true"] .朗読内容,
@@ -240,6 +252,10 @@
     overflow-x: hidden;
     overflow-y: auto;
     visibility: visible;
+    box-shadow: 0 14px 35px color-mix(in srgb, var(--墨) 16%, transparent);
+}
+.朗読収納[data-readaloud-pinned="true"] .朗読内容 {
+    box-shadow: none;
 }
 .朗読収納:is(:hover, :focus-within) .朗読引手 svg,
 .朗読収納[data-readaloud-open="true"] .朗読引手 svg,

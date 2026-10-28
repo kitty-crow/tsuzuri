@@ -271,7 +271,7 @@ class 物語朗読 {
     }
 }
 
-/** 目次と同じ開閉規則で、朗読の操作を巻物の下に収納する。 */
+/** 目次と同じく、非固定では本文に重ね、固定した場合のみ本文を押し下げる。 */
 function 朗読の収納を起動(): void {
     const 収納 = document.querySelector<HTMLElement>(".朗読収納");
     const 引手 = document.querySelector<HTMLButtonElement>("#朗読引手");

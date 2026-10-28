@@ -1164,30 +1164,60 @@ try {
     };
     接合を確認する("大画面・収納", await 収納の接合を調べる());
     await 収納試験.locator("#朗読引手").hover();
-    await 収納試験.waitForFunction(() => document.querySelector(".朗読収納")
-        ?.getBoundingClientRect().height! > 95);
-    const 展開時 = await 収納試験.locator(".朗読収納").evaluate((要素) => ({
-        高さ: 要素.getBoundingClientRect().height,
-        状態: 要素.querySelector("#朗読引手")?.getAttribute("aria-expanded"),
-    }));
-    if (展開時.状態 !== "true" || 展開時.高さ < 95) {
-        throw new Error("朗読がホバーで展開しません: " + JSON.stringify(展開時));
+    await 収納試験.waitForFunction(() =>
+        (document.querySelector(".朗読内容")?.getBoundingClientRect().height ?? 0) > 95);
+    await 収納試験.waitForTimeout(350);
+    const 展開時 = await 収納試験.locator(".朗読収納").evaluate((要素) => {
+        const 内容 = 要素.querySelector(".朗読内容");
+        const 巻 = document.querySelector(".物語読書面")?.getBoundingClientRect();
+        const 収納 = 要素.getBoundingClientRect();
+        const 内容枠 = 内容?.getBoundingClientRect();
+        return {
+            高さ: 収納.height,
+            内容高: 内容枠?.height ?? 0,
+            内容位置: 内容 ? getComputedStyle(内容).position : "",
+            影: 内容 ? getComputedStyle(内容).boxShadow : "none",
+            巻上: 巻?.top ?? 0,
+            収納下: 収納.bottom,
+            内容下: 内容枠?.bottom ?? 0,
+            状態: 要素.querySelector("#朗読引手")?.getAttribute("aria-expanded"),
+        };
+    });
+    if (展開時.状態 !== "true" || 展開時.内容高 < 95
+        || 展開時.高さ < 36 || 展開時.高さ > 46
+        || 展開時.内容位置 !== "absolute" || 展開時.影 === "none"
+        || Math.abs(展開時.巻上 - 展開時.収納下) > 1.5
+        || 展開時.内容下 < 展開時.巻上 + 50) {
+        throw new Error("非固定の朗読が巻物を動かさず、影付きで重なりません: " + JSON.stringify(展開時));
     }
+    接合を確認する("大画面・非固定の展開", await 収納の接合を調べる());
     if (!(await 収納試験.locator("#朗読固定").isVisible())) {
         throw new Error("展開時に内部の固定ボタンが表示されません");
     }
     await 収納試験.locator("#朗読固定").click();
+    await 収納試験.waitForTimeout(350);
     await 収納試験.mouse.move(10, 10);
     await 収納試験.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-    const 保存確認 = await 収納試験.locator(".朗読収納").evaluate((要素) => ({
-        固定: 要素.getAttribute("data-readaloud-pinned"),
-        保存: localStorage.getItem("綴り-物語朗読固定"),
-        高さ: 要素.getBoundingClientRect().height,
-        押下: 要素.querySelector("#朗読固定")?.getAttribute("aria-pressed"),
-    }));
+    const 保存確認 = await 収納試験.locator(".朗読収納").evaluate((要素) => {
+        const 巻 = document.querySelector(".物語読書面")?.getBoundingClientRect();
+        const 収納 = 要素.getBoundingClientRect();
+        const 内容 = 要素.querySelector(".朗読内容");
+        return {
+            固定: 要素.getAttribute("data-readaloud-pinned"),
+            保存: localStorage.getItem("綴り-物語朗読固定"),
+            高さ: 収納.height,
+            内容位置: 内容 ? getComputedStyle(内容).position : "",
+            巻上: 巻?.top ?? 0,
+            収納下: 収納.bottom,
+            押下: 要素.querySelector("#朗読固定")?.getAttribute("aria-pressed"),
+        };
+    });
     if (保存確認.固定 !== "true" || 保存確認.保存 !== "true"
-        || 保存確認.押下 !== "true" || 保存確認.高さ < 95) {
-        throw new Error("朗読の固定が保持されません: " + JSON.stringify(保存確認));
+        || 保存確認.押下 !== "true" || 保存確認.高さ < 95
+        || 保存確認.内容位置 !== "relative"
+        || 保存確認.巻上 < 展開時.巻上 + 50
+        || Math.abs(保存確認.巻上 - 保存確認.収納下) > 1.5) {
+        throw new Error("固定時に朗読が巻物を押し下げず保存されません: " + JSON.stringify(保存確認));
     }
     接合を確認する("大画面・固定", await 収納の接合を調べる());
     await 収納試験.reload();
@@ -1195,6 +1225,12 @@ try {
     const 復元 = await 収納試験.locator(".朗読収納").evaluate((要素) =>
         要素.getBoundingClientRect().height);
     if (復元 < 95) throw new Error("朗読の固定が再読込後に復元されません");
+    await 収納試験.locator(".朗読収納").evaluate((要素) => {
+        const 内容 = 要素.querySelector(".朗読内容");
+        if (!内容 || getComputedStyle(内容).position !== "relative") {
+            throw new Error("再読込後の朗読が通常フローへ戻りません");
+        }
+    });
 
     for (const 幅 of [390, 320, 430]) {
         await 収納試験.setViewportSize({ width: 幅, height: 840 });
