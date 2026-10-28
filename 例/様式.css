@@ -94,7 +94,7 @@ pre { background: #252c26; color: #e9efe8; padding: 23px; font-size: .8rem; over
 
 
 /* 日本語の本文には巻物と同じ明朝体を用いる。コードだけは等幅書体。 */
-:root { --右軌道: 82px; --左軌道: 64px; --支援高: 158px; }
+:root { --右軌道: 82px; --左軌道: 76px; --左余白: 12px; --支援高: 158px; }
 body {
     font-family: "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif JP", serif;
     padding-inline: var(--左軌道) var(--右軌道);
@@ -112,47 +112,97 @@ body {
     height: 100%;
     min-height: 0;
     margin: 0;
-    padding: 18px 7px 8px;
+    padding: 18px 8px 12px;
     display: flex;
     flex-direction: column;
+    align-items: center;
     justify-content: flex-start;
-    gap: 24px;
-    overflow-y: auto;
-    scrollbar-width: thin;
+    gap: 22px;
+    overflow: hidden;
 }
 .印 {
     display: flex;
-    flex-direction: row;
-    writing-mode: vertical-rl;
+    flex-direction: column;
+    writing-mode: horizontal-tb;
     align-items: center;
-    gap: 7px;
+    justify-content: center;
+    gap: 5px;
     flex: 0 0 auto;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
     font-size: 1.15rem;
     line-height: 1.2;
-    height: auto;
     white-space: nowrap;
 }
 .印章 { width: 34px; height: 34px; }
-.印 .印字 { font-size: 1em; font-weight: 700; color: var(--墨); }
-.印 .印読 { display: inline; font-size: .67rem; margin: 0; color: var(--薄); }
+.印 .印字 { display: block; writing-mode: vertical-rl; margin: 0; font-size: 1em; font-weight: 700; color: var(--墨); }
+.印 .印読 { display: block; writing-mode: vertical-rl; margin: 0; font-size: .67rem; color: var(--薄); }
 .上部 nav {
     display: flex;
-    writing-mode: vertical-rl;
-    flex-direction: row;
+    writing-mode: horizontal-tb;
+    flex-direction: column;
     flex-wrap: nowrap;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 18px;
+    flex: 0 1 auto;
+    min-width: 0;
+    min-height: 0;
     width: 100%;
     margin: 0;
+    padding: 2px 0;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 15px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
 }
-.上部 nav a { font-size: .86rem; white-space: nowrap; letter-spacing: .14em; }
+.上部 nav a {
+    display: block;
+    flex: 0 0 auto;
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    font-size: .86rem;
+    line-height: 1.15;
+    white-space: nowrap;
+    letter-spacing: .14em;
+}
+.上部 nav::-webkit-scrollbar { display: none; }
 .上部 .配色切替 { flex: 0 0 34px; width: 34px; height: 34px; font-size: 1.1rem; }
 .容器 { width: min(1160px, calc(100% - 44px)); }
 .主題 { min-height: 670px; grid-template-columns: 1.18fr .82fr; gap: 14px; }
-.主題左 { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
-.主題左 h1 { font-size: clamp(2.3rem, 4.45vw, 5rem); line-height: 1.35; }
-.主題縦案内 { width: 100%; min-width: 0; }
+.主題左 {
+    min-width: 0;
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: space-between;
+    gap: clamp(10px, 2vw, 24px);
+}
+.主題見出し { flex: 0 0 auto; min-width: 0; }
+.主題見出し > .綴り-縦書 {
+    display: block;
+    width: max-content;
+    max-width: none;
+    height: clamp(400px, 68vh, 590px);
+    max-height: none;
+    font-family: "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif JP", serif;
+    line-height: 1.4;
+}
+.主題見出し .眉 {
+    margin: 0 0 0 1em;
+    font-size: .75rem;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+.主題見出し h1 {
+    margin: 0;
+    font-size: clamp(2rem, 3.45vw, 3.95rem);
+    font-weight: 500;
+    letter-spacing: .04em;
+    line-height: 1.35;
+    white-space: nowrap;
+}
+.主題縦案内 { width: auto; min-width: 0; flex: 1 1 auto; }
 .主題縦案内 > .綴り-縦書 {
     display: block;
     height: 280px;
@@ -232,8 +282,10 @@ body {
 .一覧題 p { margin: 0; }
 .一覧 .一覧格子 { grid-column: 1; grid-row: 1; }
 @media (max-width: 900px) {
-    :root { --右軌道: 66px; --左軌道: 42px; --支援高: 125px; }
+    :root { --右軌道: 66px; --左軌道: 56px; --左余白: 8px; --支援高: 125px; }
     .主題 { grid-template-columns: 1fr; padding-block: 42px; }
+    .主題見出し > .綴り-縦書 { height: 530px; }
+    .主題見出し h1 { font-size: clamp(2rem, 5vw, 3.15rem); }
     .主題見本 { min-height: 210px; border-left: 0; border-top: 1px solid var(--線); }
     .主題見本 .綴り-縦書 { height: 190px; }
     .縦案内節 { grid-template-columns: minmax(0,1fr) minmax(135px, 25%); gap: 12px; }
@@ -242,7 +294,7 @@ body {
     .縦案内節 .節題 > .綴り-縦書 { height: 540px; max-height: none; }
 }
 @media (max-width: 520px) {
-    :root { --右軌道: 56px; --左軌道: 28px; --支援高: 88px; }
+    :root { --右軌道: 56px; --左軌道: 38px; --左余白: 6px; --支援高: 88px; }
     .容器 { width: calc(100% - 20px); }
     .上部中 { padding: 10px 3px; gap: 12px; }
     .印 { font-size: 1rem; }
@@ -250,7 +302,11 @@ body {
     .上部 nav { gap: 11px; }
     .上部 nav a { font-size: .7rem; }
     .上部 .配色切替 { width: 29px; height: 29px; flex-basis: 29px; }
-    .主題左 h1 { font-size: clamp(1.85rem, 7vw, 2.6rem); }
+    .主題左 { flex-direction: column; align-items: flex-end; gap: 16px; }
+    .主題見出し > .綴り-縦書 { height: 340px; }
+    .主題見出し h1 { font-size: clamp(1.8rem, 7vw, 2.6rem); }
+    .主題見出し .眉 { font-size: .64rem; }
+    .主題縦案内 { align-self: center; width: 100%; }
     .主題縦案内 > .綴り-縦書 { height: 235px; font-size: .75rem; }
     .縦案内節 { grid-template-columns: minmax(0,1fr) minmax(90px, 30%); }
     .縦案内節 > .節題 { padding-left: 6px; }

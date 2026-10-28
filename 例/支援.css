@@ -143,11 +143,12 @@
 /* 右上は縦書きの案内、右下は珈琲支援の専用区画。左端は縦書きフッター。 */
 .下部 {
     position: fixed;
-    inset: 0 auto 0 0;
+    inset: 0 auto 0 var(--左余白);
     z-index: 9;
-    width: var(--左軌道);
+    width: calc(var(--左軌道) - var(--左余白));
     margin: 0;
     border: 0;
+    border-left: 1px solid var(--線);
     border-right: 1px solid var(--線);
     background: color-mix(in srgb, var(--紙) 97%, var(--面));
 }
@@ -156,22 +157,61 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
+    writing-mode: horizontal-tb;
     width: 100%;
     height: 100%;
+    min-width: 0;
     min-height: 0;
     margin: 0;
-    padding: 16px 7px;
-    gap: 16px;
-    overflow-y: auto;
-    scrollbar-width: thin;
+    padding: 16px 8px;
+    gap: 14px;
+    overflow: hidden;
+}
+.下部版 {
+    display: flex;
     writing-mode: vertical-rl;
     text-orientation: mixed;
+    flex: 0 0 auto;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: .5em;
+    font-size: .78rem;
+    white-space: nowrap;
 }
-.下部版 { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: .5em; white-space: nowrap; font-size: .78rem; }
 .下部版 > span, .下部版 > small { white-space: nowrap; }
-.下部リンク { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 8px; }
-.下部リンク > a { white-space: nowrap; }
-.pages-kofi-link { display: flex; flex-direction: row; align-items: center; gap: 5px; }
+.下部リンク {
+    display: flex;
+    writing-mode: horizontal-tb;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-start;
+    flex: 0 1 auto;
+    min-height: 0;
+    min-width: 0;
+    width: 100%;
+    gap: 11px;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+.下部リンク::-webkit-scrollbar { display: none; }
+.下部リンク > a, .下部リンク > span {
+    display: block;
+    flex: 0 0 auto;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+.pages-kofi-link {
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+}
 .pages-kofi-link > img { width: 14px; height: 14px; }
 .支援側帯 {
     position: fixed;
@@ -196,7 +236,7 @@
     box-shadow: inset 3px 0 0 var(--朱);
 }
 @media (max-width: 900px) {
-    .下部中 { padding: 12px 3px; gap: 11px; }
+    .下部中 { padding: 12px 5px; gap: 10px; }
     .下部版 { font-size: .7rem; }
     .下部リンク > a { font-size: .7rem; }
     .支援側帯 { font-size: .8rem; }
@@ -220,9 +260,9 @@
     }
 }
 @media (max-width: 520px) {
-    .下部中 { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+    .下部中 { padding: 10px 3px; gap: 9px; }
     .下部版 { flex-wrap: nowrap; font-size: .6rem; }
-    .下部リンク { justify-content: flex-start; flex-wrap: nowrap; }
+    .下部リンク { justify-content: flex-start; flex-wrap: nowrap; gap: 8px; }
     .下部リンク > a { font-size: .6rem; }
     .pages-kofi-link > img { width: 10px; height: 10px; }
     .支援浮輪 { width: 48px; height: 48px; }

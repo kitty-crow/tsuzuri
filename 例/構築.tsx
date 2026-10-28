@@ -52,7 +52,7 @@ const 画面 = (
         <body>
             <header className="上部">
                 <div className="容器 上部中">
-                    <a className="印" href="#先頭"><img className="印章" src="./綴.svg" alt="" aria-hidden="true" /><span className="印字">綴り</span><span className="印読">つづり</span></a>
+                    <a className="印" href="#先頭"><img className="印章" src="./綴.svg" alt="" aria-hidden="true" /><span className="印字">り</span><span className="印読">つづり</span></a>
                     <nav aria-label="ページ内の案内">
                         <a href="#組版">組版</a><a href="#合成">合成漢字</a><a href="#書式">使い方</a><a href="#物語">物語</a>
                         <a href="https://github.com/kitty-crow/tsuzuri">原稿</a>
@@ -64,8 +64,10 @@ const 画面 = (
                 <section className="主題 容器">
                     <div className="主題左">
                         <div className="主題見出し">
-                            <p className="眉">日本語の文字表現を、もっと自由に。</p>
-                            <h1>文字を<span>綴る。</span><br/>想いを、かたちに。</h1>
+                            {縦書(<>
+                                <p className="眉">日本語の文字表現を、もっと自由に。</p>
+                                <h1>文字を<span>綴る。</span><br/>想いを、かたちに。</h1>
+                            </>)}
                         </div>
                         <div className="主題縦案内">
                             {縦書(<>

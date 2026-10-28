@@ -411,7 +411,8 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) clamp(190px, 22vw, 260px);
     align-items: start;
-    gap: 20px;
+    column-gap: clamp(36px, 4.1vw, 64px);
+    row-gap: 20px;
 }
 .物語冒頭 {
     grid-column: 2;
@@ -419,7 +420,7 @@
     align-self: stretch;
     min-width: 0;
     border-left: 1px solid var(--線);
-    padding-left: 12px;
+    padding-left: 18px;
 }
 .物語冒頭 > .綴り-縦書 {
     height: min(76vh, 730px);
@@ -451,12 +452,12 @@
     min-width: 0;
 }
 @media (max-width: 900px) {
-    .物語節 > .容器 { grid-template-columns: minmax(0,1fr) minmax(130px,25%); gap: 12px; }
+    .物語節 > .容器 { grid-template-columns: minmax(0,1fr) minmax(130px,25%); column-gap: 24px; row-gap: 12px; }
     .物語冒頭 > .綴り-縦書 { height: 570px; font-size: .83rem; }
 }
 @media (max-width: 520px) {
-    .物語節 > .容器 { grid-template-columns: minmax(0,1fr) minmax(82px,29%); gap: 7px; }
-    .物語冒頭 { padding-left: 5px; }
+    .物語節 > .容器 { grid-template-columns: minmax(0,1fr) minmax(82px,29%); column-gap: 14px; row-gap: 7px; }
+    .物語冒頭 { padding-left: 8px; }
     .物語冒頭 > .綴り-縦書 { height: 450px; font-size: .74rem; }
     .物語冒頭 .節題 > h2 { font-size: 1.32rem; }
     .物語冒頭 .物語説明 { font-size: .73em; }

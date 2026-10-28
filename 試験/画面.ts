@@ -32,11 +32,14 @@ try {
     });
     if (!標章の読込.読込 || 標章の読込.幅 !== 128 || 標章の読込.高さ !== 128
         || 標章の読込.代替 !== "" || アイコン先 !== "./綴.svg"
-        || 標章の読込.元 !== アイコン先 || !印の文字?.includes("綴り")
+        || 標章の読込.元 !== アイコン先 || !印の文字?.includes("り") || 印の文字.includes("綴")
         || !標章の原文.includes("<path ") || 標章の原文.includes("<text ")) {
         throw new Error("文字を輪郭化した標章とファビコンが不正です: "
             + JSON.stringify({ 標章の読込, アイコン先, 印の文字 }));
     }
+
+    const 印字 = await 頁.locator(".上部 .印 .印字").textContent();
+    if (印字 !== "り") throw new Error("標章と綴りの文字が重複しています: " + 印字);
 
     const 組版方向 = await 頁.evaluate(() => {
         const 対象 = (選択: string): Element => {
@@ -64,13 +67,15 @@ try {
             手順: 複数(".手順題 > .綴り-縦書"),
             個別: 複数(".一覧題 > .綴り-縦書"),
             物語: 複数(".物語冒頭 > .綴り-縦書"),
-            足方向: getComputedStyle(対象(".下部中")).writingMode,
-            頭方向: getComputedStyle(対象(".上部 nav")).writingMode,
+            主題: 複数(".主題見出し > .綴り-縦書"),
+            足方向: getComputedStyle(対象(".下部版")).writingMode,
+            頭方向: getComputedStyle(対象(".上部 nav a")).writingMode,
+            足左空白: Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--左余白")),
         };
     });
     for (const [名称, 方向] of Object.entries({
         導入: 組版方向.導入, 章題: 組版方向.章題, 手順: 組版方向.手順,
-        個別: 組版方向.個別, 物語: 組版方向.物語,
+        個別: 組版方向.個別, 物語: 組版方向.物語, 主題: 組版方向.主題,
     })) {
         const 数 = 名称 === "章題" ? 3 : 名称 === "手順" ? 2 : 1;
         if (方向.length !== 数 || !方向.every((向き) => 向き === "vertical-rl")) {
@@ -79,12 +84,53 @@ try {
     }
     if (!組版方向.書体.includes("Yu Mincho") || 組版方向.足方向 !== "vertical-rl"
         || 組版方向.頭方向 !== "vertical-rl"
-        || 組版方向.頭右 !== 組版方向.画面幅 || 組版方向.足左 !== 0
+        || 組版方向.頭右 !== 組版方向.画面幅
+        || 組版方向.足左 !== 組版方向.足左空白
+        || 組版方向.足左空白 < 5
         || Math.abs(組版方向.支援下 - 組版方向.画面高) > 1
         || Math.abs(組版方向.支援上 - 組版方向.頭下) > 1
         || await 頁.locator(".物語注記").count() !== 0) {
         throw new Error("左右の縦書き軌道と書体が不正です: " + JSON.stringify(組版方向));
     }
+    const 軌道の寸法 = await 頁.evaluate(() => {
+        const 計測 = (軌道: string, 項目: string): Readonly<{
+            内幅: number; 使用幅: number; 位置: readonly number[];
+            収まり: boolean;
+        }> => {
+            const 面 = document.querySelector(軌道);
+            if (!面) throw new Error("軌道が存在しません: " + 軌道);
+            const 枠 = 面.getBoundingClientRect();
+            const 子 = Array.from(面.querySelectorAll(項目));
+            const 位置 = 子.map((要素) => {
+                const 箱 = 要素.getBoundingClientRect();
+                return (箱.left + 箱.right) / 2;
+            });
+            const 収まり = 子.every((要素) => {
+                const 箱 = 要素.getBoundingClientRect();
+                return 箱.left >= 枠.left - 2 && 箱.right <= 枠.right + 2;
+            });
+            return { 内幅: 面.clientWidth, 使用幅: 面.scrollWidth, 位置, 収まり };
+        };
+        return {
+            頭: 計測(".上部中", ".印, nav a, #配色切替"),
+            足: 計測(".下部中", ".下部版, .下部リンク a"),
+            頭案内: 計測(".上部 nav", "a, #配色切替"),
+            足案内: 計測(".下部リンク", "a"),
+            横はみ出し: document.documentElement.scrollWidth - window.innerWidth,
+        };
+    });
+    const 頭の並び = 軌道の寸法.頭案内.位置;
+    const 足の並び = 軌道の寸法.足案内.位置;
+    if (!軌道の寸法.頭.収まり || !軌道の寸法.足.収まり
+        || !軌道の寸法.頭案内.収まり || !軌道の寸法.足案内.収まり
+        || 軌道の寸法.頭.使用幅 > 軌道の寸法.頭.内幅 + 2
+        || 軌道の寸法.足.使用幅 > 軌道の寸法.足.内幅 + 2
+        || Math.max(...頭の並び) - Math.min(...頭の並び) > 4
+        || Math.max(...足の並び) - Math.min(...足の並び) > 4
+        || 軌道の寸法.横はみ出し > 3) {
+        throw new Error("一列の縦書き軌道が横に溢れています: " + JSON.stringify(軌道の寸法));
+    }
+
     for (const 名称 of ["組版", "合成", "書式"]) {
         const 配置 = await 頁.locator("#" + 名称).evaluate((節) => {
             const 題 = 節.querySelector(".節題")?.getBoundingClientRect();
@@ -100,7 +146,7 @@ try {
         const 本文 = 箱.querySelector(".物語読書面")?.getBoundingClientRect();
         return { 題左: 題?.left ?? 0, 本文右: 本文?.right ?? 0 };
     });
-    if (物語配置.題左 < 物語配置.本文右) {
+    if (物語配置.題左 - 物語配置.本文右 < 32) {
         throw new Error("物語の縦書き案内が巻物に重なっています: " + JSON.stringify(物語配置));
     }
 
@@ -528,9 +574,40 @@ try {
         return { 画面幅: innerWidth, はみ出し: document.documentElement.scrollWidth - innerWidth,
             頭右: 頭?.right ?? 0, 足左: 足?.left ?? 0, 見出し右: 見出し?.right ?? 0 };
     });
-    if (携帯の軌道.頭右 !== 携帯の軌道.画面幅 || 携帯の軌道.足左 !== 0
+    if (携帯の軌道.頭右 !== 携帯の軌道.画面幅 || 携帯の軌道.足左 < 5
         || 携帯の軌道.はみ出し > 3 || 携帯の軌道.見出し右 > 携帯の軌道.頭右) {
         throw new Error("携帯の縦組が画面に収まりません: " + JSON.stringify(携帯の軌道));
+    }
+
+    const 携帯の欄 = await 頁.evaluate(() => {
+        const 測定 = (要素: string, 子: string) => {
+            const 本体 = document.querySelector(要素);
+            const 項目 = Array.from(document.querySelectorAll(子));
+            const 枠 = 本体?.getBoundingClientRect();
+            return {
+                幅: 本体?.clientWidth ?? 0,
+                使用幅: 本体?.scrollWidth ?? 0,
+                収まり: Boolean(枠 && 項目.every((項) => {
+                    const 個 = 項.getBoundingClientRect();
+                    return 個.left >= 枠.left - 2 && 個.right <= 枠.right + 2;
+                })),
+            };
+        };
+        const 書面 = document.querySelector(".物語節 .容器");
+        const 題 = 書面?.querySelector(".物語冒頭")?.getBoundingClientRect();
+        const 本文 = 書面?.querySelector(".物語読書面")?.getBoundingClientRect();
+        return {
+            頭: 測定(".上部中", ".上部 .印, .上部 nav a, .上部 #配色切替"),
+            足: 測定(".下部中", ".下部 .下部版, .下部 .下部リンク a"),
+            主題: getComputedStyle(document.querySelector(".主題見出し > .綴り-縦書")!).writingMode,
+            物語間隔: (題?.left ?? 0) - (本文?.right ?? 0),
+        };
+    });
+    if (!携帯の欄.頭.収まり || !携帯の欄.足.収まり
+        || 携帯の欄.頭.使用幅 > 携帯の欄.頭.幅 + 2
+        || 携帯の欄.足.使用幅 > 携帯の欄.足.幅 + 2
+        || 携帯の欄.主題 !== "vertical-rl" || 携帯の欄.物語間隔 < 12) {
+        throw new Error("携帯表示の縦組と余白が不正です: " + JSON.stringify(携帯の欄));
     }
 
     const 携帯収納 = await 頁.locator(".物語読書面").evaluate((面) => {
