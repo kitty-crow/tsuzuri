@@ -226,6 +226,7 @@ try {
     const 収納時の幅 = await 頁.locator(".物語読書面").evaluate((面) => ({
         面: 面.getBoundingClientRect().width,
         本文: 面.querySelector(".物語巻")?.getBoundingClientRect().width ?? 0,
+        右余白: Number.parseFloat(getComputedStyle(面.querySelector(".物語巻")!).paddingRight),
     }));
     if (Math.abs(収納時の幅.面 - 収納時の幅.本文) > 2) {
         throw new Error("非固定の目次が本文を押し縮めました: " + JSON.stringify(収納時の幅));
@@ -255,15 +256,18 @@ try {
             && Math.abs(左.width + 右.width - 読書面.getBoundingClientRect().width) < 3;
     });
     const 固定寸法 = await 頁.locator(".物語読書面").evaluate((面) => {
-        const 本文 = 面.querySelector(".物語巻")?.getBoundingClientRect();
+        const 内容 = 面.querySelector(".物語巻");
+        const 本文 = 内容?.getBoundingClientRect();
         const 側 = 面.querySelector(".目次側")?.getBoundingClientRect();
         return { 全幅: 面.getBoundingClientRect().width,
             本文右: 本文?.right ?? 0, 目次左: 側?.left ?? 0,
-            本文幅: 本文?.width ?? 0, 目次幅: 側?.width ?? 0 };
+            本文幅: 本文?.width ?? 0, 目次幅: 側?.width ?? 0,
+            右余白: 内容 ? Number.parseFloat(getComputedStyle(内容).paddingRight) : 0 };
     });
     if (Math.abs(固定寸法.本文右 - 固定寸法.目次左) > 3
-        || Math.abs(固定寸法.本文幅 + 固定寸法.目次幅 - 固定寸法.全幅) > 3) {
-        throw new Error("固定した目次が本文を隠しています: " + JSON.stringify(固定寸法));
+        || Math.abs(固定寸法.本文幅 + 固定寸法.目次幅 - 固定寸法.全幅) > 3
+        || 固定寸法.右余白 < 収納時の幅.右余白 + 12) {
+        throw new Error("固定した目次と本文の間隔が不足しています: " + JSON.stringify({ 収納時の幅, 固定寸法 }));
     }
 
     const ルビ位置 = await 頁.locator(".物語巻 .綴り-合成ルビ").evaluateAll((要素一覧) =>
@@ -278,6 +282,7 @@ try {
                 字中央: 字枠 ? (字枠.top + 字枠.bottom) / 2 : 0,
                 読み中央: 読み枠 ? (読み枠.top + 読み枠.bottom) / 2 : 0,
                 向き: getComputedStyle(ルビ).writingMode,
+                間隔: Number.parseFloat(getComputedStyle(ルビ).gap),
             };
         })
     );
@@ -286,6 +291,7 @@ try {
     }
     for (const 位置 of ルビ位置) {
         if (位置.向き !== "vertical-rl" || 位置.読み左 - 位置.字右 < 1
+            || 位置.読み左 - 位置.字右 > 8 || 位置.間隔 > 3
             || Math.abs(位置.読み中央 - 位置.字中央) > 18) {
             throw new Error("合成漢字と振仮名が重なっています: " + JSON.stringify(位置));
         }

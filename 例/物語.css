@@ -307,11 +307,13 @@
 }
 .物語読書面 .物語巻 {
     width: 100%;
-    transition: width .48s cubic-bezier(.2,.85,.2,1);
+    transition: width .48s cubic-bezier(.2,.85,.2,1),
+        padding-right .48s cubic-bezier(.2,.85,.2,1);
 }
 /* 固定中のみ本文の領域を縮め、右側の目次と重ならないようにする。 */
 .物語読書面[data-index-pinned="true"] .物語巻 {
     width: calc(100% - var(--目次横幅));
+    padding-right: clamp(44px, 5vw, 64px);
 }
 .目次側 {
     --目次引手幅: 34px;
