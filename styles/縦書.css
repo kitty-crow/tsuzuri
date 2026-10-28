@@ -1,0 +1,5 @@
+.綴り-本文 { display: inline-block; max-width: 100%; font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif; }
+.綴り-縦書 { writing-mode: vertical-rl; text-orientation: mixed; max-height: min(76vh, 36em); line-height: 1.85; }
+.綴り-横書 { writing-mode: horizontal-tb; line-height: 1.85; }
+.綴り-縦中横 { text-combine-upright: all; -webkit-text-combine: horizontal; white-space: nowrap; }
+

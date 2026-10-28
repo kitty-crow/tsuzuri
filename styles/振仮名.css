@@ -1,0 +1,5 @@
+.綴り-振仮名 { ruby-position: over; ruby-align: center; }
+.綴り-振仮名 > rt { font-size: .4em; font-family: sans-serif; line-height: 1.1; }
+.綴り-合成ルビ { display: inline-flex; flex-direction: column-reverse; align-items: center; justify-content: center; vertical-align: middle; white-space: nowrap; width: 1em; min-width: 1em; line-height: 1; }
+.綴り-合成ルビ > rt { display: block; width: max-content; margin: 0 0 .16em; font-size: .28em; text-align: center; white-space: nowrap; }
+

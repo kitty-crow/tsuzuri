@@ -1,0 +1,3 @@
+.綴り-暦 { font-variant-numeric: normal; white-space: nowrap; }
+.綴り-暦[data-unconverted="true"] { text-decoration: underline dotted; text-underline-offset: .15em; }
+
