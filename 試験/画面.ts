@@ -960,6 +960,10 @@ try {
         || await 頁.locator("#朗読鍵").getAttribute("type") !== "password") {
         throw new Error("localStorage のキーが再読込後に復元されません");
     }
+    await 頁.locator("#朗読引手").hover();
+    await 頁.locator("#朗読設定").evaluate((詳細) => {
+        if (詳細 instanceof HTMLDetailsElement) 詳細.open = true;
+    });
     await 頁.locator("#朗読鍵").fill("");
     if (await 頁.evaluate(() => localStorage.getItem("綴り-朗読鍵")) !== null) {
         throw new Error("キーを空にした際の保存削除が動作していません");
@@ -975,6 +979,10 @@ try {
     if (移行.鍵 !== "旧版の鍵" || 移行.保存 !== "旧版の鍵" || 移行.旧保存 !== null) {
         throw new Error("旧版のキーを移行できません: " + JSON.stringify(移行));
     }
+    await 頁.locator("#朗読引手").hover();
+    await 頁.locator("#朗読設定").evaluate((詳細) => {
+        if (詳細 instanceof HTMLDetailsElement) 詳細.open = true;
+    });
     await 頁.locator("#朗読鍵").fill("");
     // 偽音声は再生できないため、再生完了後の停止ボタンは無効でもよい。
 
