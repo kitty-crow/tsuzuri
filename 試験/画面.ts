@@ -531,6 +531,34 @@ try {
     const 目次側 = 頁.locator(".目次側");
     const 引手 = 頁.locator("#目次引手");
     const 固定 = 頁.locator("#目次固定");
+    const 目次の縁を検査 = async (): Promise<void> => {
+        const 配置 = await 目次側.evaluate((側) => {
+            const 引手 = 側.querySelector(".目次引手");
+            const 側の様式 = getComputedStyle(側);
+            const 引手の様式 = 引手 ? getComputedStyle(引手) : null;
+            const 側枠 = 側.getBoundingClientRect();
+            const 引手枠 = 引手?.getBoundingClientRect();
+            return {
+                上ずれ: (引手枠?.top ?? -100) - 側枠.top,
+                側左上: 側の様式.borderTopLeftRadius,
+                側左下: 側の様式.borderBottomLeftRadius,
+                側右上: 側の様式.borderTopRightRadius,
+                側右下: 側の様式.borderBottomRightRadius,
+                引手左上: 引手の様式?.borderTopLeftRadius ?? "",
+                引手左下: 引手の様式?.borderBottomLeftRadius ?? "",
+                引手右上: 引手の様式?.borderTopRightRadius ?? "",
+                引手右下: 引手の様式?.borderBottomRightRadius ?? "",
+            };
+        });
+        if (Math.abs(配置.上ずれ) > 1
+            || 配置.側左上 !== "0px" || 配置.側左下 !== "0px"
+            || 配置.側右上 !== "5px" || 配置.側右下 !== "5px"
+            || 配置.引手左上 !== "0px" || 配置.引手左下 !== "0px"
+            || 配置.引手右上 !== "4px" || 配置.引手右下 !== "4px") {
+            throw new Error("目次の外側の角丸と最上部の引手が不正です: " + JSON.stringify(配置));
+        }
+    };
+    await 目次の縁を検査();
     const 初期収納 = await 目次側.evaluate((要素) => ({
         左: 要素.getBoundingClientRect().left,
         親右: 要素.parentElement?.getBoundingClientRect().right ?? 0,
@@ -540,6 +568,7 @@ try {
         throw new Error("目次が初期状態で収納されていません: " + JSON.stringify(初期収納));
     }
     await 引手.hover();
+    await 目次の縁を検査();
 
     await 頁.waitForFunction(() =>
         document.querySelector(".目次側")?.getBoundingClientRect().width !== undefined
@@ -808,6 +837,7 @@ try {
         throw new Error("携帯表示の縦組と余白が不正です: " + JSON.stringify(携帯の欄));
     }
 
+    await 目次の縁を検査();
     const 携帯収納 = await 頁.locator(".物語読書面").evaluate((面) => {
         const 本文 = 面.querySelector(".物語巻")?.getBoundingClientRect();
         const 引手 = 面.querySelector(".目次引手")?.getBoundingClientRect();
