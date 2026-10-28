@@ -138,3 +138,94 @@
 @media (prefers-reduced-motion: reduce) {
     .支援側帯, .支援浮輪 { transition: none; }
 }
+
+
+/* 右上は縦書きの案内、右下は珈琲支援の専用区画。左端は縦書きフッター。 */
+.下部 {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 9;
+    width: var(--左軌道);
+    margin: 0;
+    border: 0;
+    border-right: 1px solid var(--線);
+    background: color-mix(in srgb, var(--紙) 97%, var(--面));
+}
+.下部中 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 16px 7px;
+    gap: 16px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+}
+.下部版 { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: .5em; white-space: nowrap; font-size: .78rem; }
+.下部版 > span, .下部版 > small { white-space: nowrap; }
+.下部リンク { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 8px; }
+.下部リンク > a { white-space: nowrap; }
+.pages-kofi-link { display: flex; flex-direction: row; align-items: center; gap: 5px; }
+.pages-kofi-link > img { width: 14px; height: 14px; }
+.支援側帯 {
+    position: fixed;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    width: var(--右軌道);
+    height: var(--支援高);
+    min-width: 0;
+    padding: 12px 5px 14px;
+    border: 0;
+    border-left: 1px solid var(--線);
+    border-top: 1px solid var(--線);
+    border-radius: 0;
+    box-shadow: none;
+    justify-content: center;
+    background: color-mix(in srgb, var(--面) 94%, var(--朱));
+}
+.支援側帯:hover, .支援側帯:focus-visible {
+    transform: none;
+    background: color-mix(in srgb, var(--面) 77%, var(--朱));
+    box-shadow: inset 3px 0 0 var(--朱);
+}
+@media (max-width: 900px) {
+    .下部中 { padding: 12px 3px; gap: 11px; }
+    .下部版 { font-size: .7rem; }
+    .下部リンク > a { font-size: .7rem; }
+    .支援側帯 { font-size: .8rem; }
+}
+@media (max-width: 720px) {
+    /* 携帯では丸い Ko-fi を右端下部の専用領域に配置する。 */
+    .支援浮輪 {
+        right: max(4px, env(safe-area-inset-right));
+        left: auto;
+        bottom: max(12px, env(safe-area-inset-bottom));
+    }
+    .floatingchat-container-wrap, .floatingchat-container-wrap-mobi {
+        left: auto !important;
+        right: max(4px, env(safe-area-inset-right)) !important;
+        bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    }
+    .floating-chat-kofi-popup-iframe, .floating-chat-kofi-popup-iframe-mobi,
+    .floating-chat-kofi-popup-iframe-closer, .floating-chat-kofi-popup-iframe-closer-mobi {
+        left: auto !important;
+        right: max(8px, env(safe-area-inset-right)) !important;
+    }
+}
+@media (max-width: 520px) {
+    .下部中 { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+    .下部版 { flex-wrap: nowrap; font-size: .6rem; }
+    .下部リンク { justify-content: flex-start; flex-wrap: nowrap; }
+    .下部リンク > a { font-size: .6rem; }
+    .pages-kofi-link > img { width: 10px; height: 10px; }
+    .支援浮輪 { width: 48px; height: 48px; }
+    .支援浮輪 > img { width: 34px; height: 34px; }
+    /* Ko-fi 自身の円は元の 56px のまま。 */
+}

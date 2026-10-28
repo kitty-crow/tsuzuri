@@ -38,6 +38,72 @@ try {
             + JSON.stringify({ 標章の読込, アイコン先, 印の文字 }));
     }
 
+    const 組版方向 = await 頁.evaluate(() => {
+        const 対象 = (選択: string): Element => {
+            const 要素 = document.querySelector(選択);
+            if (!要素) throw new Error("必要な表示要素がありません: " + 選択);
+            return 要素;
+        };
+        const 複数 = (選択: string): string[] =>
+            Array.from(document.querySelectorAll(選択), (要素) => getComputedStyle(要素).writingMode);
+        const 右側 = 対象(".上部").getBoundingClientRect();
+        const 左側 = 対象(".下部").getBoundingClientRect();
+        const 支援 = 対象(".支援側帯").getBoundingClientRect();
+        const 読む人 = 対象("body");
+        return {
+            書体: getComputedStyle(読む人).fontFamily,
+            頭右: 右側.right,
+            足左: 左側.left,
+            支援下: 支援.bottom,
+            支援上: 支援.top,
+            頭下: 右側.bottom,
+            画面幅: window.innerWidth,
+            画面高: window.innerHeight,
+            導入: 複数(".主題縦案内 > .綴り-縦書"),
+            章題: 複数(".縦案内節 > .節題 > .綴り-縦書"),
+            手順: 複数(".手順題 > .綴り-縦書"),
+            個別: 複数(".一覧題 > .綴り-縦書"),
+            物語: 複数(".物語冒頭 > .綴り-縦書"),
+            足方向: getComputedStyle(対象(".下部中")).writingMode,
+            頭方向: getComputedStyle(対象(".上部 nav")).writingMode,
+        };
+    });
+    for (const [名称, 方向] of Object.entries({
+        導入: 組版方向.導入, 章題: 組版方向.章題, 手順: 組版方向.手順,
+        個別: 組版方向.個別, 物語: 組版方向.物語,
+    })) {
+        const 数 = 名称 === "章題" ? 3 : 名称 === "手順" ? 2 : 1;
+        if (方向.length !== 数 || !方向.every((向き) => 向き === "vertical-rl")) {
+            throw new Error("縦書きの案内が不正です: " + JSON.stringify({ 名称, 方向, 数 }));
+        }
+    }
+    if (!組版方向.書体.includes("Yu Mincho") || 組版方向.足方向 !== "vertical-rl"
+        || 組版方向.頭方向 !== "vertical-rl"
+        || 組版方向.頭右 !== 組版方向.画面幅 || 組版方向.足左 !== 0
+        || Math.abs(組版方向.支援下 - 組版方向.画面高) > 1
+        || Math.abs(組版方向.支援上 - 組版方向.頭下) > 1
+        || await 頁.locator(".物語注記").count() !== 0) {
+        throw new Error("左右の縦書き軌道と書体が不正です: " + JSON.stringify(組版方向));
+    }
+    for (const 名称 of ["組版", "合成", "書式"]) {
+        const 配置 = await 頁.locator("#" + 名称).evaluate((節) => {
+            const 題 = 節.querySelector(".節題")?.getBoundingClientRect();
+            const 本文 = 節.querySelector(".機能格子, .作品格子, .手順")?.getBoundingClientRect();
+            return { 題左: 題?.left ?? 0, 本文右: 本文?.right ?? 0 };
+        });
+        if (配置.題左 < 配置.本文右) {
+            throw new Error("右側の縦書き見出しが本文に重なっています: " + JSON.stringify({ 名称, 配置 }));
+        }
+    }
+    const 物語配置 = await 頁.locator(".物語節 .容器").evaluate((箱) => {
+        const 題 = 箱.querySelector(".物語冒頭")?.getBoundingClientRect();
+        const 本文 = 箱.querySelector(".物語読書面")?.getBoundingClientRect();
+        return { 題左: 題?.left ?? 0, 本文右: 本文?.right ?? 0 };
+    });
+    if (物語配置.題左 < 物語配置.本文右) {
+        throw new Error("物語の縦書き案内が巻物に重なっています: " + JSON.stringify(物語配置));
+    }
+
     const 合成数 = await 頁.locator(".綴り-文字").count();
     const 縦書数 = await 頁.locator(".綴り-縦書").count();
     const 読み数 = await 頁.locator(".綴り-振仮名").count();
@@ -430,6 +496,18 @@ try {
     });
     await 頁.setViewportSize({ width: 390, height: 840 });
     await 頁.waitForFunction(() => document.documentElement.dataset.kofiReady === "true");
+    const 携帯の軌道 = await 頁.evaluate(() => {
+        const 頭 = document.querySelector(".上部")?.getBoundingClientRect();
+        const 足 = document.querySelector(".下部")?.getBoundingClientRect();
+        const 見出し = document.querySelector(".縦案内節 .節題")?.getBoundingClientRect();
+        return { 画面幅: innerWidth, はみ出し: document.documentElement.scrollWidth - innerWidth,
+            頭右: 頭?.right ?? 0, 足左: 足?.left ?? 0, 見出し右: 見出し?.right ?? 0 };
+    });
+    if (携帯の軌道.頭右 !== 携帯の軌道.画面幅 || 携帯の軌道.足左 !== 0
+        || 携帯の軌道.はみ出し > 3 || 携帯の軌道.見出し右 > 携帯の軌道.頭右) {
+        throw new Error("携帯の縦組が画面に収まりません: " + JSON.stringify(携帯の軌道));
+    }
+
     const 円形 = await 頁.locator(".floatingchat-container-wrap-mobi").evaluate((要素) => {
         const 装飾 = getComputedStyle(要素);
         return { 幅: 要素.getBoundingClientRect().width, 高さ: 要素.getBoundingClientRect().height,

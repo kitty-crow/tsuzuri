@@ -52,7 +52,7 @@ const 画面 = (
         <body>
             <header className="上部">
                 <div className="容器 上部中">
-                    <a className="印" href="#先頭"><img className="印章" src="./綴.svg" alt="" aria-hidden="true" />綴り <span>つづり</span></a>
+                    <a className="印" href="#先頭"><img className="印章" src="./綴.svg" alt="" aria-hidden="true" /><span className="印字">綴り</span><span className="印読">つづり</span></a>
                     <nav aria-label="ページ内の案内">
                         <a href="#組版">組版</a><a href="#合成">合成漢字</a><a href="#書式">使い方</a><a href="#物語">物語</a>
                         <a href="https://github.com/kitty-crow/tsuzuri">原稿</a>
@@ -63,19 +63,25 @@ const 画面 = (
             <main id="先頭">
                 <section className="主題 容器">
                     <div className="主題左">
-                        <p className="眉">日本語の文字表現を、もっと自由に。</p>
-                        <h1>文字を<span>綴る。</span><br/>想いを、かたちに。</h1>
-                        <p className="導入">縦書き、振仮名、組版、合成漢字、漢数字、そして暦。<br/>一つの読み込みで、日本語の豊かな表現をそのまま書けます。</p>
-                        <div className="導入行"><a className="主要" href="#書式">書き方を見る</a><a className="副" href="#合成">実例を見る</a></div>
-                        <div className="手引"><span>依存ライブラリー不要</span><span>文字として複写可能</span><span>自動初期化</span></div>
+                        <div className="主題見出し">
+                            <p className="眉">日本語の文字表現を、もっと自由に。</p>
+                            <h1>文字を<span>綴る。</span><br/>想いを、かたちに。</h1>
+                        </div>
+                        <div className="主題縦案内">
+                            {縦書(<>
+                                <p className="導入">縦書き、振仮名、組版、合成漢字、漢数字、そして暦。一つの読み込みで、日本語の豊かな表現をそのまま書けます。</p>
+                                <div className="導入行"><a className="主要" href="#書式">書き方を見る</a><a className="副" href="#合成">実例を見る</a></div>
+                                <div className="手引"><span>依存ライブラリー不要</span><span>文字として複写可能</span><span>自動初期化</span></div>
+                            </>)}
+                        </div>
                     </div>
                     <div className="主題見本" aria-label="縦書きの例">
                         <span className="朱印">和</span>
                         {縦書(<><strong>言の葉を<br/>編む。</strong><small>書を愉しむ、すべての人へ。</small></>)}
                     </div>
                 </section>
-                <section id="組版" className="節 容器">
-                    <div className="節題"><p className="眉">言葉と文字</p><h2>日本語を、美しく。</h2><p>縦書きが基本。必要なところだけ横書きに切り替えられます。</p></div>
+                <section id="組版" className="節 容器 縦案内節">
+                    <div className="節題">{縦書(<><p className="眉">言葉と文字</p><h2>日本語を、美しく。</h2><p>縦書きが基本。必要なところだけ横書きに切り替えられます。</p></>)}</div>
                     <div className="機能格子">
                         <article className="機能">
                             <span className="番号">壱</span><h3>縦書き</h3>
@@ -96,9 +102,9 @@ const 画面 = (
                         </article>
                     </div>
                 </section>
-                <section id="合成" className="節 容器">
-                    <div className="節題"><p className="眉">意匠の自由</p><h2>存在しない漢字を、つくる。</h2>
-                        <p>表意文字記述文字列を解釈し、文字を自由に組み合わせます。振仮名を添えて、独自の読みも指定できます。</p>
+                <section id="合成" className="節 容器 縦案内節">
+                    <div className="節題">{縦書(<><p className="眉">意匠の自由</p><h2>存在しない漢字を、つくる。</h2>
+                        <p>表意文字記述文字列を解釈し、文字を自由に組み合わせます。振仮名を添えて、独自の読みも指定できます。</p></>)}
                     </div>
                     <div className="作品格子">
                         {例示("上下", "⿱日本", "にほん", "日本を縦に重ねた合成文字。")}
@@ -108,21 +114,21 @@ const 画面 = (
                     </div>
                     <p className="補足">書体に収録された専用字形と、文字の縦横を伸縮する描画を利用します。複写した文字列には、元の記述が残ります。</p>
                 </section>
-                <section id="書式" className="節 容器">
-                    <div className="節題"><p className="眉">使いはじめる</p><h2>書くのは、文字だけ。</h2><p>一つの配布ファイルを読み込み、本文に要素を置くだけ。追加の処理は不要です。</p></div>
+                <section id="書式" className="節 容器 縦案内節">
+                    <div className="節題">{縦書(<><p className="眉">使いはじめる</p><h2>書くのは、文字だけ。</h2><p>一つの配布ファイルを読み込み、本文に要素を置くだけ。追加の処理は不要です。</p></>)}</div>
                     <div className="手順">
                         <article>
-                            <div className="小見出し">一 · 読み込む</div>
+                            <div className="小見出し 手順題">{縦書("一 · 読み込む")}</div>
                             <pre><code>{'<script src="dist/tsuzuri.js"></script>'}</code></pre>
                         </article>
                         <article>
-                            <div className="小見出し">二 · 書いてみる</div>
+                            <div className="小見出し 手順題">{縦書("二 · 書いてみる")}</div>
                             <pre><code>{'<tsuzuri>\n  <jp-furigana reading="つづり">綴り</jp-furigana>\n  <jp-kanji reading="にほん">⿱日本</jp-kanji>\n</tsuzuri>'}</code></pre>
                         </article>
                     </div>
                     <div className="一覧">
-                        <h3>個別に読み込む場合</h3>
-                        <p>必要な機能だけを選べます。配布物はそれぞれ単独で使用できます。</p>
+                        <div className="一覧題">{縦書(<><h3>個別に読み込む場合</h3>
+                        <p>必要な機能だけを選べます。配布物はそれぞれ単独で使用できます。</p></>)}</div>
                         <div className="一覧格子">
                             {["furigana", "tategaki", "shoudou", "kumihan", "kansuji", "koyomi"].map((名) =>
                                 <code key={名}>{名}.js</code>

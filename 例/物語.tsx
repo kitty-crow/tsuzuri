@@ -212,16 +212,20 @@ export async function 物語の見本(): Promise<ReactNode> {
     return (
         <section id="物語" className="節 物語節">
             <div className="容器">
-                <div className="節題">
-                    <p className="眉">日本語の縦書きの実例</p>
-                    <h2>物語を、ひと巻に綴る。</h2>
-                    <p>一つの原稿に題名・章・後日譚を収めました。すべての見出しと文章は Markdown から組み上げます。</p>
-                </div>
-                <div className="物語説明">
-                    <span>人名の振仮名</span>
-                    <span>合成漢字</span>
-                    <span>旧暦の章題</span>
-                    <span>右から左へ読む一巻の物語</span>
+                <div className="物語冒頭">
+                    {createElement("tsuzuri", null, <>
+                        <div className="節題">
+                            <p className="眉">日本語の縦書きの実例</p>
+                            <h2>物語を、ひと巻に綴る。</h2>
+                            <p>一つの原稿に題名・章・後日譚を収めました。すべての見出しと文章は Markdown から組み上げます。</p>
+                        </div>
+                        <div className="物語説明">
+                            <span>人名の振仮名</span>
+                            <span>合成漢字</span>
+                            <span>旧暦の章題</span>
+                            <span>右から左へ読む一巻の物語</span>
+                        </div>
+                    </>)}
                 </div>
                 <div className="物語読書面" data-index-pinned="false">
                     <article id="物語本文" className="物語巻" aria-label="白萩の露と後日譚" tabIndex={0}>
@@ -260,7 +264,7 @@ export async function 物語の見本(): Promise<ReactNode> {
                         <span className="目次案内">項目を選ぶと巻物が移動します</span>
                     </aside>
                 </div>
-                <p className="物語注記">※ 祝言の吉日は日付が特定されていないため、文化十二年弥生の一日を資料内の代表日として用ゐてをります。</p>
+
             </div>
         </section>
     );
