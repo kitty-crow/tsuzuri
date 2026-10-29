@@ -11,6 +11,9 @@ const 分節器 = new Intl.Segmenter("ja", { granularity: "grapheme" });
 const 確認済 = new WeakMap<Element, string>();
 const 対象選択子 = [
     "tsuzuri p", "tsuzuri li", "tsuzuri blockquote",
+    "t-綴 p", "t-綴 li", "t-綴 blockquote",
+    "tategaki p", "tategaki li", "tategaki blockquote",
+    "t-縦 p", "t-縦 li", "t-縦 blockquote",
     "jp-tategaki p", "jp-tategaki li", "jp-tategaki blockquote",
     ".綴り-縦書 p", ".綴り-縦書 li", ".綴り-縦書 blockquote",
     ".綴り-組版", ".綴り-組版 p",
