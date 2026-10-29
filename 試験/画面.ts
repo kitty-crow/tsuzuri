@@ -975,6 +975,11 @@ try {
     if (!(await 後日譚の展開.evaluate((要素) => (要素 as HTMLDetailsElement).open))) {
         throw new Error("目次の展開操作に失敗しました");
     }
+    const 本篇の展開 = 頁.locator("#物語目次 details.目次開閉").first();
+    await 本篇の展開.locator("summary").click();
+    if (!(await 本篇の展開.evaluate((要素) => (要素 as HTMLDetailsElement).open))) {
+        throw new Error("初期収納した本篇の目次を展開できません");
+    }
     const 巻物 = 頁.locator("#物語本文");
     await 巻物.scrollIntoViewIfNeeded();
     const 移動前 = await 巻物.evaluate((要素) => ({
