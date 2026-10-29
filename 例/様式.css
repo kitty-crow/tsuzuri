@@ -134,7 +134,7 @@ body {
     line-height: 1.2;
     white-space: nowrap;
 }
-/* 生きた合成漢字と振仮名を、同じ一つの金色の枠に納める。 */
+/* 綴り自身が生成する合成漢字一文字を金色の枠の中央に置く。 */
 .印 .印章 {
     display: grid;
     place-items: center;
@@ -164,18 +164,6 @@ body {
     text-orientation: upright;
     line-height: 1;
 }
-.印 .印章 ruby {
-    display: inline-flex;
-    flex-direction: column-reverse;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    writing-mode: vertical-rl;
-    text-orientation: upright;
-    ruby-position: over;
-    ruby-align: center;
-    white-space: nowrap;
-}
 .印 .印章 .綴り-文字 {
     display: inline-flex;
     box-sizing: border-box;
@@ -183,19 +171,6 @@ body {
     padding: 0;
     border: 0;
     background: transparent;
-}
-.印 .印章 rt {
-    display: block;
-    flex: 0 0 auto;
-    margin: 0;
-    padding: 0;
-    color: var(--薄);
-    font-size: .24em;
-    font-weight: 400;
-    line-height: 1.15;
-    letter-spacing: .02em;
-    writing-mode: vertical-rl;
-    text-orientation: upright;
 }
 .上部 nav {
     display: flex;
@@ -378,7 +353,6 @@ body {
     .上部中 { padding: 10px 3px; gap: 12px; }
     .印 { font-size: 1rem; }
     .印 .印章 { width: 42px; height: 42px; padding: 2px; font-size: 1.5rem; }
-    .印 .印章 ruby { gap: 1px; }
     .上部 nav { gap: 11px; }
     .上部 nav a { font-size: .7rem; }
     .上部 .配色切替 { width: 29px; height: 29px; flex-basis: 29px; }

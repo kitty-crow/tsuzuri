@@ -53,7 +53,7 @@ const 画面 = (
         <body>
             <header className="上部">
                 <div className="容器 上部中">
-                    <a className="印" href="#先頭" aria-label="綴り（つづり）"><span className="印章">{縦書(合成("⿰綴り", "つづり"))}</span></a>
+                    <a className="印" href="#先頭" aria-label="綴り（つづり）"><span className="印章">{縦書(合成("⿰綴り"))}</span></a>
                     <nav aria-label="ページ内の案内">
                         <a href="#組版">組版</a><a href="#合成">合成漢字</a><a href="#書式">使い方</a><a href="#物語">物語</a>
                         <a href="https://github.com/kitty-crow/tsuzuri">原稿</a>
