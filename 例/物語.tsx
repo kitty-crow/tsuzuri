@@ -33,7 +33,7 @@ const 日付の装ひ: Readonly<Record<string, 日付設定>> = {
     "1815-04-15": { 干支: true, 吉日: true },
 };
 
-const 特徴的な語 = /(清七|初音|久兵衛|海藤|主様|白萩|燈心|行燈)/g;
+const 特徴的な語 = /(白萩の露|清七|初音|久兵衛|海藤|主様|白萩|燈心|行燈)/g;
 const 西暦 = /^\d{4}-\d{2}-\d{2}$/;
 
 export function 見出しか(項目: Token): 項目 is Tokens.Heading {
@@ -41,9 +41,18 @@ export function 見出しか(項目: Token): 項目 is Tokens.Heading {
         && "text" in 項目 && typeof 項目.text === "string";
 }
 
-/** 人名の読みをすべて示し、合成文字はそれぞれ初出に限る。 */
+/** 題名の合成字は初出に限らず、すべての見出しと本文に用いる。 */
+function 題名の合成字(): ReactNode {
+    return createElement("kanji", { "振り": "しらはぎ" }, "⿱白萩");
+}
+
+/** 人名の読みは毎回示し、題名以外の合成文字はそれぞれ初出に限る。 */
 export function 文章を装ふ(文章: string, 使用済み: Set<string>): ReactNode[] {
     return 文章.split(特徴的な語).map((語, 番号) => {
+        if (語 === "白萩の露") {
+            使用済み.add("白萩");
+            return <Fragment key={番号}>{題名の合成字()}の露</Fragment>;
+        }
         const 合成 = 合成候補[語];
         const 読み = 人名[語];
         if (合成 && !使用済み.has(語)) {
@@ -104,13 +113,13 @@ export function 目次を組む(字句: readonly Token[]): 目次構成 {
 
 function 目次リンク(節: 目次節): ReactNode {
     const 日付 = 節.階層 === 3 && 西暦.test(節.表記);
+    const 題名 = 節.表記.startsWith("白萩の露");
     return (
         <a className={"目次リンク 目次リンク-" + String(節.階層)}
             href={"#" + 節.識別} data-target={節.識別}>
             <span className="目次リンク文字">
-                {節.表記 === "白萩の露"
-                    ? <>{createElement("tsuzuri", null,
-                        createElement("kanji", { "振り": "しらはぎ" }, "⿱白萩"))}の露</>
+                {題名
+                    ? <>{createElement("tsuzuri", null, 題名の合成字())}の露{節.表記.slice("白萩の露".length)}</>
                     : 日付 ? 日付を描く(節.表記) : 節.表記}
             </span>
         </a>
