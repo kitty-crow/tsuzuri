@@ -758,6 +758,33 @@ try {
     for (const 構文 of ["⿱白萩", "⿰燈心", "⿱行燈", "⿰初音"]) {
         if (!表意文字.includes(構文)) throw new Error("合成文字が欠けています: " + 構文);
     }
+    // 再出する表題の上下合成字は見出し、後日譚、結びの強調文に必ず残す。
+    const 表題の位置 = await 頁.locator(".物語巻").evaluate((巻物) => {
+        const 最後の強調 = Array.from(巻物.querySelectorAll("strong"))
+            .find((要素) => 要素.textContent?.includes("の露　終"));
+        const 対象 = [巻物.querySelector(".物語大題"), 巻物.querySelector(".物語後日題"), 最後の強調];
+        return 対象.map((要素) => ({
+            原文: 要素?.querySelector(".綴り-原字")?.textContent ?? "",
+            読み: 要素?.querySelector("ruby rt")?.textContent ?? "",
+            続き: Boolean(要素?.textContent?.includes("の露")),
+            文字数: 要素?.querySelectorAll(".綴り-単字").length ?? 0,
+        }));
+    });
+    if (表題の位置.length !== 3 || 表題の位置.some((位置) =>
+        位置.原文 !== "⿱白萩" || 位置.読み !== "しらはぎ"
+        || !位置.続き || 位置.文字数 !== 2)) {
+        throw new Error("再出する表題に合成漢字が使用されていません: " + JSON.stringify(表題の位置));
+    }
+    const 後日譚の目次題 = await 頁.locator("#物語目次 .目次リンク-2 .目次リンク文字").evaluate((要素) => ({
+        原文: 要素.querySelector(".綴り-原字")?.textContent ?? "",
+        読み: 要素.querySelector("ruby rt")?.textContent ?? "",
+        続き: 要素.textContent?.includes("の露　後日譚"),
+    }));
+    if (後日譚の目次題.原文 !== "⿱白萩" || 後日譚の目次題.読み !== "しらはぎ"
+        || !後日譚の目次題.続き) {
+        throw new Error("後日譚の目次題に合成漢字が使用されていません: " + JSON.stringify(後日譚の目次題));
+    }
+
 
     const 書状数 = await 頁.locator(".物語巻 blockquote.物語書状").count();
     const 強調数 = await 頁.locator(".物語巻 strong").count();
