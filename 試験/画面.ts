@@ -126,6 +126,8 @@ try {
         最終行: Array.from(節.querySelectorAll(".記法対応 tbody tr:last-child > *"), (欄) => 欄.textContent),
         実例: 節.querySelector(".手順 article:nth-child(2) code")?.textContent ?? "",
         説明: 節.querySelector(".記法対応 p")?.textContent ?? "",
+        縦題: 節.querySelector(".記法題 h3")?.textContent ?? "",
+        縦本文: Boolean(節.querySelector(".記法題 > .綴り-縦書")),
     }));
     const 合成見本 = await 頁.locator(".作品格子").evaluate((節) =>
         Array.from(節.querySelectorAll(".文字列 code"), (欄) => 欄.textContent ?? ""));
@@ -134,12 +136,45 @@ try {
         || 記法見本.最終行.join(",") !== '振仮名の読み,読み="...",reading="..."'
         || !記法見本.実例.includes("<t-綴>")
         || 記法見本.実例.includes("<jp-") || !記法見本.説明.includes("ローマ字")
+        || 記法見本.縦題 !== "ローマ字の記法にも対応" || !記法見本.縦本文
         || 合成見本.length !== 4
         || !合成見本.every((見本) => 見本.includes("<t-漢字"))
         || 合成見本.some((見本) => 見本.includes("<kanji"))) {
         throw new Error("紹介ページの日本語見本とローマ字の対応表が不正です: "
             + JSON.stringify({ 記法見本, 合成見本 }));
     }
+
+    // 対照表の説明は右側で縦組になり、罫線で左側の表と区切られる。
+    for (const 横幅 of [1280, 1024, 820]) {
+        await 頁.setViewportSize({ width: 横幅, height: 800 });
+        const 対照配置 = await 頁.locator(".記法対応").evaluate((箱) => {
+            const 表 = 箱.querySelector(".記法表枠");
+            const 説明 = 箱.querySelector(".記法題");
+            const 縦組 = 説明?.querySelector(".綴り-縦書");
+            const 表枠 = 表?.getBoundingClientRect();
+            const 右枠 = 説明?.getBoundingClientRect();
+            const 外枠 = 箱.getBoundingClientRect();
+            return {
+                外左: 外枠.left, 外右: 外枠.right,
+                表右: 表枠?.right ?? 0,
+                説明左: 右枠?.left ?? 0,
+                説明右: 右枠?.right ?? 0,
+                罫線: 説明 ? getComputedStyle(説明).borderLeftStyle : "",
+                罫線幅: 説明 ? getComputedStyle(説明).borderLeftWidth : "",
+                縦組: 縦組 ? getComputedStyle(縦組).writingMode : "",
+                高さ: 縦組?.getBoundingClientRect().height ?? 0,
+                表の中: Boolean(表枠 && 表枠.left >= 外枠.left - 1),
+            };
+        });
+        if (!対照配置.表の中 || 対照配置.表右 > 対照配置.説明左 - 10
+            || 対照配置.説明右 > 対照配置.外右 + 1
+            || 対照配置.罫線 !== "solid" || 対照配置.罫線幅 !== "1px"
+            || 対照配置.縦組 !== "vertical-rl" || 対照配置.高さ < 250) {
+            throw new Error("対照表の縦書き案内と罫線が不正です: "
+                + JSON.stringify({ 横幅, ...対照配置 }));
+        }
+    }
+    await 頁.setViewportSize({ width: 1280, height: 800 });
 
     // 朗読の格納位置は巻物の上。収納時は常に引手の高さだけを占める。
     const 朗読領域 = await 頁.locator(".物語節 > .容器").evaluate((箱) => {
@@ -1104,7 +1139,8 @@ try {
                 ".縦案内節 > .節題", ".縦案内節 .機能",
                 ".縦案内節 .作品", ".縦案内節 .手順 article",
                 ".縦案内節 .一覧", ".縦案内節 .一覧格子",
-                ".縦案内節 .記法対応", ".縦案内節 .記法表枠",
+                ".縦案内節 .記法対応", ".縦案内節 .記法題",
+                ".縦案内節 .記法表枠",
                 ".物語冒頭", ".物語読書面",
             ];
             const 範囲 = 選択.flatMap((式) => Array.from(document.querySelectorAll(式), (要素) => ({
@@ -1125,6 +1161,9 @@ try {
             const 配布 = document.querySelector(".一覧格子")?.getBoundingClientRect();
             const 表枠 = document.querySelector(".記法表枠");
             const 表 = 表枠?.querySelector("table");
+            const 縦案内 = document.querySelector(".記法題");
+            const 縦体 = 縦案内?.querySelector(".綴り-縦書");
+            const 縦寸法 = 縦案内?.getBoundingClientRect();
             const 表寸法 = 表枠?.getBoundingClientRect();
             const 外枠 = 表枠?.closest(".記法対応")?.getBoundingClientRect();
             return {
@@ -1134,6 +1173,10 @@ try {
                 主題中心差: ((見出し?.left ?? 0) + (見出し?.right ?? 0)) / 2
                     - (左端 + 右端) / 2,
                 範囲, 重なり, 手順,
+                説明の縦組: Boolean(縦案内 && 縦体 && 縦寸法 && 表寸法
+                    && getComputedStyle(縦体).writingMode === "vertical-rl"
+                    && getComputedStyle(縦案内).borderBottomStyle === "solid"
+                    && 縦寸法.bottom <= 表寸法.top - 4),
                 表の収納: Boolean(表枠 && 表 && 表寸法 && 外枠
                     && 表寸法.left >= 外枠.left - 1
                     && 表寸法.right <= 外枠.right + 1
@@ -1152,7 +1195,7 @@ try {
             || Math.abs(配置.主題中心差) > 22
             || 配置.重なり.some((項目) => 項目.差 < 12)
             || 配置.手順.some((項目) => 項目.間隔 < 2)
-            || !配置.一覧内 || !配置.表の収納) {
+            || !配置.一覧内 || !配置.表の収納 || !配置.説明の縦組) {
             throw new Error("携帯表示が欄外へ溢れたり内容を重ねています: "
                 + JSON.stringify({ 横幅, ...配置, はみ出し }));
         }

@@ -815,22 +815,55 @@ body {
     .主題見本文 { gap: .26em; }
 }
 
-/* 書式対応表は既存の二段組を動かさず、本文側の三段目へ置く。 */
+/* 対応表は全幅を使い、右側に縦書きの説明を配する。 */
 .縦案内節 > .記法対応 {
-    grid-column: 1;
+    grid-column: 1 / -1;
     grid-row: 3;
     min-width: 0;
     max-width: 100%;
     box-sizing: border-box;
 }
 .記法対応 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(170px, 21vw, 240px);
+    column-gap: clamp(16px, 2.7vw, 33px);
+    align-items: stretch;
     border: 1px solid var(--線);
     padding: 24px;
     background: var(--面);
 }
-.記法対応 h3 { font-family: "Yu Mincho", serif; font-size: 1.18rem; margin: 0 0 10px; }
-.記法対応 p { font-size: .83rem; color: var(--薄); line-height: 1.8; margin: 0 0 18px; }
-.記法表枠 { min-width: 0; max-width: 100%; overflow-x: auto; }
+.記法題 {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    border-left: 1px solid var(--線);
+    padding-left: 14px;
+}
+.記法題 > .綴り-縦書 {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: min(70vh, 440px);
+    max-height: none;
+    font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+    font-size: clamp(.84rem, 1.18vw, 1rem);
+    line-height: 1.85;
+}
+.記法題 h3 {
+    margin: 0 0 0 .7em;
+    font-size: 1.35em;
+    line-height: 1.4;
+    font-weight: 600;
+}
+.記法題 p { margin: 0; color: var(--薄); font-size: .92em; line-height: 1.85; }
+.記法表枠 {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+}
 .記法表枠 table { width: 100%; border-collapse: collapse; text-align: left; font-size: .81rem; }
 .記法表枠 th, .記法表枠 td {
     border-bottom: 1px solid var(--線);
@@ -846,6 +879,31 @@ body {
         grid-row: auto;
         width: 100%;
     }
-    .記法対応 { padding: 12px; }
+    .記法対応 {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: 16px;
+        padding: 12px;
+    }
+    .記法題 {
+        grid-column: 1;
+        grid-row: 1;
+        display: flex;
+        justify-content: flex-end;
+        border-left: 0;
+        border-bottom: 1px solid var(--線);
+        padding: 0 0 12px;
+    }
+    .記法題 > .綴り-縦書 {
+        flex: 0 1 auto;
+        width: max-content;
+        height: clamp(255px, 43vh, 360px);
+        max-width: 100%;
+        font-size: .78rem;
+    }
+    .記法題 h3 { font-size: 1.25em; }
+    .記法表枠 {
+        grid-column: 1;
+        grid-row: 2;
+    }
     .記法表枠 table { min-width: 365px; }
 }
