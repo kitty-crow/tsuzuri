@@ -45,6 +45,48 @@ h1 span { color: var(--緑); }
 .作品 { background: var(--面); border: 1px solid var(--線); padding: 25px; min-width: 0; }
 .作品頭 { display: flex; justify-content: space-between; align-items: start; border-bottom: 1px solid var(--線); padding-bottom: 15px; }
 .作品頭 h3 { font-family: serif; font-size: 1.3rem; margin: 4px 0; font-weight: normal; }
+/* 作品ごとに独立した二つの切替を設け、朱色の選択表示を共有する。 */
+.作品操作 {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 12px 0 2px;
+}
+.作品切替 {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 34px;
+    max-width: 100%;
+    border: 1px solid var(--線);
+    border-radius: 4px;
+    padding: 3px 6px;
+    background: var(--紙);
+    color: var(--薄);
+    font: 600 .7rem/1.4 "Yu Mincho", "Hiragino Mincho ProN", serif;
+    letter-spacing: .03em;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: border-color .2s ease, background-color .2s ease, color .2s ease;
+}
+.作品切替:hover { border-color: var(--朱); color: var(--朱); }
+.作品切替:focus-visible { outline: 2px solid var(--朱); outline-offset: 3px; }
+.作品切替 > [data-値] { border-radius: 2px; padding: 3px 6px; }
+.作品切替区切り { color: var(--線); font-size: .7em; }
+.作品[data-記法="ids"] .作品切替[data-切替="記法"] [data-値="ids"],
+.作品[data-記法="tags"] .作品切替[data-切替="記法"] [data-値="tags"],
+.作品[data-言語="日本語"] .作品切替[data-切替="言語"] [data-値="日本語"],
+.作品[data-言語="ローマ字"] .作品切替[data-切替="言語"] [data-値="ローマ字"] {
+    color: var(--主要文字);
+    background: var(--朱);
+}
+@media (prefers-reduced-motion: reduce) {
+    .作品切替 { transition: none; }
+}
 .小見出し { font-size: .68rem; letter-spacing: .15em; color: var(--朱); font-weight: bold; }
 .識別 { color: var(--淡印); }
 .作品見本 { height: 180px; display: flex; align-items: center; justify-content: center; font-family: "Yu Mincho",serif; font-size: clamp(5rem,10vw,8rem); overflow: visible; }
@@ -86,7 +128,20 @@ h1 span { color: var(--緑); }
     letter-spacing: 0;
 }
 .作品説明, .補足 { color: var(--薄); font-size: .83rem; }
-.文字列 { padding: 11px; background: var(--紙); font-size: 1.1rem; text-align: center; overflow-wrap:anywhere; }
+.文字列 {
+    padding: 11px;
+    background: var(--紙);
+    text-align: center;
+    font-size: clamp(.7rem, 1.15vw, .88rem);
+    min-width: 0;
+}
+.文字列 code {
+    display: block;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    line-height: 1.7;
+}
 code,pre { font-family: "Noto Sans Mono CJK JP",ui-monospace,monospace; }
 .補足 { margin-top: 20px; }
 .手順 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }

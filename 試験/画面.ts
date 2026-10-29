@@ -7,7 +7,7 @@ const 配信 = Bun.serve({
     fetch(要求) {
         const 道 = decodeURIComponent(new URL(要求.url).pathname);
         const 対象 = 道 === "/" ? "index.html" : 道.replace(/^\//, "");
-        if (!["index.html", "綴.svg", "様式.css", "物語.css", "朗読.css", "支援.css", "配色.js", "目次.js", "朗読.js", "音声SDK.js", "dist/tsuzuri.js", "dist/tsuzuri.css", "dist/tsuzuri.js.map"].includes(対象)) {
+        if (!["index.html", "綴.svg", "様式.css", "物語.css", "朗読.css", "支援.css", "配色.js", "実例.js", "目次.js", "朗読.js", "音声SDK.js", "dist/tsuzuri.js", "dist/tsuzuri.css", "dist/tsuzuri.js.map"].includes(対象)) {
             return new Response("未登録", { status: 404 });
         }
         return new Response(Bun.file("site/" + 対象));
@@ -143,6 +143,88 @@ try {
         throw new Error("紹介ページの日本語見本とローマ字の対応表が不正です: "
             + JSON.stringify({ 記法見本, 合成見本 }));
     }
+
+
+    // 各作品の二つの切替は独立して動作し、四通りの書式が実際に描画される。
+    const 作品列 = 頁.locator("#合成 .作品");
+    const 表意列 = ["⿱日本", "⿰日本", "⿱⿰日本語", "⿱⿰日本⿰語学"];
+    const 読み列 = ["にほん", "にほん", "にほんご", "にほんごがく"];
+    if (await 作品列.count() !== 4) throw new Error("合成文字の作品数が一致しません");
+    const 状態を確かめる = async (
+        番号: number, 記法: "ids" | "tags", 言語: "日本語" | "ローマ字",
+    ): Promise<void> => {
+        const 状態 = await 作品列.nth(番号).evaluate((作品) => {
+            const 表 = 作品.querySelector(".文字列 code");
+            const 記法切替 = 作品.querySelector<HTMLButtonElement>('.作品切替[data-切替="記法"]');
+            const 言語切替 = 作品.querySelector<HTMLButtonElement>('.作品切替[data-切替="言語"]');
+            const 原文 = 作品.querySelector(".作品見本 .綴り-原字");
+            const 読み = 作品.querySelector(".作品見本 rt");
+            return {
+                記法: (作品 as HTMLElement).dataset["記法"],
+                言語: (作品 as HTMLElement).dataset["言語"],
+                表記: 表?.textContent ?? "",
+                記法押下: 記法切替?.getAttribute("aria-pressed"),
+                言語押下: 言語切替?.getAttribute("aria-pressed"),
+                操作数: 作品.querySelectorAll("button.作品切替").length,
+                原文: 原文?.textContent ?? "",
+                読み: 読み?.textContent ?? "",
+                描画済み: Boolean(作品.querySelector(".作品見本 .綴り-文字")),
+            };
+        });
+        const 和文 = 言語 === "日本語";
+        const 名称 = 和文 ? "t-漢字" : "kanji";
+        const 読み属性 = 和文 ? "振り" : "reading";
+        const 方向 = 番号 === 1
+            ? (和文 ? " 横" : " horizontal") : (和文 ? " 縦" : " vertical");
+        const 期待する表記 = 記法 === "ids"
+            ? "<" + 名称 + " " + 読み属性 + '="' + 読み列[番号] + '">' + 表意列[番号]
+                + "</" + 名称 + ">"
+            : "";
+        if (状態.記法 !== 記法 || 状態.言語 !== 言語
+            || 状態.記法押下 !== String(記法 === "tags")
+            || 状態.言語押下 !== String(言語 === "ローマ字")
+            || 状態.操作数 !== 2
+            || 状態.原文 !== 表意列[番号] || 状態.読み !== 読み列[番号]
+            || !状態.描画済み
+            || (記法 === "ids" && 状態.表記 !== 期待する表記)
+            || (記法 === "tags" && (状態.表記.includes("⿱")
+                || 状態.表記.includes("⿰")
+                || !状態.表記.startsWith("<" + 名称 + 方向)
+                || !状態.表記.includes(読み属性 + '="' + 読み列[番号] + '"')))) {
+            throw new Error("合成文字の書式切替が不正です: "
+                + JSON.stringify({ 番号, 記法, 言語, 状態, 期待する表記 }));
+        }
+    };
+    const 描画完了を待つ = async (番号: number): Promise<void> => {
+        await 頁.waitForFunction(({ 番号, 表意 }) =>
+            document.querySelectorAll("#合成 .作品")[番号]
+                ?.querySelector(".作品見本 .綴り-原字")?.textContent === 表意,
+        { 番号, 表意: 表意列[番号] });
+    };
+    for (let 番号 = 0; 番号 < 4; 番号++) {
+        const 作品 = 作品列.nth(番号);
+        const 記法切替 = 作品.locator('[data-切替="記法"]');
+        const 言語切替 = 作品.locator('[data-切替="言語"]');
+        await 状態を確かめる(番号, "ids", "日本語");
+        await 記法切替.click();
+        await 描画完了を待つ(番号);
+        await 状態を確かめる(番号, "tags", "日本語");
+        await 言語切替.click();
+        await 描画完了を待つ(番号);
+        await 状態を確かめる(番号, "tags", "ローマ字");
+        await 記法切替.press("Enter");
+        await 描画完了を待つ(番号);
+        await 状態を確かめる(番号, "ids", "ローマ字");
+        await 言語切替.press("Space");
+        await 描画完了を待つ(番号);
+        await 状態を確かめる(番号, "ids", "日本語");
+    }
+    // 一方の作品を切り替えても、他の三作は既定の状態を保つ。
+    await 作品列.nth(3).locator('[data-切替="記法"]').click();
+    await 作品列.nth(3).locator('[data-切替="言語"]').click();
+    await 描画完了を待つ(3);
+    await 状態を確かめる(3, "tags", "ローマ字");
+    for (let 番号 = 0; 番号 < 3; 番号++) await 状態を確かめる(番号, "ids", "日本語");
 
     // 対照表の説明は右側で縦組になり、罫線で左側の表と区切られる。
     for (const 横幅 of [1280, 1024, 820]) {

@@ -15,16 +15,35 @@ function 縦書(内容: ReactNode): ReactNode {
 function 横書(内容: ReactNode): ReactNode {
     return createElement("tsuzuri", { "横": "" }, 内容);
 }
-function 例示(名称: string, 内容: ReactNode, 説明: string, 記法: string, 縦の読み = false): ReactNode {
+function 例示(
+    名称: string, 表意: string, 読み: string, 説明: string,
+    日本語タグ: string, ローマ字タグ: string, 縦の読み = false,
+): ReactNode {
     return (
-        <article className="作品">
+        <article className="作品" data-記法="ids" data-言語="日本語"
+            data-表意={表意} data-読み={読み}
+            data-日本語タグ={日本語タグ} data-ローマ字タグ={ローマ字タグ}>
             <div className="作品頭">
                 <div><span className="小見出し">合成文字</span><h3>{名称}</h3></div>
                 <span className="識別">縦・横</span>
             </div>
-            <div className={"作品見本" + (縦の読み ? " 作品見本-縦" : "")}>{横書(内容)}</div>
+            <div className="作品操作" role="group" aria-label={名称 + "の記法と表記を切り替える"}>
+                <button type="button" className="作品切替" data-切替="記法"
+                    aria-pressed="false" aria-label="現在は表意文字記述。タグ記法に切り替える">
+                    <span data-値="ids">IDS</span><span className="作品切替区切り" aria-hidden="true">／</span>
+                    <span data-値="tags">タグ</span>
+                </button>
+                <button type="button" className="作品切替" data-切替="言語"
+                    aria-pressed="false" aria-label="現在は日本語。ローマ字に切り替える">
+                    <span data-値="日本語">日本語</span><span className="作品切替区切り" aria-hidden="true">／</span>
+                    <span data-値="ローマ字">ローマ字</span>
+                </button>
+            </div>
+            <div className={"作品見本" + (縦の読み ? " 作品見本-縦" : "")}>
+                {横書(合成(表意, 読み))}
+            </div>
             <p className="作品説明">{説明}</p>
-            <div className="文字列"><code>{記法}</code></div>
+            <div className="文字列"><code aria-live="polite">{'<t-漢字 振り="' + 読み + '">' + 表意 + '</t-漢字>'}</code></div>
         </article>
     );
 }
@@ -59,6 +78,7 @@ const 画面 = (
             <link rel="stylesheet" href="./支援.css" />
             <script src="./dist/tsuzuri.js" defer={true}></script>
             <script src="./配色.js" defer={true}></script>
+            <script src="./実例.js" defer={true}></script>
             <script src="./目次.js" defer={true}></script>
             <script src="./朗読.js" defer={true}></script>
         </head>
@@ -128,25 +148,22 @@ const 画面 = (
                         <p>縦と横の指定を入れ子にして文字を組み合わせます。振仮名を添えて独自の読みも指定できます。</p></>)}
                     </div>
                     <div className="作品格子">
-                        {例示("上下",
-                            createElement("kanji", { "縦": "", "振り": "にほん" }, "日本"),
+                        {例示("上下", "⿱日本", "にほん",
                             "日本を縦に重ねた合成文字。",
-                            '<t-漢字 縦 振り="にほん">日本</t-漢字>', true)}
-                        {例示("左右",
-                            createElement("kanji", { "横": "", "振り": "にほん" }, "日本"),
+                            '<t-漢字 縦 振り="にほん">日本</t-漢字>',
+                            '<kanji vertical reading="にほん">日本</kanji>', true)}
+                        {例示("左右", "⿰日本", "にほん",
                             "同じ二文字を左右に組み合わせる。",
-                            '<t-漢字 横 振り="にほん">日本</t-漢字>')}
-                        {例示("三文字",
-                            createElement("kanji", { "縦": "", "振り": "にほんご" },
-                                createElement("kanji", { "横": "" }, "日本"), "語"),
+                            '<t-漢字 横 振り="にほん">日本</t-漢字>',
+                            '<kanji horizontal reading="にほん">日本</kanji>')}
+                        {例示("三文字", "⿱⿰日本語", "にほんご",
                             "文字の組み合わせは入れ子にできます。",
-                            '<t-漢字 縦><t-漢字 横>日本</t-漢字>語</t-漢字>', true)}
-                        {例示("四文字",
-                            createElement("kanji", { "縦": "", "振り": "にほんごがく" },
-                                createElement("kanji", { "横": "" }, "日本"),
-                                createElement("kanji", { "横": "" }, "語学")),
+                            '<t-漢字 縦 振り="にほんご"><t-漢字 横>日本</t-漢字>語</t-漢字>',
+                            '<kanji vertical reading="にほんご"><kanji horizontal>日本</kanji>語</kanji>', true)}
+                        {例示("四文字", "⿱⿰日本⿰語学", "にほんごがく",
                             "より複雑な合成構造も入れ子で記述できます。",
-                            '<t-漢字 縦><t-漢字 横>日本</t-漢字><t-漢字 横>語学</t-漢字></t-漢字>', true)}
+                            '<t-漢字 縦 振り="にほんごがく"><t-漢字 横>日本</t-漢字><t-漢字 横>語学</t-漢字></t-漢字>',
+                            '<kanji vertical reading="にほんごがく"><kanji horizontal>日本</kanji><kanji horizontal>語学</kanji></kanji>', true)}
                     </div>
                     <p className="補足">書体に収録された専用字形と、文字の縦横を伸縮する描画を利用します。複写した文字列には、元の記述が残ります。</p>
                 </section>
@@ -273,6 +290,15 @@ const 朗読の構築 = await Bun.build({
     minify: true,
 });
 if (!朗読の構築.success) throw new Error("朗読の構築に失敗しました");
+const 実例の構築 = await Bun.build({
+    entrypoints: ["例/実例.ts"],
+    outdir: "site",
+    naming: { entry: "実例.js" },
+    target: "browser",
+    format: "iife",
+    minify: true,
+});
+if (!実例の構築.success) throw new Error("実例の構築に失敗しました");
 
 console.log("紹介ページを構築しました。");
 
