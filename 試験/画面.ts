@@ -1665,9 +1665,11 @@ try {
     接合を確認する("大画面・固定", await 収納の接合を調べる());
     await 収納試験.reload();
     await 収納試験.waitForSelector(".朗読収納[data-readaloud-pinned='true']");
-    const 復元 = await 収納試験.locator(".朗読収納").evaluate((要素) =>
-        要素.getBoundingClientRect().height);
-    if (復元 < 95) throw new Error("朗読の固定が再読込後に復元されません");
+    // 開閉アニメーションの途中ではなく、確保された領域の復元を確認する。
+    await 収納試験.waitForFunction(() => {
+        const 収納 = document.querySelector(".朗読収納[data-readaloud-pinned='true']");
+        return Boolean(収納 && 収納.getBoundingClientRect().height >= 95);
+    });
     await 収納試験.locator(".朗読収納").evaluate((要素) => {
         const 内容 = 要素.querySelector(".朗読内容");
         if (!内容 || getComputedStyle(内容).position !== "relative") {
