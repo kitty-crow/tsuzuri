@@ -322,7 +322,7 @@ export async function 物語の見本(): Promise<ReactNode> {
                         </div>
                         <nav id="物語目次" className="目次領域" aria-label="題名と日付の目次">
                             {createElement("tsuzuri", null,
-                                <ul className="目次列">{目次.節.map((節, 番号) => 目次の節(節, 番号 === 0))}</ul>
+                                <ul className="目次列">{目次.節.map((節) => 目次の節(節, false))}</ul>
                             )}
                         </nav>
                         <div className="目次進度" aria-hidden="true"><span /></div>

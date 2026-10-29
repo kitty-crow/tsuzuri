@@ -176,6 +176,53 @@ try {
     }
     await 頁.setViewportSize({ width: 1280, height: 800 });
 
+    // 活用語尾は振仮名に含めず、文字の外側へ続ける。
+    const 活用の読み = await 頁.locator(".機能 .大文字").evaluate((要素) => ({
+        読み: Array.from(要素.querySelectorAll("ruby"), (ルビ) => ({
+            親字: Array.from(ルビ.childNodes)
+                .filter((節) => 節.nodeType === Node.TEXT_NODE)
+                .map((節) => 節.textContent ?? "").join(""),
+            振り: ルビ.querySelector("rt")?.textContent ?? "",
+        })),
+        本文: 要素.textContent ?? "",
+    }));
+    if (活用の読み.読み.length !== 2
+        || 活用の読み.読み[1]?.親字 !== "綴"
+        || 活用の読み.読み[1]?.振り !== "つづ"
+        || !活用の読み.本文.includes("綴る")) {
+        throw new Error("活用語尾と振仮名の対応が不正です: " + JSON.stringify(活用の読み));
+    }
+
+    // 合成字の振仮名は小さくし、上下合成の読みを字の右へ置く。
+    const 合成の読み = await 頁.locator(".作品格子 .作品見本").evaluateAll((要素一覧) =>
+        要素一覧.map((箱) => {
+            const 合成 = 箱.querySelector(".綴り-文字");
+            const ルビ = 箱.querySelector(".綴り-合成ルビ");
+            const 読み = ルビ?.querySelector("rt");
+            const 字枠 = 合成?.getBoundingClientRect();
+            const 読み枠 = 読み?.getBoundingClientRect();
+            const 方向 = ルビ ? getComputedStyle(ルビ).writingMode : "";
+            return {
+                縦: 箱.classList.contains("作品見本-縦"),
+                読み: 読み?.textContent ?? "",
+                文字大きさ: ルビ ? Number.parseFloat(getComputedStyle(ルビ).fontSize) : 0,
+                読み大きさ: 読み ? Number.parseFloat(getComputedStyle(読み).fontSize) : 0,
+                右間隔: 字枠 && 読み枠 ? 読み枠.left - 字枠.right : -999,
+                上間隔: 字枠 && 読み枠 ? 字枠.top - 読み枠.bottom : -999,
+                向き: 方向,
+            };
+        }));
+    if (合成の読み.length !== 4
+        || 合成の読み.filter((項目) => 項目.縦).length !== 3
+        || 合成の読み.some((項目) =>
+            !項目.読み || 項目.読み大きさ > 項目.文字大きさ * .22)
+        || 合成の読み.some((項目) => 項目.縦
+            && (項目.向き !== "vertical-rl" || 項目.右間隔 < 0))
+        || 合成の読み.some((項目) => !項目.縦
+            && (項目.向き !== "horizontal-tb" || 項目.上間隔 < -1))) {
+        throw new Error("合成文字の小さな振仮名の位置が不正です: " + JSON.stringify(合成の読み));
+    }
+
     // 朗読の格納位置は巻物の上。収納時は常に引手の高さだけを占める。
     const 朗読領域 = await 頁.locator(".物語節 > .容器").evaluate((箱) => {
         const 巻 = 箱.querySelector(".物語読書面")?.getBoundingClientRect();
@@ -914,7 +961,9 @@ try {
     const 目次の方向 = await 頁.locator("#物語目次 > .綴り-縦書")
         .evaluate((要素) => getComputedStyle(要素).writingMode);
     const 展開の数 = await 頁.locator("#物語目次 details.目次開閉").count();
-    if (目次数 !== 12 || !目次の検証 || 目次の方向 !== "vertical-rl" || 展開の数 !== 2) {
+    const 初期展開数 = await 頁.locator("#物語目次 details.目次開閉[open]").count();
+    if (目次数 !== 12 || !目次の検証 || 目次の方向 !== "vertical-rl"
+        || 展開の数 !== 2 || 初期展開数 !== 0) {
         throw new Error("縦書きの目次が見出しと一致しません: "
             + JSON.stringify({ 目次数, 目次の検証, 目次の方向, 展開の数 }));
     }
@@ -1007,8 +1056,10 @@ try {
     const 斜体の形式 = await 頁.locator(".物語巻 em").first().evaluate((要素) => ({
         傾斜: getComputedStyle(要素).fontStyle,
         装飾: getComputedStyle(要素).textDecorationLine,
+        下線方向: getComputedStyle(要素).textUnderlinePosition,
     }));
-    if (!斜体の形式.傾斜.includes("italic") || !斜体の形式.装飾.includes("underline")) {
+    if (!斜体の形式.傾斜.includes("italic") || !斜体の形式.装飾.includes("underline")
+        || 斜体の形式.下線方向 !== "left") {
         throw new Error("斜体が読者に見える形で装飾されていません");
     }
     await ボタン.click();

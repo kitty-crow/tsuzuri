@@ -15,14 +15,14 @@ function 縦書(内容: ReactNode): ReactNode {
 function 横書(内容: ReactNode): ReactNode {
     return createElement("tsuzuri", { "横": "" }, 内容);
 }
-function 例示(名称: string, 内容: ReactNode, 説明: string, 記法: string): ReactNode {
+function 例示(名称: string, 内容: ReactNode, 説明: string, 記法: string, 縦の読み = false): ReactNode {
     return (
         <article className="作品">
             <div className="作品頭">
                 <div><span className="小見出し">合成文字</span><h3>{名称}</h3></div>
                 <span className="識別">縦・横</span>
             </div>
-            <div className="作品見本">{横書(内容)}</div>
+            <div className={"作品見本" + (縦の読み ? " 作品見本-縦" : "")}>{横書(内容)}</div>
             <p className="作品説明">{説明}</p>
             <div className="文字列"><code>{記法}</code></div>
         </article>
@@ -111,7 +111,7 @@ const 画面 = (
                         </article>
                         <article className="機能">
                             <span className="番号">弐</span><h3>振仮名</h3>
-                            <div className="大文字">{横書(<>{ルビ("言葉", "ことば")}を{ルビ("綴る", "つづる")}。</>)}</div>
+                            <div className="大文字">{横書(<>{ルビ("言葉", "ことば")}を{ルビ("綴", "つづ")}る。</>)}</div>
                             <p>簡潔な要素と読みの指定から、意味のあるルビへ。</p>
                         </article>
                         <article className="機能">
@@ -131,7 +131,7 @@ const 画面 = (
                         {例示("上下",
                             createElement("kanji", { "縦": "", "振り": "にほん" }, "日本"),
                             "日本を縦に重ねた合成文字。",
-                            '<t-漢字 縦 振り="にほん">日本</t-漢字>')}
+                            '<t-漢字 縦 振り="にほん">日本</t-漢字>', true)}
                         {例示("左右",
                             createElement("kanji", { "横": "", "振り": "にほん" }, "日本"),
                             "同じ二文字を左右に組み合わせる。",
@@ -140,13 +140,13 @@ const 画面 = (
                             createElement("kanji", { "縦": "", "振り": "にほんご" },
                                 createElement("kanji", { "横": "" }, "日本"), "語"),
                             "文字の組み合わせは入れ子にできます。",
-                            '<t-漢字 縦><t-漢字 横>日本</t-漢字>語</t-漢字>')}
+                            '<t-漢字 縦><t-漢字 横>日本</t-漢字>語</t-漢字>', true)}
                         {例示("四文字",
                             createElement("kanji", { "縦": "", "振り": "にほんごがく" },
                                 createElement("kanji", { "横": "" }, "日本"),
                                 createElement("kanji", { "横": "" }, "語学")),
                             "より複雑な合成構造も入れ子で記述できます。",
-                            '<t-漢字 縦><t-漢字 横>日本</t-漢字><t-漢字 横>語学</t-漢字></t-漢字>')}
+                            '<t-漢字 縦><t-漢字 横>日本</t-漢字><t-漢字 横>語学</t-漢字></t-漢字>', true)}
                     </div>
                     <p className="補足">書体に収録された専用字形と、文字の縦横を伸縮する描画を利用します。複写した文字列には、元の記述が残ります。</p>
                 </section>

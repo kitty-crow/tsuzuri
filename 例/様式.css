@@ -49,6 +49,42 @@ h1 span { color: var(--緑); }
 .識別 { color: var(--淡印); }
 .作品見本 { height: 180px; display: flex; align-items: center; justify-content: center; font-family: "Yu Mincho",serif; font-size: clamp(5rem,10vw,8rem); overflow: visible; }
 .作品見本 .綴り-振仮名 { font-size: 1em; }
+/* 合成一字に添える読みは小さくし、縦方向の合成では字の右側に置く。 */
+.作品見本 .綴り-合成ルビ > rt {
+    font-size: .18em;
+    line-height: 1.2;
+}
+.作品見本-縦 .綴り-合成ルビ {
+    display: inline-flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    justify-content: center;
+    gap: .1em;
+    width: max-content;
+    min-width: max-content;
+    height: 1em;
+    min-height: 1em;
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    line-height: 1;
+}
+.作品見本-縦 .綴り-合成ルビ > .綴り-文字 {
+    flex: 0 0 auto;
+    width: 1em;
+    height: 1em;
+}
+.作品見本-縦 .綴り-合成ルビ > rt {
+    display: block;
+    flex: 0 0 auto;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    white-space: nowrap;
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    letter-spacing: 0;
+}
 .作品説明, .補足 { color: var(--薄); font-size: .83rem; }
 .文字列 { padding: 11px; background: var(--紙); font-size: 1.1rem; text-align: center; overflow-wrap:anywhere; }
 code,pre { font-family: "Noto Sans Mono CJK JP",ui-monospace,monospace; }

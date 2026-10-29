@@ -110,6 +110,8 @@
     text-decoration-color: var(--朱);
     text-decoration-thickness: .09em;
     text-underline-offset: .22em;
+    /* 縦書きでは字の左側へ引き、右側の振仮名と重ねない。 */
+    text-underline-position: left;
 }
 .物語巻 a { color: var(--緑); text-decoration-color: var(--朱); }
 .物語区切り {
