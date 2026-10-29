@@ -55,6 +55,19 @@ describe("白萩の露と後日譚", () => {
         expect(JSON.stringify(要素)).toContain("かいとう");
         expect(JSON.stringify(要素)).toContain("ぬしさま");
     });
+    test("題名の合成文字は再出する見出しや強調文にも用いる", () => {
+        const 使用済み = new Set<string>();
+        const 表題 = 文章を装ふ("白萩の露", 使用済み);
+        const 後日譚 = 文章を装ふ("白萩の露　後日譚", 使用済み);
+        const 終幕 = 文章を装ふ("白萩の露　終", 使用済み);
+        for (const 要素 of [表題, 後日譚, 終幕]) {
+            const 描画 = JSON.stringify(要素);
+            expect(描画).toContain("⿱白萩");
+            expect(描画).toContain("しらはぎ");
+            expect(描画).toContain("の露");
+        }
+        expect(JSON.stringify(文章を装ふ("白萩の花", 使用済み))).not.toContain("⿱白萩");
+    });
     test("合成字形は最初の一回だけ表示する", () => {
         const 使用済み = new Set<string>();
         const 初回 = 文章を装ふ("白萩", 使用済み);
