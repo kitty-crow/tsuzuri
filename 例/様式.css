@@ -47,6 +47,8 @@ h1 span { color: var(--緑); }
 .作品頭 h3 { font-family: serif; font-size: 1.3rem; margin: 4px 0; font-weight: normal; }
 /* 作品ごとに独立した二つの切替を設け、朱色の選択表示を共有する。 */
 .作品操作 {
+    position: relative;
+    z-index: 2;
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
@@ -89,7 +91,7 @@ h1 span { color: var(--緑); }
 }
 .小見出し { font-size: .68rem; letter-spacing: .15em; color: var(--朱); font-weight: bold; }
 .識別 { color: var(--淡印); }
-.作品見本 { height: 180px; display: flex; align-items: center; justify-content: center; font-family: "Yu Mincho",serif; font-size: clamp(5rem,10vw,8rem); overflow: visible; }
+.作品見本 { position: relative; z-index: 0; height: 180px; margin-top: 8px; display: flex; align-items: center; justify-content: center; font-family: "Yu Mincho",serif; font-size: clamp(5rem,10vw,8rem); overflow: visible; }
 .作品見本 .綴り-振仮名 { font-size: 1em; }
 /* 合成一字に添える読みは小さくし、縦方向の合成では字の右側に置く。 */
 .作品見本 .綴り-合成ルビ > rt {
