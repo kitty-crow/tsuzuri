@@ -4,30 +4,42 @@ import { render2Mkup } from "../vendor/website/src/reactHelpers.tsx";
 import { 物語の見本 } from "./物語.tsx";
 
 function 合成(構文: string, 読み?: string): ReactNode {
-    return createElement("kanji", { reading: 読み }, 構文);
+    return createElement("t-漢字", { "振り": 読み }, 構文);
 }
 function ルビ(表記: string, 読み: string): ReactNode {
-    return createElement("furigana", { reading: 読み }, 表記);
+    return createElement("t-振り", { "読み": 読み }, 表記);
 }
 function 縦書(内容: ReactNode): ReactNode {
-    return createElement("tsuzuri", null, 内容);
+    return createElement("t-綴", null, 内容);
 }
 function 横書(内容: ReactNode): ReactNode {
-    return createElement("tsuzuri", { direction: "horizontal" }, 内容);
+    return createElement("t-綴", { "横": "" }, 内容);
 }
-function 例示(名称: string, 内容: string, 読み: string, 説明: string, 記法?: string): ReactNode {
+function 例示(名称: string, 内容: ReactNode, 説明: string, 記法: string): ReactNode {
     return (
         <article className="作品">
             <div className="作品頭">
                 <div><span className="小見出し">合成文字</span><h3>{名称}</h3></div>
-                <span className="識別">⿰ ⿱</span>
+                <span className="識別">縦・横</span>
             </div>
-            <div className="作品見本">{横書(合成(内容, 読み))}</div>
+            <div className="作品見本">{横書(内容)}</div>
             <p className="作品説明">{説明}</p>
-            <div className="文字列"><code>{記法 ?? 内容}</code></div>
+            <div className="文字列"><code>{記法}</code></div>
         </article>
     );
 }
+
+const 記法対応 = [
+    ["処理領域", "t-綴", "tsuzuri"],
+    ["縦書き領域", "t-縦", "tategaki"],
+    ["横書き領域", "t-横", "yokogaki"],
+    ["振仮名", "t-振り", "furigana"],
+    ["漢字・合成漢字", "t-漢字", "kanji"],
+    ["縦方向", "縦", "vertical"],
+    ["横方向", "横", "horizontal"],
+    ["漢字の振仮名", '振り="..."', 'reading="..."'],
+    ["振仮名の読み", '読み="..."', 'reading="..."'],
+] as const;
 
 const 物語 = await 物語の見本();
 const 版 = (await Bun.file("package.json").json() as { readonly version: string }).version;
@@ -105,7 +117,7 @@ const 画面 = (
                         <article className="機能">
                             <span className="番号">参</span><h3>漢数字と暦</h3>
                             <div className="日付">
-                                {createElement("jp-koyomi", { date:"2026-10-28", calendar:"kyureki" }, "変換できない日付")}
+                                {横書(createElement("t-暦", { "日付": "2026-10-28", "暦": "旧暦" }, "変換できない日付"))}
                             </div>
                             <p>表記を揃え、時代の趣を添える。旧暦は照合済みの日付に限ります。</p>
                         </article>
@@ -113,13 +125,28 @@ const 画面 = (
                 </section>
                 <section id="合成" className="節 容器 縦案内節">
                     <div className="節題">{縦書(<><p className="眉">意匠の自由</p><h2>存在しない漢字を、つくる。</h2>
-                        <p>表意文字記述文字列を解釈し、文字を自由に組み合わせます。振仮名を添えて、独自の読みも指定できます。</p></>)}
+                        <p>縦と横の指定を入れ子にして文字を組み合わせます。振仮名を添えて独自の読みも指定できます。</p></>)}
                     </div>
                     <div className="作品格子">
-                        {例示("上下", "⿱日本", "にほん", "日本を縦に重ねた合成文字。", "<t-漢字 縦>日本</t-漢字>")}
-                        {例示("左右", "⿰日本", "にほん", "同じ二文字を左右に組み合わせる。", "<kanji horizontal>日本</kanji>")}
-                        {例示("三文字", "⿱⿰日本語", "にほんご", "文字の組み合わせは入れ子にできます。")}
-                        {例示("四文字", "⿱⿰日本⿰語学", "にほんごがく", "より複雑な合成構造も文字のまま扱えます。")}
+                        {例示("上下",
+                            createElement("t-漢字", { "縦": "", "振り": "にほん" }, "日本"),
+                            "日本を縦に重ねた合成文字。",
+                            '<t-漢字 縦 振り="にほん">日本</t-漢字>')}
+                        {例示("左右",
+                            createElement("t-漢字", { "横": "", "振り": "にほん" }, "日本"),
+                            "同じ二文字を左右に組み合わせる。",
+                            '<t-漢字 横 振り="にほん">日本</t-漢字>')}
+                        {例示("三文字",
+                            createElement("t-漢字", { "縦": "", "振り": "にほんご" },
+                                createElement("t-漢字", { "横": "" }, "日本"), "語"),
+                            "文字の組み合わせは入れ子にできます。",
+                            '<t-漢字 縦><t-漢字 横>日本</t-漢字>語</t-漢字>')}
+                        {例示("四文字",
+                            createElement("t-漢字", { "縦": "", "振り": "にほんごがく" },
+                                createElement("t-漢字", { "横": "" }, "日本"),
+                                createElement("t-漢字", { "横": "" }, "語学")),
+                            "より複雑な合成構造も入れ子で記述できます。",
+                            '<t-漢字 縦><t-漢字 横>日本</t-漢字><t-漢字 横>語学</t-漢字></t-漢字>')}
                     </div>
                     <p className="補足">書体に収録された専用字形と、文字の縦横を伸縮する描画を利用します。複写した文字列には、元の記述が残ります。</p>
                 </section>
@@ -144,6 +171,26 @@ const 画面 = (
                             )}
                         </div>
                     </div>
+                    <div className="記法対応">
+                        <h3>ローマ字の記法にも対応</h3>
+                        <p>日本語の要素名と属性に加え、ローマ字でも同じ機能を利用できます。次の名前は互いに対応しています。</p>
+                        <div className="記法表枠">
+                            <table>
+                                <thead>
+                                    <tr><th scope="col">用途</th><th scope="col">日本語</th><th scope="col">ローマ字</th></tr>
+                                </thead>
+                                <tbody>
+                                    {記法対応.map(([用途, 日本語, ローマ字]) =>
+                                        <tr key={用途}>
+                                            <th scope="row">{用途}</th>
+                                            <td><code>{日本語}</code></td>
+                                            <td><code>{ローマ字}</code></td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </section>
                 {物語}
             </main>
@@ -165,7 +212,7 @@ const 画面 = (
             <a className="支援側帯" href="https://ko-fi.com/kittycrow"
                 target="_blank" rel="noopener noreferrer" aria-label="珈琲で応援する">
                 <img className="支援杯" src="https://storage.ko-fi.com/cdn/cup-border.png" alt="" />
-                {createElement("jp-tategaki", null, "珈琲で応援")}
+                {createElement("t-縦", null, "珈琲で応援")}
             </a>
         </body>
     </html>

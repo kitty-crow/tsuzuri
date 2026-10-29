@@ -814,3 +814,38 @@ body {
     }
     .主題見本文 { gap: .26em; }
 }
+
+/* 書式対応表は既存の二段組を動かさず、本文側の三段目へ置く。 */
+.縦案内節 > .記法対応 {
+    grid-column: 1;
+    grid-row: 3;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.記法対応 {
+    border: 1px solid var(--線);
+    padding: 24px;
+    background: var(--面);
+}
+.記法対応 h3 { font-family: "Yu Mincho", serif; font-size: 1.18rem; margin: 0 0 10px; }
+.記法対応 p { font-size: .83rem; color: var(--薄); line-height: 1.8; margin: 0 0 18px; }
+.記法表枠 { min-width: 0; max-width: 100%; overflow-x: auto; }
+.記法表枠 table { width: 100%; border-collapse: collapse; text-align: left; font-size: .81rem; }
+.記法表枠 th, .記法表枠 td {
+    border-bottom: 1px solid var(--線);
+    padding: 11px 8px;
+    vertical-align: middle;
+}
+.記法表枠 thead th { color: var(--朱); font-weight: 700; white-space: nowrap; }
+.記法表枠 tbody th { font-weight: 500; }
+.記法表枠 td code { white-space: nowrap; font-size: .93em; }
+@media (max-width: 720px) {
+    .縦案内節 > .記法対応 {
+        grid-column: 1;
+        grid-row: auto;
+        width: 100%;
+    }
+    .記法対応 { padding: 12px; }
+    .記法表枠 table { min-width: 365px; }
+}

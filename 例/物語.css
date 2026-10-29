@@ -525,3 +525,13 @@
         max-height: 190px;
     }
 }
+
+/* 目次の題名に埋め込む綴りの処理領域は、元の文字列と同じ行に置く。 */
+.目次リンク文字 > .綴り-本文 {
+    display: inline;
+    writing-mode: inherit;
+    max-width: none;
+    max-height: none;
+    line-height: inherit;
+    font-family: inherit;
+}

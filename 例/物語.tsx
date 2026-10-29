@@ -48,9 +48,9 @@ export function 文章を装ふ(文章: string, 使用済み: Set<string>): Reac
         const 読み = 人名[語];
         if (合成 && !使用済み.has(語)) {
             使用済み.add(語);
-            return createElement("jp-kanji", { key: 番号, reading: 合成.読み }, 合成.構文);
+            return createElement("t-漢字", { key: 番号, "振り": 合成.読み }, 合成.構文);
         }
-        if (読み) return createElement("jp-furigana", { key: 番号, reading: 読み }, 語);
+        if (読み) return createElement("t-振り", { key: 番号, "読み": 読み }, 語);
         return 語;
     });
 }
@@ -107,7 +107,12 @@ function 目次リンク(節: 目次節): ReactNode {
     return (
         <a className={"目次リンク 目次リンク-" + String(節.階層)}
             href={"#" + 節.識別} data-target={節.識別}>
-            <span className="目次リンク文字">{日付 ? 日付を描く(節.表記) : 節.表記}</span>
+            <span className="目次リンク文字">
+                {節.表記 === "白萩の露"
+                    ? <>{createElement("t-綴", null,
+                        createElement("t-漢字", { "振り": "しらはぎ" }, "⿱白萩"))}の露</>
+                    : 日付 ? 日付を描く(節.表記) : 節.表記}
+            </span>
         </a>
     );
 }
@@ -136,12 +141,12 @@ function 目次の節(節: 目次節, 初期展開: boolean): ReactNode {
 
 function 日付を描く(日付: string): ReactNode {
     const 設定 = 日付の装ひ[日付];
-    return createElement("jp-koyomi", {
-        date: 日付,
-        calendar: "kyureki",
-        eto: 設定?.干支 ? true : undefined,
-        year: 設定?.同年 ? "same" : undefined,
-        "day-style": 設定?.吉日 ? "auspicious" : 設定?.廿 ? "abbreviated" : undefined,
+    return createElement("t-暦", {
+        "日付": 日付,
+        "暦": "旧暦",
+        "干支": 設定?.干支 ? "" : undefined,
+        "年": 設定?.同年 ? "同年" : undefined,
+        "日": 設定?.吉日 ? "吉日" : 設定?.廿 ? "略記" : undefined,
     }, 日付);
 }
 
@@ -213,7 +218,7 @@ export async function 物語の見本(): Promise<ReactNode> {
         <section id="物語" className="節 物語節">
             <div className="容器">
                 <div className="物語冒頭">
-                    {createElement("tsuzuri", null, <h2>日本語の物語と縦書きの実例</h2>)}
+                    {createElement("t-綴", null, <h2>日本語の物語と縦書きの実例</h2>)}
                 </div>
                 <div className="物語読書枠">
                 <section className="朗読収納" data-readaloud-pinned="false"
@@ -289,7 +294,7 @@ export async function 物語の見本(): Promise<ReactNode> {
                 </section>
                 <div className="物語読書面" data-index-pinned="false">
                     <article id="物語本文" className="物語巻" aria-label="白萩の露と後日譚" tabIndex={0}>
-                        {createElement("tsuzuri", null, 区画を描く(字句, 使用済み, 目次.識別表))}
+                        {createElement("t-綴", null, 区画を描く(字句, 使用済み, 目次.識別表))}
                     </article>
                     <aside className="目次側" aria-label="物語の目次">
                         <button id="目次引手" className="目次引手" type="button"
@@ -316,7 +321,7 @@ export async function 物語の見本(): Promise<ReactNode> {
                             </button>
                         </div>
                         <nav id="物語目次" className="目次領域" aria-label="題名と日付の目次">
-                            {createElement("tsuzuri", null,
+                            {createElement("t-綴", null,
                                 <ul className="目次列">{目次.節.map((節, 番号) => 目次の節(節, 番号 === 0))}</ul>
                             )}
                         </nav>

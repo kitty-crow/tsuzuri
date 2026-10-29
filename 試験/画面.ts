@@ -118,6 +118,29 @@ try {
     }
     await 頁.evaluate(() => document.querySelector("#新書式検査")?.remove());
 
+    // 紹介ページの見本は日本語の記法だけを使い、ローマ字の対応は別表にする。
+    const 記法見本 = await 頁.locator("#書式").evaluate((節) => ({
+        行数: 節.querySelectorAll(".記法対応 tbody tr").length,
+        見出し: Array.from(節.querySelectorAll(".記法対応 thead th"), (欄) => 欄.textContent),
+        一行目: Array.from(節.querySelectorAll(".記法対応 tbody tr:first-child > *"), (欄) => 欄.textContent),
+        最終行: Array.from(節.querySelectorAll(".記法対応 tbody tr:last-child > *"), (欄) => 欄.textContent),
+        実例: 節.querySelector(".手順 article:nth-child(2) code")?.textContent ?? "",
+        説明: 節.querySelector(".記法対応 p")?.textContent ?? "",
+    }));
+    const 合成見本 = await 頁.locator(".作品格子").evaluate((節) =>
+        Array.from(節.querySelectorAll(".文字列 code"), (欄) => 欄.textContent ?? ""));
+    if (記法見本.行数 !== 9 || 記法見本.見出し.join(",") !== "用途,日本語,ローマ字"
+        || 記法見本.一行目.join(",") !== "処理領域,t-綴,tsuzuri"
+        || 記法見本.最終行.join(",") !== '振仮名の読み,読み="...",reading="..."'
+        || !記法見本.実例.includes("<t-綴>")
+        || 記法見本.実例.includes("<jp-") || !記法見本.説明.includes("ローマ字")
+        || 合成見本.length !== 4
+        || !合成見本.every((見本) => 見本.includes("<t-漢字"))
+        || 合成見本.some((見本) => 見本.includes("<kanji"))) {
+        throw new Error("紹介ページの日本語見本とローマ字の対応表が不正です: "
+            + JSON.stringify({ 記法見本, 合成見本 }));
+    }
+
     // 朗読の格納位置は巻物の上。収納時は常に引手の高さだけを占める。
     const 朗読領域 = await 頁.locator(".物語節 > .容器").evaluate((箱) => {
         const 巻 = 箱.querySelector(".物語読書面")?.getBoundingClientRect();
@@ -824,6 +847,26 @@ try {
         }
     }
 
+    // 目次の題名は合成漢字と振仮名を使い、続く「の露」と一体に並べる。
+    const 目次題名 = await 頁.locator("#物語目次 .目次リンク-1 .目次リンク文字").first().evaluate((要素) => {
+        const 合成 = 要素.querySelector(".綴り-文字");
+        const 処理領域 = 要素.querySelector(".綴り-本文");
+        const 読み = 要素.querySelector("rt");
+        return {
+            原文: 合成?.querySelector(".綴り-原字")?.textContent,
+            読み: 読み?.textContent,
+            続き: 要素.textContent?.endsWith("の露"),
+            文字数: 合成?.querySelectorAll(".綴り-単字").length,
+            向き: 処理領域 ? getComputedStyle(処理領域).writingMode : "",
+            表示: 処理領域 ? getComputedStyle(処理領域).display : "",
+        };
+    });
+    if (目次題名.原文 !== "⿱白萩" || 目次題名.読み !== "しらはぎ"
+        || !目次題名.続き || 目次題名.文字数 !== 2
+        || 目次題名.向き !== "vertical-rl" || 目次題名.表示 !== "inline") {
+        throw new Error("目次の合成漢字と書式が不正です: " + JSON.stringify(目次題名));
+    }
+
     const 目次リンク = 頁.locator("#物語目次 a[data-target]");
     const 目次数 = await 目次リンク.count();
     const 目次の検証 = await 目次リンク.evaluateAll((一覧) =>
@@ -1061,6 +1104,7 @@ try {
                 ".縦案内節 > .節題", ".縦案内節 .機能",
                 ".縦案内節 .作品", ".縦案内節 .手順 article",
                 ".縦案内節 .一覧", ".縦案内節 .一覧格子",
+                ".縦案内節 .記法対応", ".縦案内節 .記法表枠",
                 ".物語冒頭", ".物語読書面",
             ];
             const 範囲 = 選択.flatMap((式) => Array.from(document.querySelectorAll(式), (要素) => ({
@@ -1079,6 +1123,10 @@ try {
             });
             const 一覧 = document.querySelector(".一覧")?.getBoundingClientRect();
             const 配布 = document.querySelector(".一覧格子")?.getBoundingClientRect();
+            const 表枠 = document.querySelector(".記法表枠");
+            const 表 = 表枠?.querySelector("table");
+            const 表寸法 = 表枠?.getBoundingClientRect();
+            const 外枠 = 表枠?.closest(".記法対応")?.getBoundingClientRect();
             return {
                 窓幅: innerWidth,
                 超過幅: 根.scrollWidth - 根.clientWidth,
@@ -1086,6 +1134,11 @@ try {
                 主題中心差: ((見出し?.left ?? 0) + (見出し?.right ?? 0)) / 2
                     - (左端 + 右端) / 2,
                 範囲, 重なり, 手順,
+                表の収納: Boolean(表枠 && 表 && 表寸法 && 外枠
+                    && 表寸法.left >= 外枠.left - 1
+                    && 表寸法.right <= 外枠.right + 1
+                    && 表枠.scrollWidth >= 表枠.clientWidth
+                    && 表.scrollWidth >= 表枠.clientWidth),
                 一覧内: Boolean(一覧 && 配布 && 配布.left >= 一覧.left - 1
                     && 配布.right <= 一覧.right + 1
                     && 配布.top >= 一覧.top - 1
@@ -1099,7 +1152,7 @@ try {
             || Math.abs(配置.主題中心差) > 22
             || 配置.重なり.some((項目) => 項目.差 < 12)
             || 配置.手順.some((項目) => 項目.間隔 < 2)
-            || !配置.一覧内) {
+            || !配置.一覧内 || !配置.表の収納) {
             throw new Error("携帯表示が欄外へ溢れたり内容を重ねています: "
                 + JSON.stringify({ 横幅, ...配置, はみ出し }));
         }
