@@ -41,17 +41,19 @@ function 節点から解析(節点: Node): 文字 | null {
     return 記号.length === 1 ? { 字: 記号[0]! } : null;
 }
 
+function 入れ子から解析(子: readonly Node[], 配置: 配置 | null): 文字 | null {
+    if (子.length !== 2 || !配置) return null;
+    const 第一 = 節点から解析(子[0]!);
+    const 第二 = 節点から解析(子[1]!);
+    return 第一 && 第二 ? { 配置, 部品: [第一, 第二] } : null;
+}
+
 function 要素から解析(元: Element): 文字 | null {
     const 子 = Array.from(元.childNodes).filter((節点) =>
         節点.nodeType === Node.ELEMENT_NODE
         || (節点.nodeType === Node.TEXT_NODE && Boolean(節点.textContent?.trim())));
     const 配置 = 配置を読む(元);
-    if (子.some((節点) => 節点.nodeType === Node.ELEMENT_NODE)) {
-        if (子.length !== 2 || !配置) return null;
-        const 第一 = 節点から解析(子[0]!);
-        const 第二 = 節点から解析(子[1]!);
-        return 第一 && 第二 ? { 配置, 部品: [第一, 第二] } : null;
-    }
+    if (子.some((節点) => 節点.nodeType === Node.ELEMENT_NODE)) return 入れ子から解析(子, 配置);
     const 記号 = Array.from(元.textContent?.trim() ?? "");
     const 指示 = 構文解析(記号, 0);
     if (指示 && 指示[1] === 記号.length) return 指示[0];
@@ -129,14 +131,14 @@ export function 書道を描く(根: ParentNode): void {
         const 合成 = Boolean(解析 && ("配置" in 解析 || 元.matches("jp-kanji")));
         const 読み = 元.matches("t-漢字") ? 属性(元, "振り") : 属性(元, "reading");
         const 表示 = document.createElement("span");
-        表示.className = 合成 ? "綴り-文字" : "";
+        表示.className = 合成 || 元.matches("jp-kanji") ? "綴り-文字" : "";
         表示.lang = "ja";
         if (合成 && 解析) 表示.append(合成表示を作る(解析));
         if (!合成) {
             while (元.firstChild) 表示.append(元.firstChild);
         }
+        if (!読み && (合成 || 元.matches("jp-kanji"))) return 表示;
         if (!読み) {
-            if (合成 || 元.matches("jp-kanji")) return 表示;
             const 内容 = document.createDocumentFragment();
             while (表示.firstChild) 内容.append(表示.firstChild);
             return 内容;
