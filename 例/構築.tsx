@@ -4,10 +4,10 @@ import { render2Mkup } from "../vendor/website/src/reactHelpers.tsx";
 import { 物語の見本 } from "./物語.tsx";
 
 function 合成(構文: string, 読み?: string): ReactNode {
-    return createElement("jp-kanji", { reading: 読み }, 構文);
+    return createElement("kanji", { reading: 読み }, 構文);
 }
 function ルビ(表記: string, 読み: string): ReactNode {
-    return createElement("jp-furigana", { reading: 読み }, 表記);
+    return createElement("furigana", { reading: 読み }, 表記);
 }
 function 縦書(内容: ReactNode): ReactNode {
     return createElement("tsuzuri", null, 内容);
@@ -15,7 +15,7 @@ function 縦書(内容: ReactNode): ReactNode {
 function 横書(内容: ReactNode): ReactNode {
     return createElement("tsuzuri", { direction: "horizontal" }, 内容);
 }
-function 例示(名称: string, 内容: string, 読み: string, 説明: string): ReactNode {
+function 例示(名称: string, 内容: string, 読み: string, 説明: string, 記法?: string): ReactNode {
     return (
         <article className="作品">
             <div className="作品頭">
@@ -24,7 +24,7 @@ function 例示(名称: string, 内容: string, 読み: string, 説明: string):
             </div>
             <div className="作品見本">{横書(合成(内容, 読み))}</div>
             <p className="作品説明">{説明}</p>
-            <div className="文字列"><code>{内容}</code></div>
+            <div className="文字列"><code>{記法 ?? 内容}</code></div>
         </article>
     );
 }
@@ -116,8 +116,8 @@ const 画面 = (
                         <p>表意文字記述文字列を解釈し、文字を自由に組み合わせます。振仮名を添えて、独自の読みも指定できます。</p></>)}
                     </div>
                     <div className="作品格子">
-                        {例示("上下", "⿱日本", "にほん", "日本を縦に重ねた合成文字。")}
-                        {例示("左右", "⿰日本", "にほん", "同じ二文字を左右に組み合わせる。")}
+                        {例示("上下", "⿱日本", "にほん", "日本を縦に重ねた合成文字。", "<t-漢字 縦>日本</t-漢字>")}
+                        {例示("左右", "⿰日本", "にほん", "同じ二文字を左右に組み合わせる。", "<kanji horizontal>日本</kanji>")}
                         {例示("三文字", "⿱⿰日本語", "にほんご", "文字の組み合わせは入れ子にできます。")}
                         {例示("四文字", "⿱⿰日本⿰語学", "にほんごがく", "より複雑な合成構造も文字のまま扱えます。")}
                     </div>
@@ -132,7 +132,7 @@ const 画面 = (
                         </article>
                         <article>
                             <div className="小見出し 手順題">{縦書("二 · 書いてみる")}</div>
-                            <pre><code>{'<tsuzuri>\n  <jp-furigana reading="つづり">綴り</jp-furigana>\n  <jp-kanji reading="にほん">⿱日本</jp-kanji>\n</tsuzuri>'}</code></pre>
+                            <pre><code>{'<t-綴>\n  <t-振り 読み="ことば">言葉</t-振り>\n  <t-漢字 横 振り="つづり">綴り</t-漢字>\n</t-綴>'}</code></pre>
                         </article>
                     </div>
                     <div className="一覧">

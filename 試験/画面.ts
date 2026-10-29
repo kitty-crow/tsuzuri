@@ -20,6 +20,104 @@ try {
     頁.on("pageerror", (例外内容) => 例外.push(例外内容.message));
     await 頁.goto("http://127.0.0.1:" + String(配信.port));
     await 頁.waitForSelector(".綴り-文字");
+    // 新しい二種類の記法と従来の文字構造が同じ結果になることを確かめる。
+    await 頁.evaluate(() => {
+        const 箱 = document.createElement("div");
+        箱.id = "新書式検査";
+        箱.style.cssText = "position:fixed;left:0;top:0;width:0;height:0;overflow:hidden;visibility:hidden;pointer-events:none";
+        箱.innerHTML = `
+          <t-綴><span id="和左右"><t-漢字 横 振り="つづり">綴り</t-漢字></span></t-綴>
+          <tsuzuri><span id="羅左右"><kanji horizontal reading="つづり">綴り</kanji></span></tsuzuri>
+          <t-綴><span id="和上下"><t-漢字 縦>日本</t-漢字></span></t-綴>
+          <tsuzuri><span id="羅上下"><kanji vertical>日本</kanji></span></tsuzuri>
+          <t-綴><span id="和入子"><t-漢字 縦>
+            <t-漢字 横>日本</t-漢字>
+            <t-漢字 横>綴り</t-漢字>
+          </t-漢字></span></t-綴>
+          <tsuzuri><span id="羅入子"><kanji vertical>
+            <kanji horizontal>日本</kanji>
+            <kanji horizontal>綴り</kanji>
+          </kanji></span></tsuzuri>
+          <tsuzuri><span id="表意"><kanji>⿱⿰日本⿰綴り</kanji></span></tsuzuri>
+          <t-綴><span id="和読み"><t-振り 読み="ことば">言葉</t-振り>
+            <t-漢字 振り="ことば">言葉</t-漢字></span></t-綴>
+          <tsuzuri><span id="羅読み"><furigana reading="ことば">言葉</furigana>
+            <kanji reading="ことば">言葉</kanji></span></tsuzuri>
+          <tsuzuri><span id="非合成"><kanji>日本</kanji></span></tsuzuri>
+          <tsuzuri><span id="旧来"><jp-kanji>日本</jp-kanji></span></tsuzuri>
+          <t-綴 横><span id="和方向"><t-縦>縦書き</t-縦><t-横>横書き</t-横></span></t-綴>
+          <tsuzuri horizontal><span id="羅方向"><tategaki>縦書き</tategaki><yokogaki>横書き</yokogaki></span></tsuzuri>
+          <t-綴 縦><span id="和明示">縦書き</span></t-綴>
+          <tsuzuri vertical><span id="羅明示">縦書き</span></tsuzuri>
+          <t-綴><span id="和追加"><t-漢数字 値="2026"></t-漢数字>
+            <t-暦 日付="2026-10-28"></t-暦><t-組版>文章</t-組版>
+            <t-縦中横>25</t-縦中横></span></t-綴>
+          <tsuzuri><span id="羅追加"><kansuji value="2026"></kansuji>
+            <koyomi date="2026-10-28"></koyomi><kumihan>文章</kumihan>
+            <tcy>25</tcy></span></tsuzuri>
+          <span id="範囲外"><kanji horizontal>日本</kanji></span>
+        `;
+        document.body.append(箱);
+    });
+    await 頁.waitForFunction(() =>
+        document.querySelectorAll("#新書式検査 .綴り-原字").length >= 8
+        && !document.querySelector("#和追加 t-漢数字")
+        && !document.querySelector("#羅追加 kansuji"));
+    const 新書式 = await 頁.locator("#新書式検査").evaluate((箱) => {
+        const 参照 = (名: string): Element => {
+            const 要素 = 箱.querySelector("#" + 名);
+            if (!要素) throw new Error("検査対象が見つかりません: " + 名);
+            return 要素;
+        };
+        const 原文 = (名: string): string =>
+            参照(名).querySelector(".綴り-原字")?.textContent ?? "";
+        const 読み = (名: string): string[] =>
+            Array.from(参照(名).querySelectorAll("rt"), (要素) => 要素.textContent ?? "");
+        const 方向 = (名: string, 種: string): string =>
+            getComputedStyle(参照(名).querySelector(種)!).writingMode;
+        return {
+            和左右: 原文("和左右"), 羅左右: 原文("羅左右"),
+            和上下: 原文("和上下"), 羅上下: 原文("羅上下"),
+            和入子: 原文("和入子"), 羅入子: 原文("羅入子"), 表意: 原文("表意"),
+            入子部品: 参照("和入子").querySelectorAll(".綴り-単字").length,
+            和左右読み: 読み("和左右"), 羅左右読み: 読み("羅左右"),
+            和読み: 読み("和読み"), 羅読み: 読み("羅読み"),
+            普通は非合成: !参照("非合成").querySelector(".綴り-原字"),
+            旧来: 原文("旧来"),
+            和横書: getComputedStyle(参照("和方向").parentElement!).writingMode,
+            羅横書: getComputedStyle(参照("羅方向").parentElement!).writingMode,
+            和縦領域: 方向("和方向", ".綴り-縦書"),
+            羅縦領域: 方向("羅方向", ".綴り-縦書"),
+            和横領域: 方向("和方向", ".綴り-横書"),
+            羅横領域: 方向("羅方向", ".綴り-横書"),
+            和明示: getComputedStyle(参照("和明示").parentElement!).writingMode,
+            羅明示: getComputedStyle(参照("羅明示").parentElement!).writingMode,
+            和追加: 参照("和追加").textContent?.replace(/\s+/g, "") ?? "",
+            羅追加: 参照("羅追加").textContent?.replace(/\s+/g, "") ?? "",
+            和縦中横: Boolean(参照("和追加").querySelector(".綴り-縦中横")),
+            羅縦中横: Boolean(参照("羅追加").querySelector(".綴り-縦中横")),
+            範囲外: 参照("範囲外").querySelector("kanji") !== null,
+        };
+    });
+    if (新書式.和左右 !== "⿰綴り" || 新書式.羅左右 !== "⿰綴り"
+        || 新書式.和上下 !== "⿱日本" || 新書式.羅上下 !== "⿱日本"
+        || 新書式.和入子 !== "⿱⿰日本⿰綴り" || 新書式.羅入子 !== "⿱⿰日本⿰綴り"
+        || 新書式.表意 !== 新書式.和入子 || 新書式.入子部品 !== 4
+        || 新書式.和左右読み.join("") !== "つづり"
+        || 新書式.羅左右読み.join("") !== "つづり"
+        || 新書式.和読み.join(",") !== "ことば,ことば"
+        || 新書式.羅読み.join(",") !== "ことば,ことば"
+        || !新書式.普通は非合成 || 新書式.旧来 !== "⿱日本"
+        || 新書式.和横書 !== "horizontal-tb" || 新書式.羅横書 !== "horizontal-tb"
+        || 新書式.和縦領域 !== "vertical-rl" || 新書式.羅縦領域 !== "vertical-rl"
+        || 新書式.和横領域 !== "horizontal-tb" || 新書式.羅横領域 !== "horizontal-tb"
+        || 新書式.和明示 !== "vertical-rl" || 新書式.羅明示 !== "vertical-rl"
+        || 新書式.和追加 !== 新書式.羅追加
+        || !新書式.和縦中横 || !新書式.羅縦中横 || !新書式.範囲外) {
+        throw new Error("日本語とローマ字の新書式が一致しません: " + JSON.stringify(新書式));
+    }
+    await 頁.evaluate(() => document.querySelector("#新書式検査")?.remove());
+
     // 朗読の格納位置は巻物の上。収納時は常に引手の高さだけを占める。
     const 朗読領域 = await 頁.locator(".物語節 > .容器").evaluate((箱) => {
         const 巻 = 箱.querySelector(".物語読書面")?.getBoundingClientRect();

@@ -18,26 +18,44 @@ function 構文解析(記号: readonly string[], 開始位置: number): readonly
     return [{ 配置, 部品: [左[0], 右[0]] }, 右[1]];
 }
 
-function 子要素(元: Element): readonly Element[] {
-    return Array.from(元.children).filter((子) => 子.matches("jp-kanji"));
+const 漢字要素 = "jp-kanji, kanji, t-漢字";
+const 描画対象 = [
+    "jp-kanji",
+    "tsuzuri kanji", "tsuzuri t-漢字",
+    "t-綴 kanji", "t-綴 t-漢字",
+].join(", ");
+
+/** 新しい要素では合成方向を明示し、旧来の要素だけ上下を既定とする。 */
+function 配置を読む(元: Element): 配置 | null {
+    if (元.hasAttribute("horizontal") || 元.hasAttribute("横")) return "左右";
+    if (元.hasAttribute("vertical") || 元.hasAttribute("縦")) return "上下";
+    if (!元.matches("jp-kanji")) return null;
+    return 属性(元, "alignment") === "horizontal" ? "左右" : "上下";
 }
 
-function 二要素から解析(元: Element, 子: readonly Element[]): 文字 | null {
-    const 左 = 要素から解析(子[0]!);
-    const 右 = 要素から解析(子[1]!);
-    if (!左 || !右) return null;
-    const 配置: 配置 = 属性(元, "alignment") === "horizontal" ? "左右" : "上下";
-    return { 配置, 部品: [左, 右] };
+function 節点から解析(節点: Node): 文字 | null {
+    if (節点 instanceof Element) {
+        return 節点.matches(漢字要素) ? 要素から解析(節点) : null;
+    }
+    const 記号 = Array.from(節点.textContent?.trim() ?? "");
+    return 記号.length === 1 ? { 字: 記号[0]! } : null;
 }
 
 function 要素から解析(元: Element): 文字 | null {
-    const 子 = 子要素(元);
-    if (子.length === 2) return 二要素から解析(元, 子);
+    const 子 = Array.from(元.childNodes).filter((節点) =>
+        節点.nodeType === Node.ELEMENT_NODE
+        || (節点.nodeType === Node.TEXT_NODE && Boolean(節点.textContent?.trim())));
+    const 配置 = 配置を読む(元);
+    if (子.some((節点) => 節点.nodeType === Node.ELEMENT_NODE)) {
+        if (子.length !== 2 || !配置) return null;
+        const 第一 = 節点から解析(子[0]!);
+        const 第二 = 節点から解析(子[1]!);
+        return 第一 && 第二 ? { 配置, 部品: [第一, 第二] } : null;
+    }
     const 記号 = Array.from(元.textContent?.trim() ?? "");
     const 指示 = 構文解析(記号, 0);
     if (指示 && 指示[1] === 記号.length) return 指示[0];
-    if (記号.length !== 2 || 子.length > 0) return null;
-    const 配置: 配置 = 属性(元, "alignment") === "horizontal" ? "左右" : "上下";
+    if (記号.length !== 2 || !配置) return null;
     return { 配置, 部品: [{ 字: 記号[0]! }, { 字: 記号[1]! }] };
 }
 
@@ -104,24 +122,35 @@ function 合成表示を作る(構造: 文字): DocumentFragment {
     return 断片;
 }
 
-/** IDS と入れ子になった要素の双方に対応する。 */
+/** 表意文字記述と要素の入れ子を同じ構造として描画する。 */
 export function 書道を描く(根: ParentNode): void {
-    置換(根, "jp-kanji", (元) => {
+    置換(根, 描画対象, (元) => {
         const 解析 = 要素から解析(元);
+        const 合成 = Boolean(解析 && ("配置" in 解析 || 元.matches("jp-kanji")));
+        const 読み = 元.matches("t-漢字") ? 属性(元, "振り") : 属性(元, "reading");
         const 表示 = document.createElement("span");
-        表示.className = "綴り-文字";
+        表示.className = 合成 ? "綴り-文字" : "";
         表示.lang = "ja";
-        if (!解析) 表示.textContent = 元.textContent;
-        if (解析) 表示.append(合成表示を作る(解析));
-        const 読み = 属性(元, "reading");
-        if (!読み) return 表示;
+        if (合成 && 解析) 表示.append(合成表示を作る(解析));
+        if (!合成) {
+            while (元.firstChild) 表示.append(元.firstChild);
+        }
+        if (!読み) {
+            if (合成 || 元.matches("jp-kanji")) return 表示;
+            const 内容 = document.createDocumentFragment();
+            while (表示.firstChild) 内容.append(表示.firstChild);
+            return 内容;
+        }
         const ルビ = document.createElement("ruby");
         ルビ.lang = "ja";
-        ルビ.className = "綴り-振仮名 綴り-合成ルビ";
+        ルビ.className = 合成 ? "綴り-振仮名 綴り-合成ルビ" : "綴り-振仮名";
         const 注記 = document.createElement("rt");
         注記.textContent = 読み;
-        ルビ.append(表示, 注記);
+        if (合成) ルビ.append(表示, 注記);
+        if (!合成) {
+            while (表示.firstChild) ルビ.append(表示.firstChild);
+            ルビ.append(注記);
+        }
         return ルビ;
     });
 }
-

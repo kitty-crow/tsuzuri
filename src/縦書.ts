@@ -8,6 +8,6 @@ export function 縦書を描く(根: ParentNode): void {
     });
     置換(根, "jp-tategaki", (元) => 包む(元, "綴り-本文 綴り-縦書"));
     置換(根, "jp-yokogaki", (元) => 包む(元, "綴り-本文 綴り-横書"));
-    置換(根, "jp-tcy", (元) => 包む(元, "綴り-縦中横"));
+    置換(根, "jp-tcy, tsuzuri tcy, tsuzuri t-縦中横, t-綴 tcy, t-綴 t-縦中横", (元) => 包む(元, "綴り-縦中横"));
 }
 

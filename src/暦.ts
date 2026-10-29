@@ -101,14 +101,14 @@ export function 日付を整える(入力: string, 旧暦: boolean, 書式: 暦�
 }
 
 export function 暦を描く(根: ParentNode): void {
-    置換(根, "jp-koyomi", (元) => {
-        const 日付 = 属性(元, "date");
-        const 旧暦 = 属性(元, "calendar") === "kyureki";
+    置換(根, "jp-koyomi, tsuzuri koyomi, tsuzuri t-暦, t-綴 koyomi, t-綴 t-暦", (元) => {
+        const 日付 = 属性(元, "日付") || 属性(元, "date");
+        const 旧暦 = (属性(元, "暦") || 属性(元, "calendar")) === "kyureki" || 属性(元, "暦") === "旧暦";
         const 書式: 暦書式 = {
-            年表示: 属性(元, "year") === "same" ? "同年" : "通常",
-            干支: 元.hasAttribute("eto"),
-            廿: 属性(元, "day-style") === "abbreviated",
-            吉日: 属性(元, "day-style") === "auspicious",
+            年表示: 属性(元, "year") === "same" || 属性(元, "年") === "同年" ? "同年" : "通常",
+            干支: 元.hasAttribute("eto") || 元.hasAttribute("干支"),
+            廿: 属性(元, "day-style") === "abbreviated" || 属性(元, "日") === "略記",
+            吉日: 属性(元, "day-style") === "auspicious" || 属性(元, "日") === "吉日",
         };
         const 結果 = 日付を整える(日付, 旧暦, 書式);
         const 表示 = document.createElement("time");

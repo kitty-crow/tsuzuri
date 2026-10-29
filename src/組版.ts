@@ -76,7 +76,7 @@ function 孤立を防ぐ(要素: Element): void {
 
 /** 日本語の禁則処理に加え、末尾一～二字の孤立を防ぐ。 */
 export function 組版を描く(根: ParentNode): void {
-    置換(根, "jp-kumihan", (元) => 包む(元, "綴り-組版"));
+    置換(根, "jp-kumihan, tsuzuri kumihan, tsuzuri t-組版, t-綴 kumihan, t-綴 t-組版", (元) => 包む(元, "綴り-組版"));
     for (const 要素 of Array.from(根.querySelectorAll(対象選択子))) {
         if (要素.querySelector("p, li, blockquote")) continue;
         孤立を防ぐ(要素);

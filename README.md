@@ -21,7 +21,7 @@
 </head>
 <body>
   <tsuzuri>
-     <jp-kanji reading="つづり">⿰綴り</jp-kanji>で日本語を組む。
+     <t-漢字 横 振り="つづり">綴り</t-漢字>で日本語を組む。
   </tsuzuri>
 </body>
 </html>
@@ -116,7 +116,9 @@ bun run build:lib
 
 ## 5. HTML ページで使う
 
-`<head>` に配布済みのスクリプトを置き、`<body>` に専用の HTML 要素を記述します。次はローカルにダウンロードした統合版を使う例です。
+`<tsuzuri>` または `<t-綴>` で囲んだ内容を綴りが処理します。縦書きが既定ですが、これは処理領域の指定であり、縦書き専用の要素ではありません。通常の HTML と組み合わせて利用できます。
+
+### 日本語の記法
 
 ~~~html
 <!doctype html>
@@ -126,21 +128,108 @@ bun run build:lib
   <script src="./vendor/tsuzuri/tsuzuri.js" defer></script>
 </head>
 <body>
-  <tsuzuri>春はあけぼの。</tsuzuri>
-  <tsuzuri direction="horizontal">横書きに切り替えます。</tsuzuri>
+  <t-綴>
+    <t-振り 読み="ことば">言葉</t-振り>を
+    <t-漢字 横 振り="つづり">綴り</t-漢字>ます。
 
-  <jp-tategaki>縦書きです。</jp-tategaki>
-  <jp-yokogaki>横書きです。</jp-yokogaki>
-  <jp-furigana reading="ことば">言葉</jp-furigana>
-  <jp-kanji reading="にほん">⿱日本</jp-kanji>
-  <jp-kansuji value="2026"></jp-kansuji>
-  <jp-kansuji value="18" style="daiji"></jp-kansuji>
-  <jp-koyomi date="2026-10-28"></jp-koyomi>
+    <t-横>ここだけ横書きです。</t-横>
+    <t-縦>ここは明示的な縦書きです。</t-縦>
+
+    <t-漢数字 値="2026"></t-漢数字>
+    <t-暦 日付="2026-10-28"></t-暦>
+  </t-綴>
 </body>
 </html>
 ~~~
 
-初期化処理は不要です。ページの読み込み後に追加した専用要素も自動処理します。全要素、属性、複合漢字の記述、組版、日付の書式については [要素と属性の仕様](文書/書式.md) を参照してください。
+### ローマ字の記法
+
+~~~html
+<tsuzuri>
+  <furigana reading="ことば">言葉</furigana>を
+  <kanji horizontal reading="つづり">綴り</kanji>ます。
+
+  <yokogaki>ここだけ横書きです。</yokogaki>
+  <tategaki>ここは明示的な縦書きです。</tategaki>
+
+  <kansuji value="2026"></kansuji>
+  <koyomi date="2026-10-28"></koyomi>
+</tsuzuri>
+~~~
+
+日本語とローマ字の要素を同じ処理領域内で混在させても、結果は変わりません。初期化処理は不要で、後から追加した要素も自動で処理します。
+
+### 処理領域と書字方向
+
+| 日本語 | ローマ字 | 働き |
+|---|---|---|
+| `<t-綴>` | `<tsuzuri>` | 内容を既定の設定で処理 |
+| `<t-綴 縦>` | `<tsuzuri vertical>` | 縦書きを明示 |
+| `<t-綴 横>` | `<tsuzuri horizontal>` | 横書きを明示 |
+| `<t-縦>` | `<tategaki>` | 内側だけ縦書き |
+| `<t-横>` | `<yokogaki>` | 内側だけ横書き |
+
+~~~html
+<t-綴 横>
+  横書きの文章です。
+  <t-縦>この部分だけ縦書きになります。</t-縦>
+  ここから横書きに戻ります。
+</t-綴>
+~~~
+
+### 振仮名と合成漢字
+
+`<kanji>` と `<t-漢字>` は、合成方向や表意文字記述を指定しなければ文字を合成しません。読みだけを付けた場合は `<furigana>` や `<t-振り>` と同じ振仮名になります。
+
+~~~html
+<t-綴>
+  <t-振り 読み="にほんご">日本語</t-振り>
+  <t-漢字 振り="ことば">言葉</t-漢字>
+  <t-漢字 横 振り="つづり">綴り</t-漢字>
+  <t-漢字 縦 振り="にほん">日本</t-漢字>
+</t-綴>
+~~~
+
+~~~html
+<tsuzuri>
+  <furigana reading="にほんご">日本語</furigana>
+  <kanji reading="ことば">言葉</kanji>
+  <kanji horizontal reading="つづり">綴り</kanji>
+  <kanji vertical reading="にほん">日本</kanji>
+</tsuzuri>
+~~~
+
+### 入れ子になった合成漢字
+
+各合成要素は二つの部品を組み合わせます。部品には、さらに合成要素を指定できます。改行と字下げの空白は部品に含みません。
+
+~~~html
+<t-綴>
+  <t-漢字 縦>
+    <t-漢字 横>日本</t-漢字>
+    <t-漢字 横>綴り</t-漢字>
+  </t-漢字>
+</t-綴>
+~~~
+
+~~~html
+<tsuzuri>
+  <kanji vertical>
+    <kanji horizontal>日本</kanji>
+    <kanji horizontal>綴り</kanji>
+  </kanji>
+</tsuzuri>
+~~~
+
+どちらも `⿱⿰日本⿰綴り` と同じ構造です。表意文字記述を直接書くこともできます。
+
+~~~html
+<tsuzuri>
+  <kanji>⿱⿰日本⿰綴り</kanji>
+</tsuzuri>
+~~~
+
+要素・属性の詳しい対応表、漢数字、暦の指定方法については [要素と属性](文書/書式.md) を参照してください。
 
 ## 6. 対応範囲と制限
 

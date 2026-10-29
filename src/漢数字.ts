@@ -35,11 +35,12 @@ export function 漢数字へ(数値: number, 形式: "位取り" | "各桁" | "�
 }
 
 export function 漢数字を描く(根: ParentNode): void {
-    置換(根, "jp-kansuji", (元) => {
-        const 原文 = 属性(元, "value") || 元.textContent?.trim() || "";
-        const 形式の指定 = 属性(元, "style");
+    置換(根, "jp-kansuji, tsuzuri kansuji, tsuzuri t-漢数字, t-綴 kansuji, t-綴 t-漢数字", (元) => {
+        const 原文 = 属性(元, "値") || 属性(元, "value") || 元.textContent?.trim() || "";
+        const 形式の指定 = 属性(元, "形式") || 属性(元, "style");
         const 形式: "位取り" | "各桁" | "大字" =
-            形式の指定 === "digits" ? "各桁" : 形式の指定 === "daiji" ? "大字" : "位取り";
+            形式の指定 === "digits" || 形式の指定 === "各桁" ? "各桁"
+                : 形式の指定 === "daiji" || 形式の指定 === "大字" ? "大字" : "位取り";
         const 結果 = 漢数字へ(Number(原文), 形式);
         const 出力 = document.createElement("span");
         出力.className = "綴り-漢数字";
