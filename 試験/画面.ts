@@ -989,9 +989,9 @@ try {
     const 目標識別 = await 目標.getAttribute("id");
     if (!目標識別) throw new Error("目次に使う識別子がありません");
     const 跳躍先 = 頁.locator('#物語目次 a[data-target="' + 目標識別 + '"]');
-    await 跳躍先.scrollIntoViewIfNeeded();
+    // ブラウザー試験の自動スクロールを除き、目次の操作による移動だけを調べる。
     const クリック前の頁 = await 頁.evaluate(() => window.scrollY);
-    await 跳躍先.click();
+    await 跳躍先.evaluate((要素) => (要素 as HTMLElement).click());
 
     await 頁.waitForFunction((識別) => {
         const 見出し = document.getElementById(識別);
