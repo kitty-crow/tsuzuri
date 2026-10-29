@@ -233,7 +233,7 @@ const 日本語の要素名: Readonly<Record<string, string>> = {
     tategaki: "t-縦",
 };
 const 日本語HTML = render2Mkup(画面).replace(
-    /<(\\/?)(tsuzuri|kanji|furigana|koyomi|tategaki)(?=[\\s>])/g,
+    /<(\/?)(tsuzuri|kanji|furigana|koyomi|tategaki)(?=[\s>])/g,
     (全文, 閉じ: string, 名称: string) => "<" + 閉じ + (日本語の要素名[名称] ?? 全文),
 );
 await writeFile("site/index.html", "<!doctype html>\n" + 日本語HTML + "\n", "utf8");
