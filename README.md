@@ -21,7 +21,7 @@
 </head>
 <body>
   <tsuzuri>
-    <jp-furigana reading="つづり">綴り</jp-furigana>で日本語を組む。
+     <jp-kanji reading="つづり">⿰綴り</jp-kanji>で日本語を組む。
   </tsuzuri>
 </body>
 </html>
