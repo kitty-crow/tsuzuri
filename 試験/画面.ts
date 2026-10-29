@@ -652,6 +652,24 @@ try {
     if (巻数 !== 1 || 縦書本文数 !== 1 || 大題数 !== 1 || 後日題数 !== 1) {
         throw new Error("一つの巻物に全篇が収まっていません");
     }
+    // 後日譚の飾り罫は縦組の字の左側に置き、右側の振仮名を避ける。
+    const 後日題の罫線 = await 頁.locator(".物語巻 .物語後日題").evaluate((要素) => {
+        const 様式 = getComputedStyle(要素);
+        return {
+            方向: 様式.writingMode,
+            左線: 様式.borderLeftWidth,
+            左線種: 様式.borderLeftStyle,
+            右線: 様式.borderRightWidth,
+            左余白: Number.parseFloat(様式.paddingLeft),
+            右余白: Number.parseFloat(様式.paddingRight),
+        };
+    });
+    if (後日題の罫線.方向 !== "vertical-rl"
+        || 後日題の罫線.左線 !== "2px" || 後日題の罫線.左線種 !== "solid"
+        || 後日題の罫線.右線 !== "0px"
+        || 後日題の罫線.左余白 <= 0 || 後日題の罫線.右余白 !== 0) {
+        throw new Error("後日譚の飾り罫が左側にありません: " + JSON.stringify(後日題の罫線));
+    }
     for (const 読み of ["せいしち", "はつね", "きゅうべえ", "かいとう", "ぬしさま"]) {
         if (!人物の読み.includes(読み)) throw new Error("人名の振仮名が欠けています: " + 読み);
     }

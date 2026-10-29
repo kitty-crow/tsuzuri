@@ -61,8 +61,8 @@
     line-height: 1.5;
     color: var(--朱);
     margin: 0 0 0 1.4em;
-    padding-right: .35em;
-    border-right: 2px solid var(--朱);
+    padding-left: .35em;
+    border-left: 2px solid var(--朱);
     scroll-margin-right: 3em;
 }
 .物語年月 {
