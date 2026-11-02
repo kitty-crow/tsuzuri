@@ -124,7 +124,11 @@ export function emitLayout(doc: Document, graph: PageGraph, plans: readonly Plan
         element.style.setProperty("--reader-columns", columns.map((child) => "minmax(0, " + String(child.width / Math.max(1, total) * 100) + "fr)").join(" "));
     }
     const style = doc.createElement("style");
-    style.textContent = READER_CSS + "\n[data-reader-primary] { direction: rtl !important; }\n[data-reader-primary] > * { direction: ltr !important; }"; style.dataset.readerStyle = "";
+    // 主領域が文章の流れそのものである場合、右端から左へ列を進める。
+    style.textContent = READER_CSS + "\n[data-reader-primary] { direction: rtl !important; }"
+        + "\n[data-reader-primary][data-reader-flow] { direction: ltr !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }"
+        + "\n[data-reader-primary] > * { direction: ltr !important; }";
+    style.dataset.readerStyle = "";
     doc.head.append(style);
     if (doc.body.textContent !== before) throw new Error("組版中に本文が変わったため中断しました。");
 }
