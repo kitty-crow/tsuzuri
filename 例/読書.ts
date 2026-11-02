@@ -1,3 +1,4 @@
+import { ProgressView } from "./進捗.ts";
 import { bookmarklet } from "../src/読取/bookmarklet.ts";
 import { ReaderCache } from "../src/読取/cache.ts";
 import { WebReader, type ReadResult } from "../src/読取/compiler.ts";
@@ -36,15 +37,14 @@ const panel = document.createElement("section");
 panel.className = "読書画面";
 panel.setAttribute("aria-label", "綴りで読む");
 panel.innerHTML = `<header class="読書操作">
-  <a class="読書戻る">綴りへ</a>
-  <form class="読書URL"><label>ウェブサイトのURL <input name="w" type="url" required placeholder="https://example.jp/"></label><button>縦書きで読む</button></form>
-  <label class="読書意味"><input type="checkbox" checked> 詳しい意味解析</label>
+  <div class="読書見出し"><a class="読書戻る">綴りへ</a><h1>綴りで読む</h1><p class="読書状態" role="status" aria-live="polite"></p></div>
+  <form class="読書URL"><label><span>読みたいページ</span><input name="w" type="url" required placeholder="https://example.jp/"></label><button>縦書きで読む</button></form>
+  <div class="読書道具"><label class="読書意味"><input type="checkbox" checked> 詳しい意味解析</label>
   <button type="button" class="読書原文" aria-pressed="false">元の配置</button>
   <button type="button" class="読書更新">更新</button>
   <button type="button" class="読書消去">保存を削除</button>
-  <label class="読書取込">HTMLを開く <input type="file" accept=".html,.htm,text/html"></label>
-  <p class="読書状態" role="status" aria-live="polite"></p>
-  <p class="読書連携">このリンクをブックマークバーへドラッグ: <a class="読書栞">綴りで読む</a>。読みたいサイトを開き、そのブックマークを押してください。</p>
+  </div><label class="読書取込"><span>ＨＴＭＬを開く</span><input type="file" accept=".html,.htm,text/html"></label>
+  <p class="読書連携">この栞をブックマークバーへ。<a class="読書栞">綴りで読む</a>。読みたいサイトを開き、栞を押してください。</p>
   <a class="読書出典" target="_blank" rel="noopener noreferrer">出典を開く</a>
 </header>`;
 required<HTMLAnchorElement>(panel, ".読書栞").href = bookmarklet(new URL(location.pathname, location.origin).href);
@@ -59,6 +59,8 @@ const frame = document.createElement("iframe");
 frame.className = "読書本文"; frame.title = "縦書きのページ"; frame.setAttribute("sandbox", "allow-same-origin allow-popups"); frame.referrerPolicy = "no-referrer";
 const measure = document.createElement("iframe");
 measure.className = "読書測定"; measure.title = "組版の測定"; measure.setAttribute("sandbox", "allow-same-origin"); measure.setAttribute("aria-hidden", "true"); measure.tabIndex = -1;
+const progressView = new ProgressView();
+required(panel, ".読書操作").append(progressView.element);
 panel.append(frame, measure);
 
 function show(): void {
@@ -96,17 +98,28 @@ async function open(url: URL, refresh = false, html?: string): Promise<void> {
     if (activeURL?.href !== url.href) current = undefined;
     activeURL = url; input.value = url.href; attribution.href = url.href;
     const address = new URL(location.href); address.searchParams.set("w", url.href); history.replaceState(null, "", address);
+    progressView.start();
     status.textContent = "保存済みの組版を確認しています。";
     const size = dimensions(); measure.style.width = String(size.width) + "px"; measure.style.height = String(size.height) + "px";
     const encoder = semantic.checked ? new CachedEncoder(new LocalEncoder(new URL("reader-model.js", assets))) : undefined;
-    const reader = new WebReader({ frame: measure, store, ...size, ...(encoder ? { encoder } : {}), status: (message) => { if (!signal.aborted) status.textContent = message; } });
+    const preview = new AbortController();
+    signal.addEventListener("abort", () => preview.abort(), { once: true });
+    const reader = new WebReader({
+        progress: (value) => { if (!signal.aborted) progressView.update(value); },
+        preview: (source) => { void loadFrame(frame, source, preview.signal).catch(() => undefined); },
+        frame: measure, store, ...size, ...(encoder ? { encoder } : {}), status: (message) => { if (!signal.aborted) status.textContent = message; } });
     try {
         const result = await reader.read(url, signal, refresh, html);
         signal.throwIfAborted(); current = result;
+        preview.abort();
+        progressView.update({ phase: "display" });
         await present(result, signal);
+        progressView.update({ phase: "complete" });
         if (result.cached && Date.now() - result.page.created > 24 * 60 * 60 * 1000) status.textContent += " 更新で最新のページを読み込めます。";
     } catch (error) {
+        preview.abort();
         if (signal.aborted) return;
+        progressView.update({ phase: "error" });
         status.textContent = (error instanceof Error ? error.message : String(error))
             + " サイトが直接の取得を許可しない場合は、上の「綴りで読む」をブックマークバーに追加し、元のサイト上で実行してください。保存したHTMLも開けます。";
     }

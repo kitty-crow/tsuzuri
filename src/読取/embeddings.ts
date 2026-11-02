@@ -1,10 +1,11 @@
 import { digest } from "./query.ts";
-import { EMBEDDING_POLICY, MODEL, MODEL_REVISION, type SemanticEncoder, type SemanticResult } from "./types.ts";
+import { EMBEDDING_POLICY, MODEL, MODEL_REVISION, type ProgressSink, type SemanticEncoder, type SemanticResult } from "./types.ts";
 
 /** Content-addressed embeddings survive page edits and viewport changes. */
 export class CachedEncoder implements SemanticEncoder {
     constructor(private readonly encoder: SemanticEncoder) {}
-    async encode(texts: readonly string[], signal: AbortSignal): Promise<SemanticResult> {
+    async encode(texts: readonly string[], signal: AbortSignal, progress?: ProgressSink): Promise<SemanticResult> {
+        progress?.({ phase: "cache", detail: "保存済みの意味解析を確認しています。" });
         const cache = typeof caches === "undefined" ? undefined : await caches.open("tsuzuri-reader-embeddings-v1").catch(() => undefined);
         const keys = await Promise.all(texts.map(async (text) => new URL("./__reader_embedding__/" + await digest(MODEL + MODEL_REVISION + EMBEDDING_POLICY + text), location.href).href));
         const stored = await Promise.all(keys.map(async (key): Promise<number[] | undefined> => {
@@ -17,7 +18,8 @@ export class CachedEncoder implements SemanticEncoder {
         signal.throwIfAborted();
         const known = new Map(keys.flatMap((key, index) => stored[index] ? [[key, stored[index]!] as const] : []));
         const missing = Array.from(new Map(texts.flatMap((text, index) => known.has(keys[index]!) ? [] : [[keys[index]!, { text, index }] as const])).values());
-        const result = missing.length ? await this.encoder.encode(missing.map((entry) => entry.text), signal) : undefined;
+        const result = missing.length ? await this.encoder.encode(missing.map((entry) => entry.text), signal, progress) : undefined;
+        progress?.({ phase: "save", detail: "意味解析を保存しています。" });
         await Promise.all(missing.map(async (item, index) => {
             const vector = result?.vectors[index];
             if (!vector) throw new Error("意味解析の出力が不足しています。");

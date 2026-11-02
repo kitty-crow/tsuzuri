@@ -214,13 +214,13 @@ const 画面 = (
                     </div>
                 </section>
                 <section id="読書" className="節 容器 読書入口">
-                    <h2>綴りで読む</h2>
-                    <p>日本語のウェブページを、縦書きで。文章と配置の解析は、お使いのブラウザーで行います。</p>
+                    <div className="読書入口題">{縦書(<><p className="眉">ウェブを、縦書きへ。</p><h2>綴りで読む</h2><p>日本語のウェブページを、縦書きで。文章と配置の解析は、お使いのブラウザーで行います。</p></>)}</div>
                     <form method="get">
-                        <input type="url" name="w" required aria-label="ウェブサイトのURL" placeholder="https://example.jp/" />
-                        <button type="submit">縦書きで読む</button>
+                        <label htmlFor="読書先">{縦書("読みたいページ")}</label>
+                        <input id="読書先" type="url" name="w" required aria-label="ウェブサイトのURL" placeholder="https://example.jp/" />
+                        <button type="submit">{縦書("縦書きで読む")}</button>
                     </form>
-                    <p>直接の取得が許可されていないサイトは、保存したHTMLから開けます。初回の詳しい意味解析ではモデルを取得し、結果と一緒にブラウザーに保存します。</p>
+                    <div className="読書入口手引">{縦書(<p>直接の取得が許可されていないサイトは、読書画面の栞をブックマークバーに追加し、元のサイトから開いてください。解析した文章と組版は、ブラウザーに保存されます。</p>)}</div>
                 </section>
                 {物語}
             </main>

@@ -1,9 +1,12 @@
 import { scheduleInference, type InferenceLane } from "./scheduler.ts";
-import { EMBEDDING_POLICY, MODEL, MODEL_REVISION, type SemanticEncoder, type SemanticResult } from "./types.ts";
+import { ModelTransfers } from "./progress.ts";
+import { EMBEDDING_POLICY, MODEL, MODEL_REVISION, type ModelFileProgress, type ProgressSink, type ReaderProgress, type SemanticEncoder, type SemanticResult } from "./types.ts";
 
 type Device = "wasm" | "webgpu";
 type GPUAccess = Readonly<{ requestAdapter(): Promise<{ features: ReadonlySet<string> } | null> }>;
 type Pending = { resolve: (value: readonly (readonly number[])[]) => void; reject: (error: unknown) => void; timer: ReturnType<typeof setTimeout> };
+type DownloadSink = (device: Device, progress: ModelFileProgress) => void;
+type WorkerReply = { id: number; error?: string; vectors?: readonly (readonly number[])[] } | { progress: ModelFileProgress };
 
 class ModelLane implements InferenceLane {
     readonly initialBatch: number;
@@ -13,13 +16,14 @@ class ModelLane implements InferenceLane {
     private pending = new Map<number, Pending>();
     private readonly lifetime = new AbortController();
     private failure: Error | undefined;
-    constructor(readonly name: string, private readonly url: URL, private readonly device: Device) {
+    constructor(readonly name: string, private readonly url: URL, private readonly device: Device, private readonly download?: DownloadSink) {
         this.initialBatch = device === "webgpu" ? 8 : 2;
         this.maximumBatch = device === "webgpu" ? 24 : 6;
     }
     async initialise(): Promise<void> {
         this.worker = new Worker(this.url, { type: "module" });
-        this.worker.onmessage = (event: MessageEvent<{ id: number; error?: string; vectors?: readonly (readonly number[])[] }>) => {
+        this.worker.onmessage = (event: MessageEvent<WorkerReply>) => {
+            if ("progress" in event.data) { this.download?.(this.device, event.data.progress); return; }
             const pending = this.pending.get(event.data.id);
             if (!pending) return;
             clearTimeout(pending.timer); this.pending.delete(event.data.id);
@@ -63,11 +67,11 @@ class GPULane implements InferenceLane {
     readonly maximumBatch = 24;
     private inner: ModelLane | undefined;
     private closed = false;
-    constructor(private readonly url: URL, private readonly gpu: GPUAccess) {}
+    constructor(private readonly url: URL, private readonly gpu: GPUAccess, private readonly download?: DownloadSink) {}
     async initialise(): Promise<void> {
         const adapter = await Promise.race([this.gpu.requestAdapter(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500))]);
         if (!adapter || this.closed) throw new Error("WebGPUを利用できません。");
-        this.inner = new ModelLane("webgpu", this.url, "webgpu");
+        this.inner = new ModelLane("webgpu", this.url, "webgpu", this.download);
         await this.inner.initialise();
     }
     run(texts: readonly string[]): Promise<readonly (readonly number[])[]> {
@@ -79,15 +83,27 @@ class GPULane implements InferenceLane {
 
 export class LocalEncoder implements SemanticEncoder {
     constructor(private readonly workerURL: URL) {}
-    async encode(texts: readonly string[], signal: AbortSignal): Promise<SemanticResult> {
+    async encode(texts: readonly string[], signal: AbortSignal, progress?: ProgressSink): Promise<SemanticResult> {
         signal.throwIfAborted();
+        const transfers = new ModelTransfers();
+        let latest: ReaderProgress = { phase: "model", etaSeconds: null };
+        progress?.(latest);
+        const download: DownloadSink = (device, event) => {
+            const transfer = transfers.update(device, event, performance.now());
+            if (signal.aborted || !transfer) return;
+            latest = { ...latest, download: transfer };
+            progress?.(latest);
+        };
         const hardware = navigator as Navigator & { deviceMemory?: number; gpu?: GPUAccess };
         const cores = hardware.hardwareConcurrency || 2;
         const memory = hardware.deviceMemory ?? 4;
         const cpuCount = texts.length < 24 ? 1 : Math.max(1, Math.min(3, Math.floor((cores - 2) / 2), Math.floor(memory / 3)));
-        const lanes: InferenceLane[] = Array.from({ length: cpuCount }, (_, index) => new ModelLane("wasm-" + String(index), this.workerURL, "wasm"));
-        if (hardware.gpu) lanes.push(new GPULane(this.workerURL, hardware.gpu));
-        const vectors = await scheduleInference(texts, lanes, signal);
+        const lanes: InferenceLane[] = Array.from({ length: cpuCount }, (_, index) => new ModelLane("wasm-" + String(index), this.workerURL, "wasm", download));
+        if (hardware.gpu) lanes.push(new GPULane(this.workerURL, hardware.gpu, download));
+        const vectors = await scheduleInference(texts, lanes, signal, () => performance.now(), (value) => {
+            latest = { ...latest, phase: "analyse", ...value };
+            progress?.(latest);
+        });
         return { vectors, model: MODEL + "@" + MODEL_REVISION + ":" + EMBEDDING_POLICY };
     }
 }

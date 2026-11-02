@@ -1,16 +1,58 @@
 .読書中 { overflow: hidden; }
-.読書画面 { position: fixed; inset: 0; z-index: 10000; display: flex; flex-direction: column; background: #f6f4ed; color: #272925; font: 14px/1.5 system-ui, sans-serif; }
-.読書操作 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 18px; border-bottom: 1px solid #ccc7bc; }
-.読書操作 button, .読書取込 { border: 1px solid #aaa59b; border-radius: 5px; padding: 5px 10px; background: transparent; color: inherit; cursor: pointer; font: inherit; }
-.読書URL { flex: 1 1 420px; display: flex; gap: 8px; }
-.読書URL label { display: flex; align-items: center; gap: 8px; flex: 1; }
-.読書URL input { min-width: 80px; width: 100%; padding: 6px; border: 1px solid #aaa59b; border-radius: 4px; }
+.読書画面 { position: fixed; inset: 0; z-index: 10000; display: grid; grid-template-columns: minmax(0, 1fr) clamp(190px, 26vw, 340px); background: var(--紙, #f6f4ed); color: var(--墨, #272925); font: 14px/1.8 "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif; }
+.読書操作 { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; gap: 16px; padding: 20px 16px; border-left: 1px solid var(--線, #ccc7bc); overflow: auto; min-width: 0; min-height: 0; }
+.読書操作 p, .読書操作 a, .読書操作 h1, .読書操作 button, .読書操作 label > span, .読書意味 { writing-mode: vertical-rl; text-orientation: mixed; }
+.読書見出し { display: flex; flex-direction: row-reverse; align-items: flex-start; gap: 16px; min-height: 150px; }
+.読書見出し h1 { margin: 0; font-size: 1.5em; letter-spacing: .12em; white-space: nowrap; font-weight: 500; }
+.読書戻る { white-space: nowrap; }
+.読書状態 { margin: 0; height: 180px; flex: 1; overflow: auto; font-size: 12px; line-height: 1.8; }
+.読書操作 button { border: 1px solid var(--線, #aaa59b); border-radius: 3px; padding: 10px 7px; background: transparent; color: inherit; cursor: pointer; font: inherit; letter-spacing: .08em; }
+.読書操作 button:focus-visible, .読書操作 a:focus-visible { outline: 2px solid var(--朱, #b36a4c); outline-offset: 3px; }
+.読書URL { display: flex; flex-direction: row-reverse; gap: 8px; flex-shrink: 0; }
+.読書URL label { display: flex; flex-direction: row-reverse; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+.読書URL label > span { height: 9em; font-size: 11px; }
+.読書URL input { min-width: 0; width: 100%; padding: 10px 6px; border: 1px solid var(--線, #aaa59b); border-radius: 3px; background: var(--面, white); color: inherit; font: 12px/1.5 ui-monospace, monospace; writing-mode: horizontal-tb; }
 .読書URL button { white-space: nowrap; }
-.読書状態 { flex: 1 1 75%; margin: 0; font-size: 12px; overflow-wrap: anywhere; }
-.読書出典, .読書戻る { color: #6e382e; }
-.読書本文 { border: 0; width: 100%; flex: 1; min-height: 0; background: white; }
+.読書道具 { display: flex; flex-direction: row-reverse; justify-content: flex-start; gap: 8px; align-items: stretch; flex-shrink: 0; }
+.読書意味 { display: flex; align-items: center; gap: 7px; font-size: 12px; white-space: nowrap; }
+.読書意味 input { writing-mode: horizontal-tb; }
+.読書取込 { display: flex; flex-direction: row-reverse; gap: 6px; align-items: center; flex-shrink: 0; }
+.読書取込 span { white-space: nowrap; font-size: 12px; }
+.読書取込 input { writing-mode: horizontal-tb; min-width: 0; width: 100%; font-size: 11px; }
+.読書連携 { height: 180px; margin: 0 0 0 auto; max-width: 100%; font-size: 12px; flex-shrink: 0; }
+.読書連携 a { color: var(--朱, #6e382e); text-decoration: underline; text-underline-offset: .25em; }
+.読書出典 { margin-left: auto; font-size: 12px; }
+.読書本文 { grid-column: 1; grid-row: 1; border: 0; width: 100%; height: 100%; min-width: 0; min-height: 0; background: var(--面, white); }
 .読書測定 { position: fixed; left: -100000px; top: 0; visibility: hidden; border: 0; }
-.読書取込 input { max-width: 190px; }
-.読書入口 form { display: flex; gap: 12px; flex-wrap: wrap; margin-block: 18px; }
-.読書入口 input { flex: 1 1 260px; padding: 12px; border: 1px solid currentColor; background: transparent; color: inherit; font: inherit; }
-.読書入口 button { padding: 12px 20px; background: transparent; color: inherit; border: 1px solid currentColor; font: inherit; cursor: pointer; }
+.読書進捗 { order: -1; display: flex; flex-direction: row-reverse; align-items: flex-start; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--線, #ccc7bc); min-height: 165px; flex-shrink: 0; }
+.読書進捗 p { margin: 0; height: 145px; font-size: 12px; }
+.読書進捗詳細 { flex: 1; overflow: auto; }
+.読書進捗軌道 { position: relative; width: 7px; height: 145px; flex: 0 0 7px; border-radius: 5px; background: var(--線, #dedfd5); overflow: hidden; }
+.読書進捗軌道 > span { display: block; width: 100%; background: var(--朱, #b36a4c); border-radius: inherit; transition: height .2s ease; }
+.読書進捗不定 > span { animation: 読書待機 1.6s ease-in-out infinite alternate; }
+@keyframes 読書待機 { from { transform: translateY(0); } to { transform: translateY(300%); } }
+@media (prefers-reduced-motion: reduce) { .読書進捗不定 > span { animation: none; } .読書進捗軌道 > span { transition: none; } }
+.読書入口 { display: flex; flex-direction: row-reverse; align-items: center; justify-content: space-between; gap: clamp(20px, 4vw, 60px); padding-block: 60px; }
+.読書入口題, .読書入口手引 { min-width: 0; }
+.読書入口題 > .綴り-縦書, .読書入口手引 > .綴り-縦書 { display: block; writing-mode: vertical-rl; height: 360px; max-height: none; width: max-content; max-width: 100%; }
+.読書入口題 h2 { font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 500; letter-spacing: .1em; margin: 0 0 0 .8em; }
+.読書入口題 p, .読書入口手引 p { margin: 0 0 0 1.5em; line-height: 2; }
+.読書入口題 .眉 { font-size: .78rem; color: var(--薄); }
+.読書入口手引 { font-size: .85rem; color: var(--薄); }
+.読書入口 form { display: flex; flex-direction: row-reverse; align-items: center; gap: 12px; flex: 1; min-width: 130px; }
+.読書入口 form label { writing-mode: vertical-rl; white-space: nowrap; }
+.読書入口 input { min-width: 0; width: 100%; padding: 12px; border: 1px solid var(--線); background: var(--面); color: inherit; font: 13px/1.7 ui-monospace, monospace; writing-mode: horizontal-tb; }
+.読書入口 button { padding: 18px 10px; writing-mode: vertical-rl; background: transparent; color: inherit; border: 1px solid var(--朱); font: inherit; cursor: pointer; }
+.読書入口 button > .綴り-縦書 { max-height: none; white-space: nowrap; }
+@media (max-width: 700px) {
+    .読書画面 { grid-template-columns: minmax(0, 1fr) 180px; }
+    .読書操作 { padding: 12px 8px; gap: 12px; }
+    .読書道具 { gap: 5px; }
+    .読書操作 button { font-size: 12px; padding: 7px 5px; }
+    .読書入口 { gap: 14px; flex-wrap: wrap; justify-content: flex-start; }
+    .読書入口題 { flex: 1; }
+    .読書入口題 > .綴り-縦書 { height: 320px; }
+    .読書入口 form { flex-basis: 120px; }
+    .読書入口手引 { flex-basis: 100%; }
+    .読書入口手引 > .綴り-縦書 { height: 220px; margin-left: auto; }
+}

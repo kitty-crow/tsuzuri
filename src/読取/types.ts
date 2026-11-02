@@ -34,5 +34,13 @@ export interface PageStore {
     delete(key: string): Promise<void>;
 }
 export interface SemanticEncoder {
-    encode(texts: readonly string[], signal: AbortSignal): Promise<SemanticResult>;
+    encode(texts: readonly string[], signal: AbortSignal, progress?: ProgressSink): Promise<SemanticResult>;
 }
+export type ProgressPhase = "cache" | "fetch" | "observe" | "model" | "analyse" | "layout" | "save" | "display" | "complete" | "error";
+export type TransferProgress = Readonly<{ loaded: number; total: number; etaSeconds: number | null }>;
+export type ReaderProgress = Readonly<{
+    phase: ProgressPhase; completed?: number; total?: number; etaSeconds?: number | null;
+    download?: TransferProgress; detail?: string;
+}>;
+export type ProgressSink = (progress: ReaderProgress) => void;
+export type ModelFileProgress = Readonly<{ file: string; status: string; loaded: number; total: number }>;

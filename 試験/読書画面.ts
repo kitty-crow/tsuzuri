@@ -15,6 +15,14 @@ const fixture = `<!doctype html><html lang="ja"><head><meta charset="utf-8"><tit
 </article><aside><h2>関連する物語</h2><a href="/story">ほかの作品</a><form><label>検索<input value="日本語" onfocus="alert(1)"></label><button>検索</button></form></aside></main>
 <a href="javascript:alert(1)">危険なリンク</a><iframe srcdoc="<script>alert(1)</script>"></iframe></body></html>`;
 const worker = `const anchors=${JSON.stringify(Object.values(ANCHORS))};self.onmessage=({data})=>{if(data.kind==="initialise")fetch(new URL("./__lane-started?device="+data.device,self.location.href));setTimeout(()=>self.postMessage({id:data.id,vectors:data.kind==="initialise"?[]:data.texts.map(text=>Array.from({length:384},(_,j)=>Number(j===Math.max(0,anchors.indexOf(text)))))}),data.kind==="initialise"?0:10)};`;
+const progressWorker = `const anchors=${JSON.stringify(Object.values(ANCHORS))};self.onmessage=({data})=>{
+if(data.kind==="initialise"){
+self.postMessage({progress:{file:"model",status:"progress",loaded:0,total:104857600}});
+setTimeout(()=>self.postMessage({progress:{file:"model",status:"progress",loaded:52428800,total:104857600}}),400);
+setTimeout(()=>{self.postMessage({progress:{file:"model",status:"done",loaded:104857600,total:104857600}});self.postMessage({id:data.id,vectors:[]})},1400);
+return;}
+setTimeout(()=>self.postMessage({id:data.id,vectors:data.texts.map(text=>Array.from({length:384},(_,j)=>Number(j===Math.max(0,anchors.indexOf(text)))))}),250);
+};`;
 
 const server = Bun.serve({
     port: 0,
@@ -34,18 +42,24 @@ try {
     page.on("pageerror", (error) => errors.push(error.message));
     let requests = 0;
     let workers = 0;
+    let slow = false;
     const devices = new Set<string>();
     const routeRequest = async (route: Route): Promise<void> => {
         const url = new URL(route.request().url());
         if (url.pathname === "/__lane-started") { devices.add(url.searchParams.get("device") ?? ""); await route.fulfill({ body: "ok" }); return; }
         if (url.hostname === "reader-fixture.example" && url.pathname === "/blocked") { await route.abort(); return; }
         if (url.hostname === "reader-fixture.example") { requests++; await route.fulfill({ body: fixture, contentType: "text/html", headers: { "access-control-allow-origin": "*" } }); return; }
-        if (url.pathname.endsWith("/reader-model.js")) { workers++; await route.fulfill({ body: worker, contentType: "application/javascript" }); return; }
+        if (url.pathname.endsWith("/reader-model.js")) { workers++; await route.fulfill({ body: slow ? progressWorker : worker, contentType: "application/javascript" }); return; }
         if (url.hostname !== "127.0.0.1") { await route.abort(); return; }
         await route.continue();
     };
     await page.route("**/*", routeRequest);
     const target = "http://127.0.0.1:" + String(server.port) + "/?w=" + encodeURIComponent("https://reader-fixture.example/article");
+    await page.goto("http://127.0.0.1:" + String(server.port));
+    await page.waitForSelector("#読書 .綴り-縦書");
+    const verticalTool = await page.locator("#読書 h2").evaluate((element) => getComputedStyle(element).writingMode);
+    if (verticalTool !== "vertical-rl") throw new Error("読書入口が縦書きではありません");
+    await page.locator("#読書").screenshot({ path: "/tmp/tsuzuri-tool-vertical.png" });
     await page.goto(target);
     await page.waitForFunction(() => document.querySelector(".読書状態")?.textContent?.includes("組版が完了"));
     const content = page.frameLocator(".読書本文");
@@ -65,6 +79,8 @@ try {
     await page.reload();
     await page.waitForFunction(() => document.querySelector(".読書状態")?.textContent?.includes("保存済みの組版を表示"));
     if (requests !== firstRequests || workers !== firstWorkers) throw new Error("保存済みのページを再計算しました");
+    if (await page.getByRole("progressbar").getAttribute("aria-valuenow") !== "100") throw new Error("保存済みの表示が完了になりません");
+    if (await page.locator(".読書原文").evaluate((element) => getComputedStyle(element).writingMode) !== "vertical-rl") throw new Error("読書操作が縦書きではありません");
     await page.locator(".読書原文").click();
     await page.waitForFunction(() => document.querySelector<HTMLIFrameElement>(".読書本文")?.contentDocument?.querySelector("#intro")?.hasAttribute("data-reader-vertical") === false);
     await page.locator(".読書原文").click();
@@ -118,6 +134,20 @@ try {
     if (requests !== beforeCapture + 1) throw new Error("ブックマーク連携が元のサイトを再取得しました");
     if (await captured.frameLocator(".読書本文").locator("ruby").textContent() !== "白萩しらはぎ") throw new Error("受け取った本文が不正です");
     await source.close(); await captured.close();
+    // Observe real worker protocol events before completion, with a visible original preview.
+    slow = true;
+    const progressPage = await browser.newPage({ viewport: { width: 1200, height: 900 } });
+    await progressPage.addInitScript(() => { Object.defineProperty(navigator, "gpu", { value: undefined }); });
+    await progressPage.route("**/*", routeRequest);
+    await progressPage.goto(target);
+    await progressPage.waitForFunction(() => document.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow") === "50");
+    await progressPage.frameLocator(".読書本文").locator("#intro").waitFor();
+    if (!(await progressPage.locator(".読書残時間").textContent())?.includes("約")) throw new Error("モデルの残り時間がありません");
+    await progressPage.screenshot({ path: "/tmp/tsuzuri-reader-progress.png" });
+    await progressPage.waitForFunction(() => document.querySelector(".読書進捗")?.getAttribute("data-phase") === "analyse");
+    await progressPage.waitForFunction(() => document.querySelector(".読書進捗")?.getAttribute("data-phase") === "complete");
+    if (await progressPage.getByRole("progressbar").getAttribute("aria-valuenow") !== "100") throw new Error("組版後に進捗が完了しません");
+    await progressPage.close();
     if (errors.length) throw new Error(errors.join("\n"));
     console.log("読書画面: 組版・ルビ・保護領域・安全性・永続キャッシュ・更新・再配置を確認しました。");
 } finally { await browser.close(); server.stop(true); }
