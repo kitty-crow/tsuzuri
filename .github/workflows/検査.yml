@@ -24,7 +24,9 @@ jobs:
       - name: 検査と構築
         run: bun run build
       - name: ブラウザーの準備
-        run: bunx playwright install --with-deps chromium
+        run: |
+          bunx playwright install --with-deps chromium
+          sudo apt-get install -y fonts-noto-cjk
       - name: 描画の動作確認
         run: bun run test:browser
       - name: 拡張機能の動作確認
