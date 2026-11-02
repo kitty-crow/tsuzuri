@@ -21,6 +21,7 @@ export class WebReader {
         this.options.status("ページを読み込んでいます。");
         const source = imported === undefined ? await fetchSource(url, signal) : { html: imported, url };
         const hash = await digest(source.html);
+        if (cached && !refresh && cached.hash === hash) return { page: cached, cached: true, warning: "" };
         // Explicit refresh remeasures styles, because external CSS can change independently of HTML.
         return this.compile(source.html, source.url, url, key, hash, signal);
     }

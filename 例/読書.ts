@@ -1,3 +1,4 @@
+import { bookmarklet } from "../src/読取/bookmarklet.ts";
 import { ReaderCache } from "../src/読取/cache.ts";
 import { WebReader, type ReadResult } from "../src/読取/compiler.ts";
 import { CachedEncoder } from "../src/読取/embeddings.ts";
@@ -26,6 +27,8 @@ function start(): void {
     catch (error) { show(); status.textContent = error instanceof Error ? error.message : String(error); return; }
     if (!url) return;
     show();
+    const token = new URLSearchParams(location.search).get("capture");
+    if (token && window.opener) { receiveSource(url, token); return; }
     void open(url);
 }
 
@@ -41,8 +44,10 @@ panel.innerHTML = `<header class="読書操作">
   <button type="button" class="読書消去">保存を削除</button>
   <label class="読書取込">HTMLを開く <input type="file" accept=".html,.htm,text/html"></label>
   <p class="読書状態" role="status" aria-live="polite"></p>
+  <p class="読書連携">このリンクをブックマークバーへドラッグ: <a class="読書栞">綴りで読む</a>。読みたいサイトを開き、そのブックマークを押してください。</p>
   <a class="読書出典" target="_blank" rel="noopener noreferrer">出典を開く</a>
 </header>`;
+required<HTMLAnchorElement>(panel, ".読書栞").href = bookmarklet(new URL(location.pathname, location.origin).href);
 const form = required<HTMLFormElement>(panel, "form");
 const input = required<HTMLInputElement>(panel, "input[name=w]");
 const semantic = required<HTMLInputElement>(panel, ".読書意味 input");
@@ -103,8 +108,28 @@ async function open(url: URL, refresh = false, html?: string): Promise<void> {
     } catch (error) {
         if (signal.aborted) return;
         status.textContent = (error instanceof Error ? error.message : String(error))
-            + " サイトが直接の取得を許可しない場合は、ブラウザーで保存したHTMLを開いてください。";
+            + " サイトが直接の取得を許可しない場合は、上の「綴りで読む」をブックマークバーに追加し、元のサイト上で実行してください。保存したHTMLも開けます。";
     }
+}
+
+/** Only the source tab which opened this reader may supply a snapshot. */
+function receiveSource(url: URL, token: string): void {
+    activeURL = url; input.value = url.href; attribution.href = url.href;
+    status.textContent = "元のページを受け取っています。";
+    const opener: Window = window.opener;
+    const timer = setTimeout(() => { window.removeEventListener("message", receive); status.textContent = "ページを受け取れませんでした。ブラウザーの分離設定により連携できない場合はHTMLを開いてください。"; }, 15000);
+    const receive = (event: MessageEvent<unknown>): void => {
+        if (event.source !== opener || event.origin !== url.origin) return;
+        const data = event.data;
+        if (typeof data !== "object" || data === null || !("type" in data) || data.type !== "tsuzuri-source") return;
+        if (!("token" in data) || data.token !== token || !("url" in data) || data.url !== url.href || !("html" in data) || typeof data.html !== "string") return;
+        if (new TextEncoder().encode(data.html).byteLength > SOURCE_LIMIT) { status.textContent = "ページが大きすぎます（上限2 MiB）。"; return; }
+        clearTimeout(timer); window.removeEventListener("message", receive);
+        const address = new URL(location.href); address.searchParams.delete("capture"); history.replaceState(null, "", address);
+        void open(url, false, data.html);
+    };
+    window.addEventListener("message", receive);
+    opener.postMessage({ type: "tsuzuri-ready", token }, url.origin);
 }
 
 form.addEventListener("submit", (event) => {

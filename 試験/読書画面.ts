@@ -2,7 +2,7 @@ import { chromium, type Route } from "playwright";
 import { join } from "node:path";
 import { ANCHORS } from "../src/読取/infer.ts";
 
-const fixture = `<!doctype html><html lang="ja"><head><title>白萩の庭</title>
+const fixture = `<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>白萩の庭</title>
 <style>body{font-family:serif;margin:20px}.grid{display:grid;grid-template-columns:3fr 1fr;gap:20px}h1{font-size:36px}p{font-size:18px}nav{display:flex;gap:20px}.gone{display:none}</style>
 <script>parent.document.body.dataset.compromised='yes'</script></head><body>
 <nav><a href="/home">ホーム</a><a href="/stories">物語</a></nav><main class="grid"><article>
@@ -29,6 +29,7 @@ const browser = await chromium.launch({ headless: true });
 try {
     const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
     await page.addInitScript(() => { Object.defineProperty(navigator, "gpu", { value: undefined }); Object.defineProperty(navigator, "hardwareConcurrency", { value: 2 }); });
+    page.setDefaultTimeout(15000);
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     let requests = 0;
@@ -101,6 +102,22 @@ try {
     await hybrid.waitForFunction(() => document.querySelector(".読書状態")?.textContent?.includes("組版が完了"));
     if (!devices.has("webgpu") || !devices.has("wasm")) throw new Error("GPUとWASMを同時に初期化できませんでした");
     await hybrid.close();
+    // Run the actual bookmarklet on a different origin and receive its live DOM.
+    const source = await browser.newPage();
+    source.setDefaultTimeout(15000);
+    await source.context().addInitScript(() => { Object.defineProperty(navigator, "gpu", { value: undefined }); Object.defineProperty(navigator, "hardwareConcurrency", { value: 2 }); });
+    await source.context().route("**/*", routeRequest);
+    const captureCode = await page.locator(".読書栞").getAttribute("href");
+    const beforeCapture = requests;
+    await source.goto("https://reader-fixture.example/article");
+    const popupPromise = source.waitForEvent("popup");
+    await source.evaluate((code) => { eval(code?.slice("javascript:".length) ?? ""); }, captureCode);
+    const captured = await popupPromise;
+    captured.setDefaultTimeout(15000);
+    await captured.waitForFunction(() => document.querySelector(".読書状態")?.textContent?.includes("組版が完了"));
+    if (requests !== beforeCapture + 1) throw new Error("ブックマーク連携が元のサイトを再取得しました");
+    if (await captured.frameLocator(".読書本文").locator("ruby").textContent() !== "白萩しらはぎ") throw new Error("受け取った本文が不正です");
+    await source.close(); await captured.close();
     if (errors.length) throw new Error(errors.join("\n"));
     console.log("読書画面: 組版・ルビ・保護領域・安全性・永続キャッシュ・更新・再配置を確認しました。");
 } finally { await browser.close(); server.stop(true); }
