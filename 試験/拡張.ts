@@ -46,6 +46,13 @@ try {
     if (await frame.locator("ruby").textContent() !== "白萩しらはぎ") throw new Error("ルビが失われました");
     if (await frame.locator("#dynamic").textContent() !== "画面に後から追加された日本語も読めます。") throw new Error("動的な文章が失われました");
     if (await frame.locator("#live").evaluate((element) => getComputedStyle(element).writingMode) !== "vertical-rl") throw new Error("縦書きになりません");
+    const order = await frame.locator("article").evaluate((article) => {
+        const first = article.querySelector("h1")?.getBoundingClientRect();
+        const next = article.querySelector("#live")?.getBoundingClientRect();
+        return { first: first?.x ?? -1, next: next?.x ?? -1,
+            right: article.getBoundingClientRect().right, width: article.ownerDocument.documentElement.clientWidth };
+    });
+    if (order.first <= order.next || order.right < order.width * 0.85) throw new Error("縦書きの列が右端から左へ進んでいません: " + JSON.stringify(order));
     if (await source.locator("#live").getAttribute("data-tsuzuri-source") !== "original") throw new Error("元のページを変更しました");
     if (sourceRequests !== 1) throw new Error("元のページを再取得しました");
     const packet = await reader.evaluate(async () => {

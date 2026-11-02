@@ -86,12 +86,13 @@ try {
             footerZone: body.querySelector(".foot")?.getAttribute("data-reader-zone"),
             iconWidth: body.querySelector(".icon")?.getBoundingClientRect().width,
             sourceStyle: Array.from(body.ownerDocument.querySelectorAll("style")).some((style) => style.textContent?.includes(".foot{position:fixed")),
-            layout: getComputedStyle(body.querySelector("main")!).display };
+            layout: getComputedStyle(body.querySelector("main")!).display,
+            readingOrder: body.querySelector("h1")!.getBoundingClientRect().x > body.querySelector("#intro")!.getBoundingClientRect().x };
     });
     if (result.intro !== "vertical-rl" || result.table !== "horizontal-tb" || result.code !== "horizontal-tb"
         || result.ruby !== "白萩しらはぎ" || result.numbers !== "12" || result.hidden !== "none" || result.dangerous
         || !result.text?.includes("大切な言葉") || result.footer !== "static" || result.footerZone !== "footer"
-        || !result.iconWidth || result.iconWidth > 22 || !result.sourceStyle || result.layout !== "grid"
+        || !result.iconWidth || result.iconWidth > 22 || !result.sourceStyle || result.layout !== "grid" || !result.readingOrder
         || await page.locator("body").getAttribute("data-compromised")) throw new Error("読書結果が不正: " + JSON.stringify(result));
     if (requests !== 1 || workers !== 1) throw new Error("初回の処理回数が不正");
     // 固定中は本文幅が異なるので、初回の再配置後に同じ幅のキャッシュを確認する。
