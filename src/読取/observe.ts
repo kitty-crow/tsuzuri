@@ -3,6 +3,7 @@ import type { Edge, PageGraph, Region } from "./types.ts";
 
 const protectedSelector = "pre, code, table, form, input, select, textarea, button, canvas, svg, video, audio, [role='application'], [role='grid'], [role='textbox'], [role='button'], [role='combobox'], [role='slider'], [role='switch'], [role='checkbox'], [role='radio'], [role='listbox'], [role='tablist'], [role='menubar'], [role='tree']";
 const skipped = "script, style, template, rt, rp, [hidden], [aria-hidden='true']";
+const length = (value: string): number => Number.parseFloat(value) || 0;
 const inlineDisplays = new Set(["inline", "inline-block", "inline-flex", "inline-grid", "contents", "ruby", "ruby-base", "ruby-text"]);
 
 export function observePage(doc: Document, width: number, height: number): PageGraph {
@@ -49,6 +50,16 @@ export function observePage(doc: Document, width: number, height: number): PageG
             colour: style.color, background: style.backgroundColor,
             display: style.visibility === "hidden" || style.visibility === "collapse" ? "none" : style.display,
             writingMode: style.writingMode, position: style.position,
+            visual: {
+                padding: [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft].map(length),
+                margin: [style.marginTop, style.marginRight, style.marginBottom, style.marginLeft].map(length),
+                gap: length(style.gap), flexDirection: style.flexDirection, gridColumns: style.gridTemplateColumns,
+                overflowX: style.overflowX, overflowY: style.overflowY, float: style.float,
+                textAlign: style.textAlign, lineHeight: style.lineHeight, borderRadius: style.borderRadius,
+                borderWidth: style.borderWidth, borderColor: style.borderColor, boxShadow: style.boxShadow,
+                objectFit: style.objectFit, opacity: Number.parseFloat(style.opacity) || 0,
+                image: ["img", "picture", "svg", "video", "canvas"].includes(element.localName),
+            },
         };
     });
     const edges: Edge[] = [];
