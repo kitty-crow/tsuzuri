@@ -7,6 +7,7 @@ import { ANCHORS } from "../src/読取/infer.ts";
 
 const folder = await mkdtemp(join(tmpdir(), "tsuzuri-extension-test-"));
 await cp(resolve("extension-dist"), folder, { recursive: true });
+await cp(join(folder, "reader-model.js"), join(folder, "reader-model-real.js"));
 const manifest = JSON.parse(await readFile(join(folder, "manifest.json"), "utf8")) as { permissions: string[]; host_permissions: string[] };
 if (manifest.permissions.includes("tabs") || manifest.host_permissions.includes("<all_urls>")) throw new Error("不要な全サイト権限があります");
 // Only the test copy gains a fixture-origin permission, because headless tests cannot click Chrome's toolbar.
@@ -68,5 +69,24 @@ try {
         return typeof runtime._malloc;
     });
     if (wasm !== "function") throw new Error("同梱されたWASMを初期化できません");
-    console.log("拡張機能: 実DOMと書式の取得・動的文章・縦書き・ルビ・元タブの保持・キャッシュ・同梱WASMを確認しました。");
+    // Exercise the shipped model worker under MV3 CSP, including real model-data downloads.
+    const vectors = await reader.evaluate(async () => {
+        const worker = new Worker(chrome.runtime.getURL("reader-model-real.js"), { type: "module" });
+        try {
+            return await new Promise<number[][]>((resolve, reject) => {
+                const timer = setTimeout(() => reject(new Error("実モデルの読込が時間切れです")), 180000);
+                worker.onerror = (event): void => { clearTimeout(timer); reject(new Error(event.message)); };
+                worker.onmessage = (event: MessageEvent<{ id?: number; error?: string; vectors?: number[][] }>): void => {
+                    const data = event.data;
+                    if (data.error) { clearTimeout(timer); reject(new Error(data.error)); return; }
+                    if (data.id === 1) { worker.postMessage({ id: 2, kind: "encode", texts: ["日本語の物語を縦書きで読みます。", "この文章の意味を調べます。"] }); return; }
+                    if (data.id !== 2 || !data.vectors) return;
+                    clearTimeout(timer); resolve(data.vectors);
+                };
+                worker.postMessage({ id: 1, kind: "initialise", device: "wasm" });
+            });
+        } finally { worker.terminate(); }
+    });
+    if (vectors.length !== 2 || vectors.some((row) => row.length !== 384 || row.some((value) => !Number.isFinite(value)))) throw new Error("実モデルの意味解析結果が不正です");
+    console.log("拡張機能: 実DOMと書式の取得・動的文章・縦書き・ルビ・元タブの保持・キャッシュ・同梱WASM・実モデルのローカル解析を確認しました。");
 } finally { await context.close(); }
