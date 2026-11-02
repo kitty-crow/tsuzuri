@@ -1,5 +1,5 @@
 /** 保存可能な解析データ。領域IDは元の要素に付けた属性と対応する。 */
-export const ENGINE = "reader-1.3.0";
+export const ENGINE = "reader-1.3.1";
 export const MODEL = "Xenova/paraphrase-multilingual-MiniLM-L12-v2";
 export const MODEL_REVISION = "2c4055b12046f11709e9df2c122e59ffbdc2f900";
 export const EMBEDDING_POLICY = "hybrid-q8-fp16-fp32-v1";
