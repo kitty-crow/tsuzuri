@@ -1,45 +1,32 @@
+import { inferGroups, inferZones } from "./arrange.ts";
 import { tokenise } from "./tokens.ts";
-import type { Inference, PageGraph, Plan } from "./types.ts";
+import type { Inference, PageGraph, Plan, Region } from "./types.ts";
 
-export const READER_CSS = `
-html { overflow-x: hidden; }
-body { margin: 0; padding: clamp(12px, 3vw, 40px); line-height: 1.85; }
-*, *::before, *::after { box-sizing: border-box; }
-[data-tsuzuri-source] { position: static !important; float: none !important; transform: none !important; }
-[data-reader-flow] { display: flex !important; flex-direction: row-reverse !important; align-items: flex-start; gap: 1.2em; overflow: auto; max-width: 100%; padding: .5em; }
-[data-reader-flow] > * { flex: 0 0 auto; max-width: 100%; }
-[data-reader-grid] { display: grid; grid-template-columns: var(--reader-columns); gap: 1.5em; }
-[data-reader-grid] > * { min-width: 0; }
-[data-reader-vertical] { writing-mode: vertical-rl !important; text-orientation: mixed; display: block !important; inline-size: var(--reader-height); max-inline-size: var(--reader-height); block-size: auto; max-width: none; margin: 0 .4em; overflow: visible; line-height: 1.85; line-break: strict; word-break: normal; }
-[data-reader-role="heading"][data-reader-vertical] { inline-size: auto; max-inline-size: var(--reader-height); }
-[data-reader-horizontal] { writing-mode: horizontal-tb !important; max-width: 100%; overflow: auto; }
-img, video { max-width: min(100%, 36rem); max-height: 65vh; object-fit: contain; }
-pre, table { max-width: 100%; overflow: auto; }
-a { overflow-wrap: anywhere; }
-nav { display: flex; flex-wrap: wrap; gap: 1em; }
-ruby { ruby-position: over; } rt { font-size: .5em; }
-.綴り-縦中横 { text-combine-upright: all; white-space: nowrap; }
-`;
+export const READER_CSS = "\nhtml { max-inline-size: 100%; overflow-x: auto; }\nbody[data-reader-page] { max-width: 100%; writing-mode: horizontal-tb !important; }\n[data-reader-landmark=\"header\"], [data-reader-landmark=\"footer\"] {\n  position: static !important; inset: auto !important; transform: none !important; clear: both; height: auto !important; max-height: none !important;\n  max-width: 100%; box-sizing: border-box; writing-mode: horizontal-tb !important;\n}\n[data-reader-landmark=\"footer\"] { grid-column: 1 / -1 !important; width: 100%; }\n[data-reader-flow] {\n  display: flex !important; flex-direction: row-reverse !important; align-items: flex-start !important;\n  flex-wrap: nowrap !important; gap: var(--reader-gap, 1.2em) !important;\n  max-width: 100% !important; min-width: 0 !important;\n  overflow-x: auto !important; overflow-y: hidden !important;\n  overscroll-behaviour-inline: contain; box-sizing: border-box;\n}\n[data-reader-flow] > * { flex: 0 0 auto !important; min-width: 0; }\n[data-reader-grid] {\n  display: grid !important; grid-template-columns: var(--reader-columns) !important;\n  direction: rtl !important; gap: var(--reader-gap, 1.2em) !important;\n  max-width: 100% !important; min-width: 0 !important;\n}\n[data-reader-grid] > * { min-width: 0 !important; direction: ltr !important; }\n[data-reader-vertical] {\n  writing-mode: vertical-rl !important; text-orientation: mixed !important;\n  inline-size: var(--reader-height) !important; max-inline-size: var(--reader-height) !important;\n  min-inline-size: 0 !important; block-size: max-content !important;\n  max-block-size: none !important; overflow: visible !important;\n  white-space: normal !important; text-align: start !important;\n  line-height: 1.85 !important; line-break: strict !important; word-break: normal !important;\n  box-sizing: border-box;\n}\n[data-reader-role=\"heading\"][data-reader-vertical] {\n  inline-size: max-content !important; max-inline-size: var(--reader-height) !important;\n}\n[data-reader-horizontal] { writing-mode: horizontal-tb !important; }\n[data-reader-media]:not([data-reader-icon]) {\n  max-width: min(100%, 36rem) !important; max-height: 65vh !important; object-fit: contain;\n}\n[data-reader-icon] { max-width: var(--reader-icon-width) !important; max-height: var(--reader-icon-height) !important; }\n[data-reader-horizontal]:is(pre, table) { max-width: 100% !important; overflow: auto !important; }\n[data-reader-vertical] a { overflow-wrap: anywhere; }\n[data-reader-vertical] ruby { ruby-position: over; }\n[data-reader-vertical] rt { font-size: .5em; }\n.綴り-縦中横 { text-combine-upright: all; white-space: nowrap; }\n@media (max-width: 680px) {\n  [data-reader-grid] { grid-template-columns: minmax(0, 1fr) !important; }\n}\n";
 
 export function makePlans(graph: PageGraph, inference: readonly Inference[]): Plan[] {
     const roles = new Map(inference.map((result) => [result.id, result]));
     const byID = new Map(graph.regions.map((region) => [region.id, region]));
+    const zones = inferZones(graph, inference);
     return graph.regions.map((region) => {
         const result = roles.get(region.id)!;
         let parent = region.parent;
-        let protectedAncestor = false;
+        let blocked = false;
         while (parent !== null) {
             const ancestor = byID.get(parent);
             const ancestorRole = roles.get(parent)?.role;
-            protectedAncestor ||= Boolean(ancestor?.protected || ancestor?.tag === "nav" || ancestor?.role === "navigation"
-                || ancestorRole === "interface" || ancestorRole === "code" || ancestorRole === "data");
+            blocked ||= Boolean(ancestor?.protected || ancestor?.tag === "nav" || ancestorRole === "interface"
+                || ancestorRole === "code" || ancestorRole === "data");
             parent = ancestor?.parent ?? null;
         }
+        const zone = zones.get(region.id) ?? "ordinary";
         const readable = result.scores.prose + result.scores.heading + result.scores.caption;
         const otherLanguage = region.lang.startsWith("zh") || region.lang.startsWith("ko");
+        const functional = zone === "page" || zone === "footer" || zone === "navigation" || zone === "interface" || zone === "aside";
         const vertical = region.text.trim().length > 0 && region.japanese > 0.2 && readable > 0.58
-            && !region.protected && !protectedAncestor && !otherLanguage && region.width > 0 && region.height > 0;
-        return { id: region.id, role: result.role, confidence: result.confidence, mode: vertical ? "vertical" : "horizontal" };
+            && !region.protected && !blocked && !functional && !otherLanguage
+            && region.width > 0 && region.height > 0 && region.display !== "none";
+        return { id: region.id, role: result.role, confidence: result.confidence, zone, mode: vertical ? "vertical" : "horizontal" };
     });
 }
 
@@ -59,74 +46,91 @@ function combineNumbers(element: Element, doc: Document): void {
         const fragment = doc.createDocumentFragment();
         for (const token of tokens) {
             if (token.kind !== "number" || token.text.length > 2) { fragment.append(doc.createTextNode(token.text)); continue; }
-            const span = doc.createElement("span"); span.className = "綴り-縦中横"; span.textContent = token.text; fragment.append(span);
+            const span = doc.createElement("span");
+            span.className = "綴り-縦中横"; span.textContent = token.text; fragment.append(span);
         }
         node.replaceWith(fragment);
     }
 }
 
-/** 解析結果に従って、元の要素に書字方向と組版用の属性を付ける。 */
+/** 元のCSSと実測値を証拠として残し、必要な領域の書字方向と配置だけを再構築する。 */
 export function emitLayout(doc: Document, graph: PageGraph, plans: readonly Plan[]): void {
-    for (const style of Array.from(doc.querySelectorAll("style, link[rel='stylesheet']"))) style.remove();
     const before = doc.body.textContent;
-    const elements = new Map(Array.from(doc.querySelectorAll<HTMLElement>("[data-tsuzuri-source]"), (element) => [Number(element.dataset.tsuzuriSource), element]));
+    const elements = new Map(Array.from(doc.querySelectorAll<HTMLElement>("[data-tsuzuri-source]"),
+        (element) => [Number(element.dataset.tsuzuriSource), element]));
     const regions = new Map(graph.regions.map((region) => [region.id, region]));
-    for (const element of Array.from(doc.body.querySelectorAll<HTMLElement>("*"))) element.removeAttribute("style");
-    doc.body.removeAttribute("style");
+    const byPlan = new Map(plans.map((plan) => [plan.id, plan]));
+    const modes = new Map(plans.map((plan) => [plan.id, plan.mode]));
+    const zones = new Map(plans.map((plan) => [plan.id, plan.zone ?? "ordinary"]));
+    const groups = inferGroups(graph, modes, zones);
+    doc.body.dataset.readerPage = "";
     for (const plan of plans) {
         const element = elements.get(plan.id);
         const region = regions.get(plan.id);
         if (!element || !region) continue;
         element.dataset.readerRole = plan.role;
-        element.style.fontSize = String(Math.min(56, Math.max(12, region.fontSize))) + "px";
-        element.style.fontWeight = region.fontWeight;
-        element.style.fontFamily = region.fontFamily;
-        element.style.color = region.colour;
-        element.style.backgroundColor = region.background;
+        element.dataset.readerZone = plan.zone ?? "ordinary";
         if (region.display === "none" || region.width === 0 || region.height === 0) element.hidden = true;
-        if (plan.mode === "horizontal") element.dataset.readerHorizontal = "";
-        if (plan.mode !== "vertical") continue;
+        const parentZone = region.parent === null ? undefined : byPlan.get(region.parent)?.zone;
+        if (plan.zone === "footer" && parentZone !== "footer") element.dataset.readerLandmark = "footer";
+        if (plan.zone === "header" && parentZone !== "header") element.dataset.readerLandmark = "header";
+        if (["fixed", "sticky", "absolute"].includes(region.position) && plan.zone !== "media") {
+            element.style.setProperty("position", "static", "important");
+            element.style.setProperty("inset", "auto", "important");
+            element.style.setProperty("transform", "none", "important");
+        }
+        const media = Boolean(region.visual?.image);
+        const icon = media && region.width <= Math.max(64, region.fontSize * 3)
+            && region.height <= Math.max(64, region.fontSize * 3);
+        if (media) element.dataset.readerMedia = "";
+        if (icon) {
+            element.dataset.readerIcon = "";
+            element.style.setProperty("--reader-icon-width", String(Math.max(1, Math.ceil(region.width))) + "px");
+            element.style.setProperty("--reader-icon-height", String(Math.max(1, Math.ceil(region.height))) + "px");
+        }
+        if (plan.mode === "horizontal" && region.protected) element.style.setProperty("writing-mode", "horizontal-tb", "important");
+        if (plan.mode === "horizontal") { element.dataset.readerHorizontal = ""; continue; }
         element.dataset.readerVertical = "";
+        element.style.setProperty("writing-mode", "vertical-rl", "important");
+        element.style.setProperty("inline-size", plan.role === "heading" ? "max-content" : "var(--reader-height)", "important");
+        element.style.setProperty("max-inline-size", "var(--reader-height)", "important");
+        element.style.setProperty("overflow", "visible", "important");
         element.classList.add("綴り-本文", "綴り-縦書", "綴り-組版");
-        // 縦書きにする領域の横書き指定を外す。
         element.removeAttribute("data-reader-horizontal");
         combineNumbers(element, doc);
     }
-    const children = new Map<number, number[]>();
+    const children = new Map<number, Region[]>();
     for (const region of graph.regions) {
         if (region.parent === null) continue;
-        const group = children.get(region.parent) ?? []; group.push(region.id); children.set(region.parent, group);
+        const list = children.get(region.parent) ?? [];
+        list.push(region);
+        children.set(region.parent, list);
     }
-    const vertical = new Set(plans.filter((plan) => plan.mode === "vertical").map((plan) => plan.id));
-    for (const [parent, ids] of children) {
-        const element = elements.get(parent);
-        const hasVertical = ids.some((id) => vertical.has(id));
-        if (!element || !hasVertical || element === doc.body) continue;
-        element.dataset.readerFlow = "";
-    }
-    for (const [parent, ids] of children) {
-        const element = elements.get(parent);
-        const region = regions.get(parent);
-        if (!element || !region || element.hasAttribute("data-reader-flow") || ids.length < 2) continue;
-        const columns = ids.map((id) => regions.get(id)!).filter((child) => child.width > 0 && child.height > 0);
-        const aligned = columns.length >= 2 && columns.every((child) => Math.abs(child.y - columns[0]!.y) < 8);
-        if (!aligned || (region.display !== "grid" && region.display !== "flex")) continue;
+    for (const [id, kind] of groups) {
+        const element = elements.get(id);
+        const region = regions.get(id);
+        if (!element || !region) continue;
+        const gap = Math.max(8, Math.min(48, region.visual?.gap || region.fontSize * 1.1));
+        element.style.setProperty("--reader-gap", String(gap) + "px");
+        if (kind === "flow") { element.dataset.readerFlow = ""; continue; }
         element.dataset.readerGrid = "";
-        element.style.setProperty("--reader-columns", graph.width < 700 ? "minmax(0, 1fr)" : columns.map((child) => "minmax(0, " + String(child.width / Math.max(1, region.width)) + "fr)").join(" "));
+        const columns = (children.get(id) ?? []).filter((child) => child.width > 0 && child.height > 0 && child.display !== "none");
+        const total = columns.reduce((sum, child) => sum + child.width, 0);
+        element.style.setProperty("--reader-columns", columns.map((child) => "minmax(0, " + String(child.width / Math.max(1, total) * 100) + "fr)").join(" "));
     }
-    const style = doc.createElement("style"); style.textContent = READER_CSS; style.dataset.readerStyle = ""; doc.head.append(style);
+    const style = doc.createElement("style");
+    style.textContent = READER_CSS; style.dataset.readerStyle = "";
+    doc.head.append(style);
     if (doc.body.textContent !== before) throw new Error("組版中に本文が変わったため中断しました。");
 }
 
 function cost(doc: Document): number {
     const view = doc.defaultView;
     if (!view) return Infinity;
-    const groups = Array.from(doc.querySelectorAll<HTMLElement>("[data-reader-flow]"));
-    let result = 0;
-    for (const group of groups) {
+    let result = Math.max(0, doc.documentElement.scrollWidth - view.innerWidth) / Math.max(1, view.innerWidth) * 4;
+    for (const group of Array.from(doc.querySelectorAll<HTMLElement>("[data-reader-flow]"))) {
         const children = Array.from(group.children).filter((element) => !element.hasAttribute("hidden"));
         const box = group.getBoundingClientRect();
-        result += Math.max(0, group.scrollWidth - group.clientWidth) / Math.max(1, group.clientWidth) * 0.2;
         for (let index = 1; index < children.length; index++) {
             const a = children[index - 1]!.getBoundingClientRect();
             const b = children[index]!.getBoundingClientRect();
@@ -135,30 +139,35 @@ function cost(doc: Document): number {
             result += overlapX * overlapY / Math.max(1, box.width * box.height) * 10;
         }
     }
-    result += Math.max(0, doc.documentElement.scrollWidth - view.innerWidth) / Math.max(1, view.innerWidth) * 5;
     for (const element of Array.from(doc.querySelectorAll<HTMLElement>("[data-reader-vertical]"))) {
-        result += Math.max(0, element.scrollHeight - element.clientHeight - 2) / Math.max(1, element.clientHeight);
+        const box = element.getBoundingClientRect();
+        if (box.width < 8 || box.height < 8) result += 5;
+        if (box.height > view.innerHeight * 1.05) result += (box.height / Math.max(1, view.innerHeight) - 1) * 3;
     }
     return result;
 }
 
-/** 候補の高さを実測で比較し、はみ出す領域を横書きに戻す。 */
+/** 書字方向を確定した後、実測した衝突と画面外への突出から列の高さを選ぶ。 */
 export function optimise(doc: Document, graph: PageGraph, plans: readonly Plan[]): Plan[] {
-    const candidates = [0.62, 0.74, 0.84].map((fraction) => Math.max(120, Math.min(720, graph.height * fraction)));
+    const viewport = doc.defaultView?.innerHeight ?? graph.height;
+    const candidates = [0.62, 0.75, 0.88].map((fraction) => Math.max(120, Math.min(800, viewport * fraction)));
     let best = candidates[0]!;
     let minimum = Infinity;
     for (const height of candidates) {
         doc.documentElement.style.setProperty("--reader-height", String(height) + "px");
-        const value = cost(doc) + Math.abs(height / graph.height - 0.74) * 0.05;
+        const value = cost(doc) + Math.abs(height / Math.max(1, viewport) - 0.75) * 0.05;
         if (value < minimum) { minimum = value; best = height; }
     }
     doc.documentElement.style.setProperty("--reader-height", String(best) + "px");
     const revised = plans.map((plan): Plan => {
         const element = doc.querySelector<HTMLElement>('[data-tsuzuri-source="' + String(plan.id) + '"]');
         if (!element || plan.mode !== "vertical") return plan;
-        const broken = element.scrollHeight > element.clientHeight + 4;
-        if (!broken) return plan;
-        element.removeAttribute("data-reader-vertical"); element.dataset.readerHorizontal = "";
+        const css = doc.defaultView?.getComputedStyle(element);
+        const clipped = (css?.overflowX === "hidden" && element.scrollWidth > element.clientWidth + 4)
+            || (css?.overflowY === "hidden" && element.scrollHeight > element.clientHeight + 4);
+        if (!clipped) return plan;
+        element.removeAttribute("data-reader-vertical");
+        element.dataset.readerHorizontal = "";
         element.classList.remove("綴り-縦書");
         return { ...plan, mode: "horizontal" };
     });

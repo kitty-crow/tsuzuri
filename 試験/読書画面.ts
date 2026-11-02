@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { ANCHORS } from "../src/読取/infer.ts";
 
 const fixture = `<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>白萩の庭</title>
-<style>body{font-family:serif;margin:20px}.grid{display:grid;grid-template-columns:3fr 1fr;gap:20px}h1{font-size:36px}p{font-size:18px}nav{display:flex;gap:20px}.gone{display:none}</style>
+<style>body{font-family:serif;margin:20px}.grid{display:grid;grid-template-columns:3fr 1fr;gap:20px}h1{font-size:36px}p{font-size:18px}nav{display:flex;gap:20px}.gone{display:none}.foot{position:fixed;bottom:0;left:0;width:100%;padding:8px;border-top:1px solid #999;background:#eee}.icon{width:20px;height:20px}</style>
 <script>parent.document.body.dataset.compromised='yes'</script></head><body>
 <nav><a href="/home">ホーム</a><a href="/stories">物語</a></nav><main class="grid"><article>
 <h1>白萩の庭</h1><p id="intro"><ruby>白萩<rt>しらはぎ</rt></ruby>の花が咲く庭で、二人は言葉を交わした。<a href="/next?chapter=2">続きを読む</a>。</p>
@@ -13,7 +13,7 @@ const fixture = `<!doctype html><html lang="ja"><head><meta charset="utf-8"><tit
 <table id="prices"><tr><th>商品</th><th>価格</th></tr><tr><td>本</td><td>一万円</td></tr></table>
 <pre id="code">const 日本語 = 12;</pre><p class="gone" id="concealed">隠された文章</p>
 </article><aside><h2>関連する物語</h2><a href="/story">ほかの作品</a><form><label>検索<input value="日本語" onfocus="alert(1)"></label><button>検索</button></form></aside></main>
-<a href="javascript:alert(1)">危険なリンク</a><iframe srcdoc="<script>alert(1)</script>"></iframe></body></html>`;
+<footer class="foot"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aH9kAAAAASUVORK5CYII=" alt="小さな絵"><a href="/about">運営情報</a><a href="/policy">利用案内</a></footer><a href="javascript:alert(1)">危険なリンク</a><iframe srcdoc="<script>alert(1)</script>"></iframe></body></html>`;
 const worker = `const anchors=${JSON.stringify(Object.values(ANCHORS))};self.onmessage=({data})=>{if(data.kind==="initialise")fetch(new URL("./__lane-started?device="+data.device,self.location.href));setTimeout(()=>self.postMessage({id:data.id,vectors:data.kind==="initialise"?[]:data.texts.map(text=>Array.from({length:384},(_,j)=>Number(j===Math.max(0,anchors.indexOf(text)))))}),data.kind==="initialise"?0:10)};`;
 const progressWorker = `const anchors=${JSON.stringify(Object.values(ANCHORS))};self.onmessage=({data})=>{
 if(data.kind==="initialise"){
@@ -68,11 +68,18 @@ try {
         return { intro: style("#intro"), table: style("#prices"), code: style("#code"), ruby: body.querySelector("ruby")?.textContent,
             text: body.textContent, numbers: body.querySelector("#numbers .綴り-縦中横")?.textContent,
             hidden: getComputedStyle(body.querySelector("#concealed")!).display,
-            dangerous: body.querySelector("script, iframe, [onclick], [onfocus], [href^='javascript:']") !== null };
+            dangerous: body.querySelector("script, iframe, [onclick], [onfocus], [href^='javascript:']") !== null,
+            footer: getComputedStyle(body.querySelector(".foot")!).position,
+            footerZone: body.querySelector(".foot")?.getAttribute("data-reader-zone"),
+            iconWidth: body.querySelector(".icon")?.getBoundingClientRect().width,
+            sourceStyle: Array.from(body.ownerDocument.querySelectorAll("style")).some((style) => style.textContent?.includes(".foot{position:fixed")),
+            layout: getComputedStyle(body.querySelector("main")!).display };
     });
     if (result.intro !== "vertical-rl" || result.table !== "horizontal-tb" || result.code !== "horizontal-tb"
         || result.ruby !== "白萩しらはぎ" || result.numbers !== "12" || result.hidden !== "none" || result.dangerous
-        || !result.text?.includes("大切な言葉") || await page.locator("body").getAttribute("data-compromised")) throw new Error("読書結果が不正: " + JSON.stringify(result));
+        || !result.text?.includes("大切な言葉") || result.footer !== "static" || result.footerZone !== "footer"
+        || !result.iconWidth || result.iconWidth > 22 || !result.sourceStyle || result.layout !== "grid"
+        || await page.locator("body").getAttribute("data-compromised")) throw new Error("読書結果が不正: " + JSON.stringify(result));
     const firstRequests = requests;
     const firstWorkers = workers;
     if (firstRequests !== 1 || firstWorkers !== 1) throw new Error("初回の処理回数が不正");
@@ -94,7 +101,19 @@ try {
     await page.waitForFunction(() => document.querySelector(".読書状態")?.textContent?.includes("組版が完了"));
     if (requests !== firstRequests + 1 || workers !== firstWorkers) throw new Error("表示サイズの変更時に再取得または再推論しました");
     const overflow = await content.locator("html").evaluate((element) => element.scrollWidth > element.clientWidth + 2);
-    if (overflow) throw new Error("ページ全体が表示領域をはみ出しています");
+    if (overflow) {
+        const detail = await content.locator("html").evaluate((root) => ({
+            width: root.clientWidth, scroll: root.scrollWidth,
+            protruding: Array.from(root.querySelectorAll<HTMLElement>("body *")).map((element) => {
+                const box = element.getBoundingClientRect();
+                return { tag: element.tagName, id: element.id, classes: element.className,
+                    zone: element.dataset.readerZone, role: element.dataset.readerRole,
+                    left: Math.round(box.left), right: Math.round(box.right), width: Math.round(box.width) };
+            }).filter((item) => item.right > root.clientWidth + 2 || item.left < -2)
+              .sort((a, b) => b.right - a.right).slice(0, 15),
+        }));
+        throw new Error("ページ全体が表示領域をはみ出しています: " + JSON.stringify(detail));
+    }
     await page.screenshot({ path: "/tmp/tsuzuri-reader-mobile.png" });
     // 直接取得できない場合も、HTMLファイルを同じ処理で組版できる。
     await page.goto("http://127.0.0.1:" + String(server.port) + "/?w=" + encodeURIComponent("https://reader-fixture.example/blocked"));
