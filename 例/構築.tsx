@@ -1,4 +1,4 @@
-import { copyFile, mkdir, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readdir, writeFile } from "node:fs/promises";
 import { createElement, type ReactNode } from "react";
 import { render2Mkup } from "../vendor/website/src/reactHelpers.tsx";
 import { 物語の見本 } from "./物語.tsx";
@@ -76,11 +76,13 @@ const 画面 = (
             <link rel="stylesheet" href="./物語.css" />
             <link rel="stylesheet" href="./朗読.css" />
             <link rel="stylesheet" href="./支援.css" />
+            <link rel="stylesheet" href="./読書.css" />
             <script src="./dist/tsuzuri.js" defer={true}></script>
             <script src="./配色.js" defer={true}></script>
             <script src="./実例.js" defer={true}></script>
             <script src="./目次.js" defer={true}></script>
             <script src="./朗読.js" defer={true}></script>
+            <script src="./読書.js" defer={true}></script>
         </head>
         <body>
             <header className="上部">
@@ -211,6 +213,15 @@ const 画面 = (
                         </div>
                     </div>
                 </section>
+                <section id="読書" className="節 容器 読書入口">
+                    <div className="読書入口題">{縦書(<><p className="眉">ウェブを、縦書きへ。</p><h2>綴りで読む</h2><p>日本語のウェブページを、縦書きで。文章と配置の解析は、お使いのブラウザーで行います。</p></>)}</div>
+                    <form method="get">
+                        <label htmlFor="読書先">{縦書("読みたいページ")}</label>
+                        <input id="読書先" type="url" name="w" required aria-label="ウェブサイトのURL" placeholder="https://example.jp/" />
+                        <button type="submit">{縦書("縦書きで読む")}</button>
+                    </form>
+                    <div className="読書入口手引">{縦書(<p>直接の取得が許可されていないサイトは、読書画面の栞をブックマークバーに追加し、元のサイトから開いてください。解析した文章と組版は、ブラウザーに保存されます。</p>)}</div>
+                </section>
                 {物語}
             </main>
             <footer className="下部" aria-label="サイトの案内">
@@ -239,10 +250,8 @@ const 画面 = (
 
 await mkdir("site", { recursive: true });
 await mkdir("site/dist", { recursive: true });
-for (const 名前 of ["furigana", "tategaki", "shoudou", "kumihan", "kansuji", "koyomi", "tsuzuri"]) {
-    await copyFile("dist/" + 名前 + ".js", "site/dist/" + 名前 + ".js");
-    await copyFile("dist/" + 名前 + ".css", "site/dist/" + 名前 + ".css");
-}
+await Promise.all(["furigana", "tategaki", "shoudou", "kumihan", "kansuji", "koyomi", "tsuzuri"].flatMap((名前) =>
+    ["js", "css"].map((拡張子) => copyFile("dist/" + 名前 + "." + 拡張子, "site/dist/" + 名前 + "." + 拡張子))));
 /** 生成器では英字名を使い、完成した HTML だけを日本語の要素名へ置き換える。 */
 const 日本語の要素名: Readonly<Record<string, string>> = {
     tsuzuri: "t-綴",
@@ -256,49 +265,29 @@ const 日本語HTML = render2Mkup(画面).replace(
     (全文, 閉じ: string, 名称: string) => "<" + 閉じ + (日本語の要素名[名称] ?? 全文),
 );
 await writeFile("site/index.html", "<!doctype html>\n" + 日本語HTML + "\n", "utf8");
-await copyFile("例/様式.css", "site/様式.css");
-await copyFile("例/綴.svg", "site/綴.svg");
-await copyFile("例/物語.css", "site/物語.css");
-await copyFile("例/朗読.css", "site/朗読.css");
-await copyFile("node_modules/microsoft-cognitiveservices-speech-sdk/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js", "site/音声SDK.js");
-await copyFile("例/支援.css", "site/支援.css");
-await writeFile("site/.nojekyll", "", "utf8");
-const 配色の構築 = await Bun.build({
-    entrypoints: ["例/配色.ts"],
-    outdir: "site",
-    naming: { entry: "配色.js" },
-    target: "browser",
-    format: "iife",
-    minify: true,
-});
-if (!配色の構築.success) throw new Error("配色の構築に失敗しました");
-const 目次の構築 = await Bun.build({
-    entrypoints: ["例/目次.ts"],
-    outdir: "site",
-    naming: { entry: "目次.js" },
-    target: "browser",
-    format: "iife",
-    minify: true,
-});
-if (!目次の構築.success) throw new Error("目次の構築に失敗しました");
-const 朗読の構築 = await Bun.build({
-    entrypoints: ["例/朗読.ts"],
-    outdir: "site",
-    naming: { entry: "朗読.js" },
-    target: "browser",
-    format: "iife",
-    minify: true,
-});
-if (!朗読の構築.success) throw new Error("朗読の構築に失敗しました");
-const 実例の構築 = await Bun.build({
-    entrypoints: ["例/実例.ts"],
-    outdir: "site",
-    naming: { entry: "実例.js" },
-    target: "browser",
-    format: "iife",
-    minify: true,
-});
-if (!実例の構築.success) throw new Error("実例の構築に失敗しました");
+await mkdir("site/onnx", { recursive: true });
+const 複写 = ["様式.css", "綴.svg", "物語.css", "朗読.css", "支援.css", "読書.css"];
+const 配布基盤 = (await readdir("node_modules/onnxruntime-web/dist")).filter((file) =>
+    file.endsWith(".wasm") || (file.startsWith("ort-wasm-") && file.endsWith(".mjs")));
+const 並列構築 = await Promise.all([
+    Bun.build({
+        entrypoints: ["例/読書.ts", "例/配色.ts", "例/目次.ts", "例/朗読.ts", "例/実例.ts"],
+        outdir: "site", naming: { entry: "[name].js" }, target: "browser", format: "iife", minify: true,
+    }),
+    Bun.build({
+        entrypoints: ["src/読取/model.worker.ts"], outdir: "site", naming: { entry: "reader-model.js" },
+        target: "browser", format: "esm", minify: true, conditions: ["browser"],
+    }),
+    Promise.all([
+        ...複写.map((file) => copyFile("例/" + file, "site/" + file)),
+        ...配布基盤.map((file) => copyFile("node_modules/onnxruntime-web/dist/" + file, "site/onnx/" + file)),
+        copyFile("node_modules/microsoft-cognitiveservices-speech-sdk/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js", "site/音声SDK.js"),
+        writeFile("site/.nojekyll", "", "utf8"),
+    ]),
+]);
+for (const 結果 of 並列構築.slice(0, 2)) {
+    if (!("success" in 結果) || !結果.success) throw new Error("紹介ページの構築に失敗しました。");
+}
 
 console.log("紹介ページを構築しました。");
 
