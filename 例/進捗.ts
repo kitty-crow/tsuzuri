@@ -2,6 +2,7 @@ import { duration } from "../src/読取/progress.ts";
 import type { ReaderProgress, ProgressPhase } from "../src/読取/types.ts";
 
 const titles: Record<ProgressPhase, string> = {
+    receive: "元のページを受信",
     cache: "保存済みの結果を確認", fetch: "ページを取得", observe: "文章と配置を確認", model: "モデルを読込",
     analyse: "文章の意味を解析", layout: "縦書きに組版", save: "結果を保存", display: "ページを表示", complete: "組版完了", error: "処理を中断",
 };

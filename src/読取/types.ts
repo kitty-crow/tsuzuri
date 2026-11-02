@@ -36,7 +36,7 @@ export interface PageStore {
 export interface SemanticEncoder {
     encode(texts: readonly string[], signal: AbortSignal, progress?: ProgressSink): Promise<SemanticResult>;
 }
-export type ProgressPhase = "cache" | "fetch" | "observe" | "model" | "analyse" | "layout" | "save" | "display" | "complete" | "error";
+export type ProgressPhase = "receive" | "cache" | "fetch" | "observe" | "model" | "analyse" | "layout" | "save" | "display" | "complete" | "error";
 export type TransferProgress = Readonly<{ loaded: number; total: number; etaSeconds: number | null }>;
 export type ReaderProgress = Readonly<{
     phase: ProgressPhase; completed?: number; total?: number; etaSeconds?: number | null;
