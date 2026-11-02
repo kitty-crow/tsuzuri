@@ -56,3 +56,39 @@
     .読書入口手引 { flex-basis: 100%; }
     .読書入口手引 > .綴り-縦書 { height: 220px; margin-left: auto; }
 }
+
+/* 目次の引手と固定機構に合わせて、操作を自動収納する。 */
+.読書画面 {
+    --読書操作幅: clamp(190px, 26vw, 340px);
+    --読書引手幅: 34px;
+    grid-template-columns: minmax(0, 1fr) var(--読書引手幅);
+    transition: grid-template-columns .38s cubic-bezier(.22, 1, .36, 1);
+}
+.読書画面:is([data-menu-pinned="true"], [data-menu-open="true"], [data-menu-hover="true"]),
+.読書画面:has(> .読書操作:is(:hover, :focus-within)),
+.読書画面:has(> .読書引手:is(:hover, :focus-visible)) {
+    grid-template-columns: minmax(0, 1fr) var(--読書操作幅);
+}
+.読書引手 {
+    grid-column: 2; grid-row: 1; align-self: start; justify-self: start;
+    z-index: 2; width: var(--読書引手幅); min-height: 100px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; padding: 12px 5px; border: 1px solid var(--線, #ccc7bc);
+    border-right: 0; border-radius: 4px 0 0 4px;
+    background: var(--面, white); color: var(--墨, #272925);
+    font: inherit; cursor: pointer;
+}
+.読書引手 > span:first-child { writing-mode: vertical-rl; }
+.読書引手 > svg { transition: transform .3s ease; }
+.読書画面[data-menu-open="true"] .読書引手 > svg,
+.読書画面[data-menu-pinned="true"] .読書引手 > svg { transform: rotate(180deg); }
+.読書操作 { padding-left: calc(var(--読書引手幅) + 10px); visibility: hidden; opacity: 0; pointer-events: none; transition: opacity .22s ease, visibility .22s; }
+.読書画面:is([data-menu-pinned="true"], [data-menu-open="true"], [data-menu-hover="true"]) > .読書操作,
+.読書画面 > .読書操作:is(:hover, :focus-within),
+.読書画面:has(> .読書引手:is(:hover, :focus-visible)) > .読書操作 { visibility: visible; opacity: 1; pointer-events: auto; }
+.読書固定 { display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 30px; padding: 2px !important; writing-mode: horizontal-tb !important; }
+.読書固定[aria-pressed="true"] { color: var(--朱, #b36a4c); border-color: var(--朱, #b36a4c); }
+.読書固定 svg { transition: transform .3s ease; }
+.読書固定[aria-pressed="true"] svg { transform: rotate(-35deg); }
+@media (max-width: 700px) { .読書画面 { --読書操作幅: min(85vw, 300px); } .読書操作 { padding-left: calc(var(--読書引手幅) + 5px); } }
+@media (prefers-reduced-motion: reduce) { .読書画面, .読書操作, .読書固定 svg,  .読書引手 > svg { transition: none; } }

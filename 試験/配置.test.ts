@@ -53,6 +53,14 @@ describe("ページ全体の配置推定", () => {
         expect(groups.get(2)).toBeUndefined();
         expect(groups.has(7)).toBe(false);
     });
+    test("意味分類が曖昧でも日本語の本文と見出しは縦書きにする", () => {
+        const uncertain = infer(graph, new Map(), []).map((item) =>
+            ({ ...item, scores: { prose: 0.2, heading: 0.1, navigation: 0.2, caption: 0.04, interface: 0.2, code: 0.16, data: 0.1 } }));
+        const plans = makePlans(graph, uncertain);
+        expect(plans[4]?.mode).toBe("vertical");
+        expect(plans[5]?.mode).toBe("vertical");
+        expect(plans[8]?.mode).toBe("horizontal");
+    });
     test("ページ末尾の普通の長文をフッターと誤認しない", () => {
         const modified: PageGraph = { ...graph, regions: graph.regions.map((item) =>
             item.id === 8 ? { ...item, text: "物語の最後の章。".repeat(40), links: 0 } : item) };

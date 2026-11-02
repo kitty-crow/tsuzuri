@@ -61,7 +61,20 @@ try {
     if (verticalTool !== "vertical-rl") throw new Error("読書入口が縦書きではありません");
     await page.locator("#読書").screenshot({ path: "/tmp/tsuzuri-tool-vertical.png" });
     await page.goto(target);
-    await page.waitForFunction(() => document.querySelector(".読書状態")?.textContent?.includes("組版が完了"));
+    await page.waitForFunction(() => document.querySelector(".読書状態")?.textContent?.includes("組版が完了")).catch(async () => {
+        const value = await page.locator(".読書状態").textContent();
+        const phase = await page.locator(".読書進捗").getAttribute("data-phase");
+        throw new Error("最初の組版が完了しません: " + String(value) + " / " + String(phase));
+    });
+    // 自動収納・引手・固定・固定の保存を確認する。
+    if (await page.locator(".読書画面").getAttribute("data-menu-pinned") !== "false") throw new Error("操作が初期状態で固定されています");
+    const closed = await page.locator(".読書本文").evaluate((element) => element.getBoundingClientRect().width);
+    await page.locator(".読書引手").click();
+    await page.waitForTimeout(450);
+    const expanded = await page.locator(".読書本文").evaluate((element) => element.getBoundingClientRect().width);
+    if (expanded >= closed) throw new Error("操作を開いても本文が広がりません");
+    await page.locator(".読書固定").click();
+    if (await page.locator(".読書画面").getAttribute("data-menu-pinned") !== "true") throw new Error("操作を固定できません");
     const content = page.frameLocator(".読書本文");
     const result = await content.locator("body").evaluate((body) => {
         const style = (selector: string): string => getComputedStyle(body.querySelector(selector)!).writingMode;
@@ -80,13 +93,21 @@ try {
         || !result.text?.includes("大切な言葉") || result.footer !== "static" || result.footerZone !== "footer"
         || !result.iconWidth || result.iconWidth > 22 || !result.sourceStyle || result.layout !== "grid"
         || await page.locator("body").getAttribute("data-compromised")) throw new Error("読書結果が不正: " + JSON.stringify(result));
+    if (requests !== 1 || workers !== 1) throw new Error("初回の処理回数が不正");
+    // 固定中は本文幅が異なるので、初回の再配置後に同じ幅のキャッシュを確認する。
+    await page.reload();
+    await page.waitForFunction(() => {
+        const status = document.querySelector(".読書状態")?.textContent ?? "";
+        return status.includes("組版が完了") || status.includes("保存済みの組版を表示");
+    });
+    if (await page.locator(".読書画面").getAttribute("data-menu-pinned") !== "true") throw new Error("操作の固定が保存されていません");
     const firstRequests = requests;
     const firstWorkers = workers;
-    if (firstRequests !== 1 || firstWorkers !== 1) throw new Error("初回の処理回数が不正");
     await page.reload();
     await page.waitForFunction(() => document.querySelector(".読書状態")?.textContent?.includes("保存済みの組版を表示"));
+    await page.locator(".読書固定").click();
     if (requests !== firstRequests || workers !== firstWorkers) throw new Error("保存済みのページを再計算しました");
-    if (await page.getByRole("progressbar").getAttribute("aria-valuenow") !== "100") throw new Error("保存済みの表示が完了になりません");
+    if (await page.locator('[role="progressbar"]').getAttribute("aria-valuenow") !== "100") throw new Error("保存済みの表示が完了になりません");
     if (await page.locator(".読書原文").evaluate((element) => getComputedStyle(element).writingMode) !== "vertical-rl") throw new Error("読書操作が縦書きではありません");
     await page.locator(".読書原文").click();
     await page.waitForFunction(() => document.querySelector<HTMLIFrameElement>(".読書本文")?.contentDocument?.querySelector("#intro")?.hasAttribute("data-reader-vertical") === false);
@@ -161,11 +182,14 @@ try {
     await progressPage.goto(target);
     await progressPage.waitForFunction(() => document.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow") === "50");
     await progressPage.frameLocator(".読書本文").locator("#intro").waitFor();
+    const previewMode = await progressPage.frameLocator(".読書本文").locator("#intro")
+        .evaluate((element) => getComputedStyle(element).writingMode);
+    if (previewMode !== "vertical-rl") throw new Error("意味解析中の仮組版が縦書きになっていません");
     if (!(await progressPage.locator(".読書残時間").textContent())?.includes("約")) throw new Error("モデルの残り時間がありません");
     await progressPage.screenshot({ path: "/tmp/tsuzuri-reader-progress.png" });
     await progressPage.waitForFunction(() => document.querySelector(".読書進捗")?.getAttribute("data-phase") === "analyse");
     await progressPage.waitForFunction(() => document.querySelector(".読書進捗")?.getAttribute("data-phase") === "complete");
-    if (await progressPage.getByRole("progressbar").getAttribute("aria-valuenow") !== "100") throw new Error("組版後に進捗が完了しません");
+    if (await progressPage.locator('[role="progressbar"]').getAttribute("aria-valuenow") !== "100") throw new Error("組版後に進捗が完了しません");
     await progressPage.close();
     if (errors.length) throw new Error(errors.join("\n"));
     console.log("読書画面: 組版・ルビ・保護領域・安全性・永続キャッシュ・更新・再配置を確認しました。");
