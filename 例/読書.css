@@ -1,0 +1,16 @@
+.読書中 { overflow: hidden; }
+.読書画面 { position: fixed; inset: 0; z-index: 10000; display: flex; flex-direction: column; background: #f6f4ed; color: #272925; font: 14px/1.5 system-ui, sans-serif; }
+.読書操作 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 18px; border-bottom: 1px solid #ccc7bc; }
+.読書操作 button, .読書取込 { border: 1px solid #aaa59b; border-radius: 5px; padding: 5px 10px; background: transparent; color: inherit; cursor: pointer; font: inherit; }
+.読書URL { flex: 1 1 420px; display: flex; gap: 8px; }
+.読書URL label { display: flex; align-items: center; gap: 8px; flex: 1; }
+.読書URL input { min-width: 80px; width: 100%; padding: 6px; border: 1px solid #aaa59b; border-radius: 4px; }
+.読書URL button { white-space: nowrap; }
+.読書状態 { flex: 1 1 75%; margin: 0; font-size: 12px; overflow-wrap: anywhere; }
+.読書出典, .読書戻る { color: #6e382e; }
+.読書本文 { border: 0; width: 100%; flex: 1; min-height: 0; background: white; }
+.読書測定 { position: fixed; left: -100000px; top: 0; visibility: hidden; border: 0; }
+.読書取込 input { max-width: 190px; }
+.読書入口 form { display: flex; gap: 12px; flex-wrap: wrap; margin-block: 18px; }
+.読書入口 input { flex: 1 1 260px; padding: 12px; border: 1px solid currentColor; background: transparent; color: inherit; font: inherit; }
+.読書入口 button { padding: 12px 20px; background: transparent; color: inherit; border: 1px solid currentColor; font: inherit; cursor: pointer; }
