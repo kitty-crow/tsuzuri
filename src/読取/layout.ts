@@ -14,16 +14,18 @@ export function makePlans(graph: PageGraph, inference: readonly Inference[]): Pl
         let blocked = false;
         while (parent !== null) {
             const ancestor = byID.get(parent);
-            const ancestorRole = roles.get(parent)?.role;
-            blocked ||= Boolean(ancestor?.protected || ancestor?.tag === "nav" || ancestorRole === "interface"
-                || ancestorRole === "code" || ancestorRole === "data");
+            blocked ||= Boolean(ancestor?.protected || ancestor?.tag === "nav");
             parent = ancestor?.parent ?? null;
         }
         const zone = zones.get(region.id) ?? "ordinary";
         const readable = result.scores.prose + result.scores.heading + result.scores.caption;
         const otherLanguage = region.lang.startsWith("zh") || region.lang.startsWith("ko");
         const functional = zone === "page" || zone === "footer" || zone === "navigation" || zone === "interface" || zone === "aside";
-        const vertical = region.text.trim().length > 0 && region.japanese > 0.2 && readable > 0.58
+        // 意味分類が曖昧でも、言語・文書構造・リンク密度を合わせて本文を判定する。
+        const structural = region.heading > 0 || ["p", "blockquote", "li", "dd", "dt", "figcaption"].includes(region.tag);
+        const contextual = region.text.trim().length >= 8 && region.japanese > 0.4 && region.links < 0.6;
+        const vertical = region.text.trim().length > 0 && region.japanese > 0.16
+            && (readable > 0.35 || structural || contextual)
             && !region.protected && !blocked && !functional && !otherLanguage
             && region.width > 0 && region.height > 0 && region.display !== "none";
         return { id: region.id, role: result.role, confidence: result.confidence, zone, mode: vertical ? "vertical" : "horizontal" };
@@ -74,6 +76,7 @@ export function emitLayout(doc: Document, graph: PageGraph, plans: readonly Plan
         const parentZone = region.parent === null ? undefined : byPlan.get(region.parent)?.zone;
         if (plan.zone === "footer" && parentZone !== "footer") element.dataset.readerLandmark = "footer";
         if (plan.zone === "header" && parentZone !== "header") element.dataset.readerLandmark = "header";
+        if (plan.zone === "primary" && parentZone !== "primary") element.dataset.readerPrimary = "";
         if (["fixed", "sticky", "absolute"].includes(region.position) && plan.zone !== "media") {
             element.style.setProperty("position", "static", "important");
             element.style.setProperty("inset", "auto", "important");
@@ -88,8 +91,10 @@ export function emitLayout(doc: Document, graph: PageGraph, plans: readonly Plan
             element.style.setProperty("--reader-icon-width", String(Math.max(1, Math.ceil(region.width))) + "px");
             element.style.setProperty("--reader-icon-height", String(Math.max(1, Math.ceil(region.height))) + "px");
         }
-        if (plan.mode === "horizontal" && region.protected) element.style.setProperty("writing-mode", "horizontal-tb", "important");
-        if (plan.mode === "horizontal") { element.dataset.readerHorizontal = ""; continue; }
+        // 構造的な外枠は横書きと決め付けず、内側の縦書き配置を受け入れる。
+        if (plan.mode === "horizontal" && (region.protected
+            || (region.text.trim() && !["body", "main", "article", "section"].includes(region.tag)))) element.dataset.readerHorizontal = "";
+        if (plan.mode === "horizontal") continue;
         element.dataset.readerVertical = "";
         element.style.setProperty("writing-mode", "vertical-rl", "important");
         element.style.setProperty("inline-size", plan.role === "heading" ? "max-content" : "var(--reader-height)", "important");
@@ -119,7 +124,7 @@ export function emitLayout(doc: Document, graph: PageGraph, plans: readonly Plan
         element.style.setProperty("--reader-columns", columns.map((child) => "minmax(0, " + String(child.width / Math.max(1, total) * 100) + "fr)").join(" "));
     }
     const style = doc.createElement("style");
-    style.textContent = READER_CSS; style.dataset.readerStyle = "";
+    style.textContent = READER_CSS + "\n[data-reader-primary] { direction: rtl !important; }\n[data-reader-primary] > * { direction: ltr !important; }"; style.dataset.readerStyle = "";
     doc.head.append(style);
     if (doc.body.textContent !== before) throw new Error("組版中に本文が変わったため中断しました。");
 }

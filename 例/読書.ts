@@ -52,10 +52,10 @@ function start(): void {
 const panel = document.createElement("section");
 panel.className = "読書画面";
 panel.setAttribute("aria-label", "綴りで読む");
-panel.innerHTML = `<header class="読書操作">
+panel.innerHTML = `<button class="読書引手" type="button" aria-controls="読書操作" aria-expanded="false"><span>操作</span><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button><header class="読書操作" id="読書操作">
   <div class="読書見出し"><a class="読書戻る">綴りへ</a><h1>綴りで読む</h1><p class="読書状態" role="status" aria-live="polite"></p></div>
   <form class="読書URL"><label><span>読みたいページ</span><input name="w" type="url" required placeholder="https://example.jp/"></label><button>縦書きで読む</button></form>
-  <div class="読書道具"><label class="読書意味"><input type="checkbox" checked> 詳しい意味解析</label>
+  <div class="読書道具"><button type="button" class="読書固定" aria-pressed="false" aria-label="操作を固定する" title="操作を固定する"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l-1 5 3 3v2H7v-2l3-3-1-5Z"/><path d="M12 13v8"/></svg></button><label class="読書意味"><input type="checkbox" checked> 詳しい意味解析</label>
   <button type="button" class="読書原文" aria-pressed="false">元の配置</button>
   <button type="button" class="読書更新">更新</button>
   <button type="button" class="読書消去">保存を削除</button>
@@ -79,6 +79,50 @@ const progressView = new ProgressView();
 required(panel, ".読書操作").append(progressView.element);
 panel.append(frame, measure);
 if (extensionReader()) { panel.classList.add("読書拡張"); required<HTMLElement>(panel, ".読書連携").hidden = true; }
+
+const menu = required<HTMLElement>(panel, ".読書操作");
+const handle = required<HTMLButtonElement>(panel, ".読書引手");
+const pin = required<HTMLButtonElement>(panel, ".読書固定");
+const pinKey = "綴り-読書操作固定";
+function menuState(): void {
+    const open = panel.dataset.menuPinned === "true" || panel.dataset.menuOpen === "true"
+        || panel.dataset.menuHover === "true" || menu.matches(":hover, :focus-within") || handle.matches(":hover, :focus-visible");
+    handle.setAttribute("aria-expanded", String(open));
+    handle.setAttribute("aria-label", open ? "操作を閉じる" : "操作を開く");
+}
+function setPinned(value: boolean): void {
+    panel.dataset.menuPinned = String(value);
+    pin.setAttribute("aria-pressed", String(value));
+    pin.setAttribute("aria-label", value ? "操作の固定を解除する" : "操作を固定する");
+    pin.title = pin.getAttribute("aria-label") ?? "";
+    menuState();
+}
+try { setPinned(localStorage.getItem(pinKey) === "true"); } catch { setPinned(false); }
+pin.addEventListener("click", () => {
+    const value = panel.dataset.menuPinned !== "true";
+    setPinned(value);
+    try { localStorage.setItem(pinKey, String(value)); } catch { /* 記憶できなくても操作を維持する。 */ }
+});
+handle.addEventListener("click", () => {
+    panel.dataset.menuOpen = String(panel.dataset.menuOpen !== "true");
+    menuState();
+});
+for (const target of [menu, handle]) {
+    target.addEventListener("pointerenter", () => { panel.dataset.menuHover = "true"; menuState(); });
+    target.addEventListener("pointerleave", (event) => {
+        const next = event.relatedTarget;
+        if (!(next instanceof Node) || (!menu.contains(next) && !handle.contains(next))) panel.dataset.menuHover = "false";
+        menuState();
+    });
+    target.addEventListener("focusin", menuState);
+    target.addEventListener("focusout", () => requestAnimationFrame(menuState));
+}
+document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    panel.dataset.menuOpen = "false";
+    if (menu.contains(document.activeElement) && document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    menuState();
+});
 
 function show(): void {
     document.body.append(panel); document.documentElement.classList.add("読書中");
@@ -194,9 +238,12 @@ required<HTMLInputElement>(panel, "input[type=file]").addEventListener("change",
     const url = activeURL;
     void file.arrayBuffer().then((buffer) => open(url, true, decodeHTML(new Uint8Array(buffer), "text/html"))).catch(() => { status.textContent = "HTMLを読み込めませんでした。"; });
 });
-window.addEventListener("resize", () => {
+// 操作欄の開閉でも表示領域の寸法が変わるため、枠そのものを監視する。
+function scheduleLayout(): void {
     clearTimeout(resizeTimer);
     if (!activeURL || !current) return;
-    resizeTimer = setTimeout(() => { if (activeURL && current) void open(activeURL, false, current.page.source, extensionReader() ? current.page.graph : undefined); }, 350);
-});
+    resizeTimer = setTimeout(() => { if (activeURL && current) void open(activeURL, false, current.page.source, extensionReader() ? current.page.graph : undefined); }, 500);
+}
+window.addEventListener("resize", scheduleLayout);
+new ResizeObserver(scheduleLayout).observe(frame);
 start();

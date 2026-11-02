@@ -57,6 +57,7 @@ try {
     await reader.screenshot({ path: "extension-test.png" });
     // 再取得した内容が同じなら、保存済みの組版を表示する。
     const firstURL = reader.url();
+    await reader.locator(".読書引手").click();
     await reader.locator(".読書更新").click();
     await reader.waitForFunction((oldURL) => location.href !== oldURL, firstURL);
     await reader.waitForFunction(() => document.querySelector(".読書状態")?.textContent?.includes("保存済みの組版を表示"));

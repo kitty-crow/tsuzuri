@@ -36,8 +36,12 @@ export class WebReader {
         const source = sanitise(raw, finalURL);
         const doc = await loadFrame(frame, source, signal);
         signal.throwIfAborted();
-        this.options.preview?.(source, finalURL);
         const graph = observation ? { ...observation, width, height } : observePage(doc, width, height);
+        // 意味モデルの待機中も構造解析で生成した縦書きの仮組版を表示する。
+        const preliminary = makePlans(graph, infer(graph, new Map(), []));
+        emitLayout(doc, graph, preliminary);
+        optimise(doc, graph, preliminary);
+        this.options.preview?.("<!doctype html>\n" + doc.documentElement.outerHTML, finalURL);
         const candidates = graph.regions.filter((region) => region.text.trim() && !region.protected)
             .sort((a, b) => b.text.length - a.text.length).slice(0, 384);
         const vectors = new Map<number, readonly number[]>();
@@ -61,11 +65,15 @@ export class WebReader {
         this.options.progress?.({ phase: "layout" });
         await new Promise<void>((resolve) => setTimeout(resolve, 0));
         signal.throwIfAborted();
-        emitLayout(doc, graph, plans);
-        const revised = optimise(doc, graph, plans);
-        const html = "<!doctype html>\n" + doc.documentElement.outerHTML;
+        const finalDoc = await loadFrame(frame, source, signal);
+        signal.throwIfAborted();
+        // 原文を再表示した測定枠には、元の領域番号を付け直す。
+        if (!observation) observePage(finalDoc, width, height);
+        emitLayout(finalDoc, graph, plans);
+        const revised = optimise(finalDoc, graph, plans);
+        const html = "<!doctype html>\n" + finalDoc.documentElement.outerHTML;
         const now = Date.now();
-        const partial = { key, engine: ENGINE, url: requestedURL.href, baseURL: finalURL.href, title: doc.title, source, hash, html, graph, plans: revised, model, created: now, accessed: now, bytes: 0 };
+        const partial = { key, engine: ENGINE, url: requestedURL.href, baseURL: finalURL.href, title: finalDoc.title, source, hash, html, graph, plans: revised, model, created: now, accessed: now, bytes: 0 };
         const page: SavedPage = { ...partial, bytes: new TextEncoder().encode(JSON.stringify(partial)).byteLength };
         signal.throwIfAborted();
         this.options.progress?.({ phase: "save" });
