@@ -159,15 +159,17 @@ function cost(doc: Document): number {
 /** 書字方向を確定した後、実測した衝突と画面外への突出から列の高さを選ぶ。 */
 export function optimise(doc: Document, graph: PageGraph, plans: readonly Plan[]): Plan[] {
     const viewport = doc.defaultView?.innerHeight ?? graph.height;
-    const candidates = [0.62, 0.75, 0.88].map((fraction) => Math.max(120, Math.min(800, viewport * fraction)));
-    let best = candidates[0]!;
+    const candidates = [62, 75, 88] as const;
+    let best: number = candidates[0];
     let minimum = Infinity;
-    for (const height of candidates) {
+    for (const ratio of candidates) {
+        const height = Math.max(120, Math.min(800, viewport * ratio / 100));
         doc.documentElement.style.setProperty("--reader-height", String(height) + "px");
         const value = cost(doc) + Math.abs(height / Math.max(1, viewport) - 0.75) * 0.05;
-        if (value < minimum) { minimum = value; best = height; }
+        if (value < minimum) { minimum = value; best = ratio; }
     }
-    doc.documentElement.style.setProperty("--reader-height", String(best) + "px");
+    // 初回の測定結果を割合で保存し、以後は表示領域の変化をCSSだけで処理する。
+    doc.documentElement.style.setProperty("--reader-height", "clamp(120px, " + String(best) + "vh, 800px)");
     const revised = plans.map((plan): Plan => {
         const element = doc.querySelector<HTMLElement>('[data-tsuzuri-source="' + String(plan.id) + '"]');
         if (!element || plan.mode !== "vertical") return plan;

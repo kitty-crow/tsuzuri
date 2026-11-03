@@ -17,7 +17,6 @@ let current: ReadResult | undefined;
 let activeURL: URL | undefined;
 let original = false;
 let sourceTabId: number | undefined;
-let resizeTimer: ReturnType<typeof setTimeout> | undefined;
 
 function required<T extends Element>(root: ParentNode, selector: string): T {
     const element = root.querySelector<T>(selector);
@@ -238,12 +237,6 @@ required<HTMLInputElement>(panel, "input[type=file]").addEventListener("change",
     const url = activeURL;
     void file.arrayBuffer().then((buffer) => open(url, true, decodeHTML(new Uint8Array(buffer), "text/html"))).catch(() => { status.textContent = "HTMLを読み込めませんでした。"; });
 });
-// 操作欄の開閉でも表示領域の寸法が変わるため、枠そのものを監視する。
-function scheduleLayout(): void {
-    clearTimeout(resizeTimer);
-    if (!activeURL || !current) return;
-    resizeTimer = setTimeout(() => { if (activeURL && current) void open(activeURL, false, current.page.source, extensionReader() ? current.page.graph : undefined); }, 500);
-}
-window.addEventListener("resize", scheduleLayout);
-new ResizeObserver(scheduleLayout).observe(frame);
+// スクロール・画面のフォーカス・操作欄の開閉・表示寸法の変化では組版済みの文書を読み直さない。
+// 表示領域の高さは文書内の可変CSSで調整する。
 start();
