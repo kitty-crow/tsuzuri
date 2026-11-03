@@ -66,6 +66,25 @@ try {
         const phase = await page.locator(".読書進捗").getAttribute("data-phase");
         throw new Error("最初の組版が完了しません: " + String(value) + " / " + String(phase));
     });
+    // スクロールと操作欄の開閉では文書自体を入れ替えない。
+    await page.evaluate(() => {
+        const current = document.querySelector<HTMLIFrameElement>(".読書本文")?.contentDocument;
+        if (!current) throw new Error("読書文書を確認できません");
+        (window as Window & { __readerTestDocument?: Document }).__readerTestDocument = current;
+    });
+    const assertSession = async (cause: string): Promise<void> => {
+        const unchanged = await page.evaluate(() => (window as Window & { __readerTestDocument?: Document }).__readerTestDocument
+            === document.querySelector<HTMLIFrameElement>(".読書本文")?.contentDocument);
+        if (!unchanged) throw new Error("読書中に文書が読み直されました: " + cause);
+    };
+    await page.frameLocator(".読書本文").locator("body").evaluate((body) => {
+        const flow = body.querySelector<HTMLElement>("[data-reader-flow]");
+        flow?.dispatchEvent(new Event("scroll"));
+        body.ownerDocument.defaultView?.dispatchEvent(new Event("scroll"));
+    });
+    await page.evaluate(() => { window.dispatchEvent(new Event("blur")); window.dispatchEvent(new Event("focus")); });
+    await page.waitForTimeout(750);
+    await assertSession("スクロールとフォーカス");
     // 自動収納・引手・固定・固定の保存を確認する。
     if (await page.locator(".読書画面").getAttribute("data-menu-pinned") !== "false") throw new Error("操作が初期状態で固定されています");
     const closed = await page.locator(".読書本文").evaluate((element) => element.getBoundingClientRect().width);
@@ -75,6 +94,9 @@ try {
     if (expanded >= closed) throw new Error("操作を開いても本文が広がりません");
     await page.locator(".読書固定").click();
     if (await page.locator(".読書画面").getAttribute("data-menu-pinned") !== "true") throw new Error("操作を固定できません");
+    await page.waitForTimeout(750);
+    await assertSession("操作欄の開閉と固定");
+    if (requests !== 1 || workers !== 1) throw new Error("操作中にページを再解析しました");
     const content = page.frameLocator(".読書本文");
     const result = await content.locator("body").evaluate((body) => {
         const style = (selector: string): string => getComputedStyle(body.querySelector(selector)!).writingMode;
@@ -117,10 +139,18 @@ try {
     await page.locator(".読書更新").click();
     await page.waitForFunction(() => document.querySelector(".読書状態")?.textContent?.includes("組版が完了"));
     if (requests !== firstRequests + 1 || workers !== firstWorkers) throw new Error("更新時に文章の意味解析を再計算しました");
-    // 画面幅を変えると組版をやり直し、保存済みの意味ベクトルを再利用する。
+    // 画面幅・高さが変わっても組版済みの文書を保持し、CSSで列高を調整する。
+    await page.evaluate(() => {
+        const current = document.querySelector<HTMLIFrameElement>(".読書本文")?.contentDocument;
+        if (!current) throw new Error("読書文書を確認できません");
+        (window as Window & { __readerTestDocument?: Document }).__readerTestDocument = current;
+    });
+    const beforeHeight = await content.locator("#intro").evaluate((element) => element.getBoundingClientRect().height);
     await page.setViewportSize({ width: 600, height: 850 });
-    await page.waitForTimeout(500);
-    await page.waitForFunction(() => document.querySelector(".読書状態")?.textContent?.includes("組版が完了"));
+    await page.waitForTimeout(750);
+    await assertSession("表示領域の変更");
+    const afterHeight = await content.locator("#intro").evaluate((element) => element.getBoundingClientRect().height);
+    if (Math.abs(afterHeight - beforeHeight) < 10) throw new Error("表示領域の変更に列高が追従しません");
     if (requests !== firstRequests + 1 || workers !== firstWorkers) throw new Error("表示サイズの変更時に再取得または再推論しました");
     const overflow = await content.locator("html").evaluate((element) => element.scrollWidth > element.clientWidth + 2);
     if (overflow) {

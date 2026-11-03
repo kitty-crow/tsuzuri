@@ -39,7 +39,10 @@ try {
     const activate = async (): Promise<void> => {
         await reader.evaluate((id) => { void chrome.runtime.sendMessage({ type: "capture-tab", tabId: id }).catch(() => undefined); }, tabId);
         await reader.waitForURL("**/*snapshot=*");
-        await reader.waitForFunction(() => document.querySelector(".読書進捗")?.getAttribute("data-phase") === "complete");
+        await reader.waitForFunction(() => document.querySelector(".読書進捗")?.getAttribute("data-phase") === "complete").catch(async () => {
+            const state = await reader.locator(".読書状態").textContent();
+            throw new Error("拡張機能の初回組版が完了しません: " + String(state));
+        });
     };
     await activate();
     const frame = reader.frameLocator(".読書本文");
@@ -61,13 +64,56 @@ try {
         return stored["capture:" + id] as { graph: { regions: { tag: string; fontSize: number }[] } };
     });
     if (!packet.graph.regions.some((region) => region.tag === "p" && region.fontSize === 20)) throw new Error("実際の書式を読み取れていません");
+    // 文章のスクロール・タブのフォーカス・操作欄の開閉・窓幅変更で文書を破棄しない。
+    await reader.evaluate(() => {
+        const documentInFrame = document.querySelector<HTMLIFrameElement>(".読書本文")?.contentDocument;
+        if (!documentInFrame) throw new Error("拡張の読書文書を確認できません");
+        (window as Window & { __tsuzuriSession?: Document }).__tsuzuriSession = documentInFrame;
+    });
+    const unchanged = async (reason: string): Promise<void> => {
+        const preserved = await reader.evaluate(() => {
+            const previous = (window as Window & { __tsuzuriSession?: Document }).__tsuzuriSession;
+            return previous !== undefined && previous === document.querySelector<HTMLIFrameElement>(".読書本文")?.contentDocument;
+        });
+        if (!preserved) throw new Error("読書中に文書が読み直されました: " + reason);
+    };
+    // スクロール操作とページ内のスクロール通知は再組版の理由にしない。
+    await frame.locator("article").evaluate((article) => {
+        article.dispatchEvent(new Event("scroll", { bubbles: true }));
+        article.ownerDocument.defaultView?.dispatchEvent(new Event("scroll"));
+    });
+    await reader.mouse.move(420, 420);
+    await reader.mouse.wheel(0, 480);
+    await source.bringToFront();
+    await reader.bringToFront();
+    await reader.locator(".読書引手").click();
+    await reader.locator(".読書固定").click();
+    await reader.locator(".読書固定").click();
+    await reader.mouse.move(20, 20);
+    await reader.waitForTimeout(850);
+    await unchanged("スクロール・フォーカス・操作欄");
+    await reader.locator(".読書引手").click();
+    await reader.mouse.move(20, 20);
+    const initialHeight = await frame.locator("#live").evaluate((element) => element.getBoundingClientRect().height);
+    await reader.setViewportSize({ width: 930, height: 730 });
+    await reader.waitForTimeout(850);
+    await unchanged("画面のサイズ変更");
+    const newHeight = await frame.locator("#live").evaluate((element) => element.getBoundingClientRect().height);
+    if (Math.abs(newHeight - initialHeight) < 10) throw new Error("表示領域の変更に列高が追従しません");
+    if (sourceRequests !== 1) throw new Error("読書操作中に元サイトを再取得しました");
+    await reader.setViewportSize({ width: 1200, height: 900 });
+    await reader.waitForTimeout(150);
+    await unchanged("元の表示サイズへの復帰");
     await reader.screenshot({ path: "extension-test.png" });
     // 再取得した内容が同じなら、保存済みの組版を表示する。
     const firstURL = reader.url();
     await reader.locator(".読書引手").click();
     await reader.locator(".読書更新").click();
     await reader.waitForFunction((oldURL) => location.href !== oldURL, firstURL);
-    await reader.waitForFunction(() => document.querySelector(".読書状態")?.textContent?.includes("保存済みの組版を表示"));
+    await reader.waitForFunction(() => document.querySelector(".読書状態")?.textContent?.includes("保存済みの組版を表示")).catch(async () => {
+        const state = await reader.locator(".読書状態").textContent();
+        throw new Error("更新後の組版キャッシュを利用できません: " + String(state));
+    });
     if (sourceRequests !== 1) throw new Error("更新時に元のページを取得しました");
     // 拡張機能のCSPで同梱WASMを初期化できることを確認する。
     const wasm = await reader.evaluate(async () => {
